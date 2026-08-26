@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   CONTROL_GROUPS,
   DEFAULT_SCENE_CONFIG,
+  type ControlGroup,
   type SceneConfig,
 } from "@/lib/three/config";
 
@@ -22,9 +23,21 @@ type TuningPanelProps = {
  */
 export function TuningPanel({ config, onChange }: TuningPanelProps) {
   const [open, setOpen] = useState(false);
+  const [copiedGroup, setCopiedGroup] = useState<string | null>(null);
 
   function set(key: keyof SceneConfig, value: number) {
     onChange({ ...config, [key]: value });
+  }
+
+  /** Copies just this section's values, ready to paste over the matching
+   * block of DEFAULT_SCENE_CONFIG. */
+  function copyGroup(group: ControlGroup) {
+    const subset = Object.fromEntries(
+      group.controls.map((control) => [control.key, config[control.key]]),
+    );
+    void navigator.clipboard?.writeText(JSON.stringify(subset, null, 2));
+    setCopiedGroup(group.title);
+    window.setTimeout(() => setCopiedGroup(null), 1200);
   }
 
   if (!open) {
@@ -65,8 +78,15 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
 
       {CONTROL_GROUPS.map((group) => (
         <fieldset key={group.title} className="mb-3 border-0 p-0">
-          <legend className="mb-1 text-xs font-semibold text-ink">
-            {group.title}
+          <legend className="mb-1 flex w-full items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-ink">{group.title}</span>
+            <button
+              type="button"
+              onClick={() => copyGroup(group)}
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+            >
+              {copiedGroup === group.title ? "Copied" : "Copy"}
+            </button>
           </legend>
 
           {group.controls.map((control) => {
@@ -107,10 +127,12 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         type="button"
         onClick={() => {
           void navigator.clipboard?.writeText(JSON.stringify(config, null, 2));
+          setCopiedGroup("__all__");
+          window.setTimeout(() => setCopiedGroup(null), 1200);
         }}
         className="w-full rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
       >
-        Copy values as JSON
+        {copiedGroup === "__all__" ? "Copied all" : "Copy all values"}
       </button>
     </div>
   );
