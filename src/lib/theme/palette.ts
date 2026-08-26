@@ -1,3 +1,5 @@
+import { hexToRgb, lerpOklch, oklchToRgb, rgbToHex, rgbToOklch } from "./color";
+
 /**
  * Contribution City color palette.
  *
@@ -51,3 +53,28 @@ export const levelColorByName: Record<ContributionLevel, string> = {
   THIRD_QUARTILE: levelColors[3],
   FOURTH_QUARTILE: levelColors[4],
 };
+
+/**
+ * Continuous ramp endpoints for the 3D city, converted to OKLCH once at
+ * module load. The 2D heatmap keeps GitHub's five discrete buckets for
+ * familiarity; the city interpolates between these two so a 1-commit day
+ * and an 18-commit day are visibly different rather than sharing a color.
+ */
+const RAMP_START_HEX = levelColors[1]; // lightest active green
+const RAMP_END_HEX = levelColors[4]; // deepest green
+
+const rampStart = rgbToOklch(hexToRgb(RAMP_START_HEX));
+const rampEnd = rgbToOklch(hexToRgb(RAMP_END_HEX));
+
+/**
+ * Color for a day, from the same 0..1 sqrt-normalized value that drives
+ * building height. Zero-contribution days keep the neutral ground color
+ * rather than entering the ramp.
+ */
+export function contributionRampColor(
+  normalized: number,
+  hasContributions: boolean,
+): string {
+  if (!hasContributions) return levelColors[0];
+  return rgbToHex(oklchToRgb(lerpOklch(rampStart, rampEnd, normalized)));
+}

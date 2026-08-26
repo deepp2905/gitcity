@@ -11,7 +11,7 @@ import {
 import { maxCountOf } from "@/lib/contributions/grid";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { columnProgress, easeInOutCubic } from "@/lib/three/camera";
-import { levelColorByName } from "@/lib/theme/palette";
+import { contributionRampColor } from "@/lib/theme/palette";
 
 /** Reused scratch objects — allocating per frame would churn the GC. */
 const scratchMatrix = new THREE.Matrix4();
@@ -61,13 +61,19 @@ export function CityBuildings({
 
     return days.map((day) => {
       const { x, z } = tilePosition(day.weekIndex, day.weekday, weekCount);
+      // The same sqrt-normalized value drives both height and color, so
+      // a taller building is always a deeper green.
+      const normalized = maxCount > 0 ? Math.sqrt(day.count / maxCount) : 0;
+
       return {
         day,
         x,
         z,
         flatHeight,
         targetHeight: worldHeight(computeBuildingHeight(day.count, maxCount)),
-        color: new THREE.Color(levelColorByName[day.level]),
+        color: new THREE.Color(
+          contributionRampColor(normalized, day.count > 0),
+        ),
       };
     });
   }, [days, weekCount]);
