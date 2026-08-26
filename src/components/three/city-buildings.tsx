@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { ContributionDay } from "@/lib/contributions/types";
@@ -9,12 +9,8 @@ import {
   GROUND_TILE_HEIGHT,
 } from "@/lib/contributions/height";
 import { maxCountOf } from "@/lib/contributions/grid";
-import {
-  CELL_SIZE,
-  riseDelayMs,
-  tilePosition,
-  worldHeight,
-} from "@/lib/three/layout";
+import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
+import { columnProgress, easeInOutCubic } from "@/lib/three/camera";
 import { levelColorByName } from "@/lib/theme/palette";
 
 /** Reused scratch objects — allocating per frame would churn the GC. */
@@ -28,106 +24,99 @@ type BuildingLayout = {
   day: ContributionDay;
   x: number;
   z: number;
+  flatHeight: number;
   targetHeight: number;
-  delayMs: number;
   color: THREE.Color;
 };
 
 type CityBuildingsProps = {
   days: ContributionDay[];
   weekCount: number;
-  /** Skips the rise animation and snaps to full height. */
-  reducedMotion: boolean;
-  /** Bumped when the period changes, to retarget heights and colors. */
-  transitionKey: string;
+  /** Shared 0..1 transform progress, written by the camera rig. */
+  progressRef: RefObject<number>;
   onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
 };
 
 /**
- * Every day in the period as a single instanced mesh — one draw call for
- * the whole city, per the performance budget. Per-instance color carries
- * the contribution level; raycasting against the instance id drives
- * tooltips.
+ * Every day in the period as one InstancedMesh — a single draw call for
+ * the whole city. Heights are a pure function of the shared transform
+ * progress, so the rise is inherently reversible and interruptible:
+ * scrubbing progress back lowers the buildings along the same curve.
+ *
+ * A separate damping pass eases heights toward that computed target,
+ * which also covers period changes (the target moves, the damping
+ * catches up over ~450ms) without any separate animation bookkeeping.
  */
 export function CityBuildings({
   days,
   weekCount,
-  reducedMotion,
-  transitionKey,
+  progressRef,
   onHoverDay,
 }: CityBuildingsProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
   const layout = useMemo<BuildingLayout[]>(() => {
     const maxCount = maxCountOf(days);
+    const flatHeight = worldHeight(GROUND_TILE_HEIGHT);
+
     return days.map((day) => {
       const { x, z } = tilePosition(day.weekIndex, day.weekday, weekCount);
       return {
         day,
         x,
         z,
+        flatHeight,
         targetHeight: worldHeight(computeBuildingHeight(day.count, maxCount)),
-        delayMs: riseDelayMs(day.weekIndex, weekCount),
         color: new THREE.Color(levelColorByName[day.level]),
       };
     });
   }, [days, weekCount]);
 
-  /** Current animated height per instance, damped toward the target. */
+  /** Current rendered height per instance, damped toward the target. */
   const heightsRef = useRef<Float32Array>(new Float32Array(0));
-  const startRef = useRef<number>(0);
 
-  // Restart the rise whenever the period (and therefore the targets)
-  // changes. Heights animate from the current value, so interrupting a
-  // transition damps from wherever it got to rather than snapping.
   useEffect(() => {
     const previous = heightsRef.current;
     const next = new Float32Array(layout.length);
-
     for (let i = 0; i < layout.length; i++) {
-      if (reducedMotion) {
-        next[i] = layout[i].targetHeight;
-      } else {
-        // Carry over the in-flight height where the instance still
-        // exists, so a year switch morphs instead of collapsing.
-        next[i] = i < previous.length ? previous[i] : worldHeight(GROUND_TILE_HEIGHT);
-      }
+      // Carry the in-flight height forward where the instance still
+      // exists, so switching year morphs rather than collapsing first.
+      next[i] = i < previous.length ? previous[i] : layout[i].flatHeight;
     }
-
     heightsRef.current = next;
-    startRef.current = performance.now();
-  }, [layout, reducedMotion, transitionKey]);
+  }, [layout]);
 
   useFrame((_, delta) => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
     const heights = heightsRef.current;
-    const elapsed = performance.now() - startRef.current;
+    if (heights.length !== layout.length) return;
 
-    // Critically-damped approach: smooth, never overshoots, and remains
-    // correct when the target changes mid-flight.
-    const lambda = 9;
-    const blend = 1 - Math.exp(-lambda * delta);
+    const progress = progressRef.current;
 
-    let needsUpdate = false;
+    // Critically damped: smooth, never overshoots, and stays correct when
+    // the target moves mid-flight.
+    const blend = 1 - Math.exp(-11 * delta);
+    let moved = false;
 
     for (let i = 0; i < layout.length; i++) {
       const item = layout[i];
+      const eased = easeInOutCubic(
+        columnProgress(progress, item.day.weekIndex, weekCount),
+      );
       const target =
-        reducedMotion || elapsed >= item.delayMs
-          ? item.targetHeight
-          : worldHeight(GROUND_TILE_HEIGHT);
+        item.flatHeight + (item.targetHeight - item.flatHeight) * eased;
 
       const current = heights[i];
-      const next = reducedMotion ? target : current + (target - current) * blend;
+      const next =
+        Math.abs(target - current) < 0.0005
+          ? target
+          : current + (target - current) * blend;
 
-      if (Math.abs(next - current) > 0.0001) {
+      if (next !== current) {
         heights[i] = next;
-        needsUpdate = true;
-      } else if (heights[i] !== target) {
-        heights[i] = target;
-        needsUpdate = true;
+        moved = true;
       }
 
       const height = Math.max(heights[i], 0.001);
@@ -137,7 +126,7 @@ export function CityBuildings({
       mesh.setMatrixAt(i, scratchMatrix);
     }
 
-    if (needsUpdate) mesh.instanceMatrix.needsUpdate = true;
+    if (moved) mesh.instanceMatrix.needsUpdate = true;
   });
 
   // Per-instance colors only change when the period does.
@@ -153,10 +142,10 @@ export function CityBuildings({
   return (
     <instancedMesh
       ref={meshRef}
-      // `key` forces a fresh mesh when the instance count changes, since
-      // InstancedMesh count is fixed at construction.
+      // InstancedMesh count is fixed at construction, so a changed day
+      // count needs a fresh mesh.
       key={layout.length}
-      args={[undefined, undefined, layout.length]}
+      args={[undefined, undefined, Math.max(layout.length, 1)]}
       castShadow
       receiveShadow
       onPointerMove={(event) => {

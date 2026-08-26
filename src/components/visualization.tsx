@@ -11,19 +11,19 @@ import {
 } from "@/lib/hooks/use-media-query";
 import { Heatmap } from "./heatmap";
 
-// Three.js must never run on the server, and keeping it out of the main
-// bundle means the 2D experience loads without paying for the renderer.
+// Three.js must never run on the server, and code-splitting it keeps the
+// renderer out of the initial bundle.
 const CityScene = dynamic(
   () => import("./three/city-scene").then((m) => m.CityScene),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[420px] w-full items-center justify-center rounded-xl border border-border bg-canvas text-sm text-ink-muted sm:h-[520px]">
-        Preparing the city…
-      </div>
+      <div className="h-[320px] w-full animate-pulse rounded-xl border border-border bg-canvas sm:h-[420px]" />
     ),
   },
 );
+
+let cachedWebGL: boolean | null = null;
 
 /** WebGL support, probed once on the client. */
 function useWebGLSupport(): boolean {
@@ -36,7 +36,6 @@ function useWebGLSupport(): boolean {
     () => true, // assume supported during SSR; the client decides
   );
 }
-let cachedWebGL: boolean | null = null;
 
 type VisualizationProps = {
   period: ContributionPeriod;
@@ -45,6 +44,16 @@ type VisualizationProps = {
   onToggleView: (next: ViewMode) => void;
 };
 
+/**
+ * There is only ever one visualization: the 3D scene. The "2D" state is
+ * that same scene viewed from directly overhead, so the toggle changes
+ * the camera rather than swapping renderings.
+ *
+ * The DOM heatmap stays mounted underneath in both states — visually
+ * hidden when WebGL works (screen readers and keyboard users still get
+ * every day's exact date and count), and shown as the full fallback when
+ * it doesn't.
+ */
 export function Visualization({
   period,
   profile,
@@ -55,48 +64,41 @@ export function Visualization({
   const isMobile = useIsMobile();
   const webglSupported = useWebGLSupport();
 
-  const is3D = view === "3d" && webglSupported;
+  const isCity = view === "3d";
+
+  if (!webglSupported) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Heatmap period={period} login={profile.login} />
+        <p className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">
+          The 3D city needs WebGL, which this browser doesn&apos;t support. The
+          heatmap above shows exactly the same contribution data.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-medium text-ink-muted">
-          {is3D ? "City view" : "Heatmap"}
-        </h2>
-
-        {webglSupported ? (
-          <button
-            type="button"
-            onClick={() => onToggleView(is3D ? "2d" : "3d")}
-            className="min-h-11 rounded-lg border border-border bg-canvas-raised px-4 text-sm font-medium text-ink shadow-sm transition-colors hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            {is3D ? "Flatten" : "Build city"}
-          </button>
-        ) : null}
-      </div>
-
-      {/* The accessible grid stays mounted in both modes — visually hidden
-          in 3D so screen readers keep the same per-day information. */}
-      <Heatmap
+      <CityScene
         period={period}
-        login={profile.login}
-        visuallyHidden={is3D}
+        target={isCity ? 1 : 0}
+        reducedMotion={reducedMotion}
+        isMobile={isMobile}
       />
 
-      {is3D ? (
-        <CityScene
-          period={period}
-          reducedMotion={reducedMotion}
-          isMobile={isMobile}
-        />
-      ) : null}
+      {/* Same information, always available to assistive technology. */}
+      <Heatmap period={period} login={profile.login} visuallyHidden />
 
-      {!webglSupported ? (
-        <p className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">
-          3D city view is unavailable because your browser doesn&apos;t support
-          WebGL. The heatmap above shows the same contribution data.
-        </p>
-      ) : null}
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={() => onToggleView(isCity ? "2d" : "3d")}
+          className="min-h-11 rounded-lg border border-border bg-canvas-raised px-5 text-sm font-medium text-ink shadow-sm transition-colors hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          {isCity ? "Flatten to 2D" : "Transform to 3D"}
+        </button>
+      </div>
     </div>
   );
 }
