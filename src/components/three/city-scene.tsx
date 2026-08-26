@@ -89,6 +89,13 @@ export function CityScene({
             // silently downgrades to PCFShadowMap anyway — so this is the
             // same output without the console warning.
             shadows={isMobile ? false : "percentage"}
+            // `flat` disables R3F's default ACES Filmic tone mapping.
+            // ACES is built for HDR film response: it compresses
+            // near-white toward ~85% grey and desaturates, which made the
+            // off-white ground read as a grey panel against the page and
+            // muted the OKLCH ramp. This is a flat-lit diagram, not a
+            // photographic scene, so colors should render as authored.
+            flat
             dpr={pixelRatioCap(isMobile)}
             orthographic
             camera={{ position: [0, 200, 8], zoom: baseZoom, near: 1, far: 600 }}
