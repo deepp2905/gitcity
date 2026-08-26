@@ -19,6 +19,7 @@ import {
   isCachedNotFound,
 } from "@/lib/github/cache";
 import { checkThrottle } from "@/lib/github/throttle";
+import { fixturesEnabled, readFixture } from "@/lib/github/fixtures";
 
 export const runtime = "nodejs";
 
@@ -73,6 +74,16 @@ export async function GET(request: Request): Promise<NextResponse> {
     return errorResponse("INVALID_USERNAME", INVALID_USERNAME_MESSAGES[parsed.reason]);
   }
   const username = parsed.username;
+
+  // Offline development: serve a saved response and skip GitHub entirely.
+  if (fixturesEnabled()) {
+    const fixture = await readFixture(username);
+    if (fixture) return NextResponse.json<ContributionResponse>(fixture);
+    return errorResponse(
+      "NOT_FOUND",
+      `No fixture saved for "${username}". Add fixtures/${username}.json or unset USE_FIXTURES.`,
+    );
+  }
 
   const cachedSuccess = getCachedSuccess(username);
   if (cachedSuccess) {

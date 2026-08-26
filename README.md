@@ -31,6 +31,27 @@ browser.
 pnpm dev
 ```
 
+## Offline development
+
+Set `USE_FIXTURES=true` in `.env.local` and the API route serves saved
+responses from [`fixtures/`](fixtures) instead of calling GitHub — no
+token needed, no rate limit consumed, and identical response shapes
+because the fixtures are captured normalized responses. A username with
+no matching `fixtures/<name>.json` returns `NOT_FOUND`.
+
+Two fixtures ship with the repo:
+
+| Fixture      | Why it's useful                                                        |
+| ------------ | ---------------------------------------------------------------------- |
+| `deepp2905`  | Edge cases: 2025 and 2024 are entirely empty (`maxCount` 0), 2023 is sparse |
+| `torvalds`   | Dense graph across all five periods, good for height-scale work        |
+
+Capture a new one by unsetting the flag and saving the response:
+
+```bash
+curl "http://localhost:3000/api/contributions?user=NAME" > fixtures/NAME.json
+```
+
 ## Scripts
 
 | Command              | Description                              |
