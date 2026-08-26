@@ -225,13 +225,19 @@ export function CityScene({
               shadow-camera-bottom={-50}
             />
 
+            {/*
+              Shadow catcher, not a surface. A painted plane was visible
+              as a distinct slab once you zoomed out; shadowMaterial
+              renders only where shadows fall, so the city sits on the
+              page background with its shadows intact.
+            */}
             <mesh
               rotation={[-Math.PI / 2, 0, 0]}
               position={[0, -0.02, 0]}
               receiveShadow={!isMobile}
             >
               <planeGeometry args={[600, 600]} />
-              <meshLambertMaterial color={palette.canvas} />
+              <shadowMaterial transparent opacity={0.14} />
             </mesh>
 
             <CityBuildings
