@@ -41,6 +41,10 @@ type Tooltip = { day: ContributionDay; x: number; y: number };
 /** Pointer travel beyond this is a drag (orbit), not a click. */
 const DRAG_THRESHOLD_PX = 6;
 
+/** Grace period before a tooltip is dismissed, so crossing the gap
+ * between two buildings doesn't strobe it. */
+const TOOLTIP_DISMISS_DELAY_MS = 120;
+
 /**
  * One scene for both states. The camera never switches projection — it's
  * orthographic throughout — so the flat view is genuinely the same city
@@ -104,12 +108,46 @@ export function CityScene({
     FLAT_VIEW,
   );
 
+  /**
+   * Pending tooltip dismissal.
+   *
+   * The mesh reports "out" whenever the ray stops hitting a building,
+   * which happens every time the pointer crosses one of the gaps between
+   * tiles. Clearing immediately made the tooltip strobe as you moved
+   * across the grid, so a dismissal is deferred long enough for the next
+   * building to claim it.
+   */
+  const dismissTimerRef = useRef<number | null>(null);
+
+  const cancelDismiss = useCallback(() => {
+    if (dismissTimerRef.current !== null) {
+      window.clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  }, []);
+
   const handleHoverDay = useCallback(
     (day: ContributionDay | null, x: number, y: number) => {
-      setTooltip(day ? { day, x, y } : null);
+      cancelDismiss();
+      if (day) {
+        setTooltip({ day, x, y });
+        return;
+      }
+      dismissTimerRef.current = window.setTimeout(
+        () => setTooltip(null),
+        TOOLTIP_DISMISS_DELAY_MS,
+      );
     },
-    [],
+    [cancelDismiss],
   );
+
+  /** Leaving the scene entirely dismisses at once, with no grace period. */
+  const handlePointerLeave = useCallback(() => {
+    cancelDismiss();
+    setTooltip(null);
+  }, [cancelDismiss]);
+
+  useEffect(() => cancelDismiss, [cancelDismiss]);
 
   /**
    * Clicking the scene toggles the view, but the same gesture also drives
@@ -150,6 +188,7 @@ export function CityScene({
         className="relative h-[320px] w-full cursor-pointer sm:h-[440px]"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
         // Decorative, and the toggle button beside the tabs is the
         // accessible equivalent of clicking here.
         aria-hidden="true"
@@ -171,7 +210,6 @@ export function CityScene({
             dpr={pixelRatioCap(isMobile)}
             orthographic
             camera={{ position: [0, 200, 8], zoom: baseZoom, near: 1, far: 600 }}
-            onPointerMissed={() => setTooltip(null)}
           >
             <color attach="background" args={[palette.canvas]} />
 
