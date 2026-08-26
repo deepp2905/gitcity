@@ -15,7 +15,7 @@ import {
 } from "@/lib/state/url-state";
 import { SearchForm } from "./search-form";
 import { ProfileHeader } from "./profile-header";
-import { Heatmap } from "./heatmap";
+import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
 
 type FetchError = { code: ContributionErrorCode; message: string };
@@ -114,6 +114,11 @@ export function CityApp() {
     [navigate],
   );
 
+  const handleToggleView = useCallback(
+    (nextView: ViewMode) => navigate({ view: nextView }, true),
+    [navigate],
+  );
+
   // Loading and error are derived, never synced in an effect: a request is
   // in flight whenever the settled outcome doesn't answer the key the
   // current URL asks for, and an error only counts while it's still the
@@ -167,10 +172,11 @@ export function CityApp() {
         <>
           <section className="flex flex-col gap-6 rounded-xl border border-border bg-canvas-raised p-5 shadow-sm sm:p-6">
             <ProfileHeader profile={data.profile} period={activePeriod} />
-            <Heatmap
-              key={activePeriod.id}
+            <Visualization
               period={activePeriod}
-              login={data.profile.login}
+              profile={data.profile}
+              view={view}
+              onToggleView={handleToggleView}
             />
           </section>
 
