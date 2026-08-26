@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
+import type { ViewMode } from "@/lib/state/url-state";
 import { formatDayLabel } from "@/lib/contributions/grid";
 import {
   buildSceneTiles,
@@ -29,11 +30,16 @@ type CitySceneProps = {
   period: ContributionPeriod;
   /** 0 = flat grid, 1 = tilted city. */
   target: number;
+  view: ViewMode;
   reducedMotion: boolean;
   isMobile: boolean;
+  onToggleView: (next: ViewMode) => void;
 };
 
 type Tooltip = { day: ContributionDay; x: number; y: number };
+
+/** Pointer travel beyond this is a drag (orbit), not a click. */
+const DRAG_THRESHOLD_PX = 6;
 
 /**
  * One scene for both states. The camera never switches projection — it's
@@ -43,8 +49,10 @@ type Tooltip = { day: ContributionDay; x: number; y: number };
 export function CityScene({
   period,
   target,
+  view,
   reducedMotion,
   isMobile,
+  onToggleView,
 }: CitySceneProps) {
   const [containerRef, size] = useElementSize();
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
@@ -103,6 +111,35 @@ export function CityScene({
     [],
   );
 
+  /**
+   * Clicking the scene toggles the view, but the same gesture also drives
+   * orbit once the city has arrived. Distinguish them by movement: a
+   * press that barely moves is a click, anything further is a drag and
+   * belongs to OrbitControls.
+   */
+  const pressRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent) => {
+    pressRef.current = { x: event.clientX, y: event.clientY };
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (event: React.PointerEvent) => {
+      const press = pressRef.current;
+      pressRef.current = null;
+      if (!press) return;
+
+      const travelled = Math.hypot(
+        event.clientX - press.x,
+        event.clientY - press.y,
+      );
+      if (travelled > DRAG_THRESHOLD_PX) return;
+
+      onToggleView(view === "3d" ? "2d" : "3d");
+    },
+    [onToggleView, view],
+  );
+
   return (
     <div className="relative">
       <div
@@ -110,8 +147,11 @@ export function CityScene({
         // No border, background or radius: the canvas already clears to
         // the page colour, so the scene reads as part of the page rather
         // than a panel sitting on it.
-        className="relative h-[320px] w-full sm:h-[440px]"
-        // Decorative: the sr-only heatmap carries the same information.
+        className="relative h-[320px] w-full cursor-pointer sm:h-[440px]"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        // Decorative, and the toggle button beside the tabs is the
+        // accessible equivalent of clicking here.
         aria-hidden="true"
       >
         {size.width > 0 ? (

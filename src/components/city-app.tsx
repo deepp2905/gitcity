@@ -17,6 +17,8 @@ import { SearchForm } from "./search-form";
 import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
+import { ViewToggle } from "./view-toggle";
+import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 
 type FetchError = { code: ContributionErrorCode; message: string };
 
@@ -27,6 +29,7 @@ type Outcome = { key: string; error: FetchError | null };
 export function CityApp() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const webglSupported = useWebGLSupport();
   const { user, period, view } = readUrlState(
     new URLSearchParams(searchParams.toString()),
   );
@@ -176,15 +179,21 @@ export function CityApp() {
             period={activePeriod}
             profile={data.profile}
             view={view}
+            webglSupported={webglSupported}
             onToggleView={handleToggleView}
           />
 
           <div className="flex flex-col items-center gap-3">
-            <PeriodTabs
-              periods={data.periods}
-              activeId={activePeriod.id}
-              onSelect={handleSelectPeriod}
-            />
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <PeriodTabs
+                periods={data.periods}
+                activeId={activePeriod.id}
+                onSelect={handleSelectPeriod}
+              />
+              {webglSupported ? (
+                <ViewToggle view={view} onToggle={handleToggleView} />
+              ) : null}
+            </div>
             <PeriodTotal period={activePeriod} />
           </div>
         </>

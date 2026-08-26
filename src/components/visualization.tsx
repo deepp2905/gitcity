@@ -1,10 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useSyncExternalStore } from "react";
 import type { ContributionPeriod, GithubProfile } from "@/lib/contributions/types";
 import type { ViewMode } from "@/lib/state/url-state";
-import { detectWebGLSupport } from "@/lib/three/webgl";
 import {
   useIsMobile,
   usePrefersReducedMotion,
@@ -21,24 +19,11 @@ const CityScene = dynamic(
   },
 );
 
-let cachedWebGL: boolean | null = null;
-
-/** WebGL support, probed once on the client. */
-function useWebGLSupport(): boolean {
-  return useSyncExternalStore(
-    () => () => {},
-    () => {
-      cachedWebGL ??= detectWebGLSupport();
-      return cachedWebGL;
-    },
-    () => true, // assume supported during SSR; the client decides
-  );
-}
-
 type VisualizationProps = {
   period: ContributionPeriod;
   profile: GithubProfile;
   view: ViewMode;
+  webglSupported: boolean;
   onToggleView: (next: ViewMode) => void;
 };
 
@@ -56,19 +41,17 @@ export function Visualization({
   period,
   profile,
   view,
+  webglSupported,
   onToggleView,
 }: VisualizationProps) {
   const reducedMotion = usePrefersReducedMotion();
   const isMobile = useIsMobile();
-  const webglSupported = useWebGLSupport();
-
-  const isCity = view === "3d";
 
   if (!webglSupported) {
     return (
       <div className="flex flex-col gap-4">
         <Heatmap period={period} login={profile.login} />
-        <p className="rounded-lg border border-border bg-canvas px-3 py-2 text-xs text-ink-muted">
+        <p className="mx-auto max-w-md text-center text-xs text-ink-muted">
           The 3D city needs WebGL, which this browser doesn&apos;t support. The
           heatmap above shows exactly the same contribution data.
         </p>
@@ -77,26 +60,18 @@ export function Visualization({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
       <CityScene
         period={period}
-        target={isCity ? 1 : 0}
+        target={view === "3d" ? 1 : 0}
         reducedMotion={reducedMotion}
         isMobile={isMobile}
+        onToggleView={onToggleView}
+        view={view}
       />
 
       {/* Same information, always available to assistive technology. */}
       <Heatmap period={period} login={profile.login} visuallyHidden />
-
-      <div className="flex justify-center">
-        <button
-          type="button"
-          onClick={() => onToggleView(isCity ? "2d" : "3d")}
-          className="min-h-11 rounded-lg border border-border bg-canvas-raised px-5 text-sm font-medium text-ink shadow-sm transition-colors hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          {isCity ? "Flatten to 2D" : "Transform to 3D"}
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
