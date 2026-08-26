@@ -5,12 +5,11 @@ import { useFrame } from "@react-three/fiber";
 import type * as THREE from "three";
 import { easeInOutCubic } from "@/lib/three/camera";
 
-/** Shadow strength at the fully tilted city view. */
-const MAX_SHADOW_OPACITY = 0.14;
-
 type ShadowCatcherProps = {
   progressRef: RefObject<number>;
   enabled: boolean;
+  /** Shadow strength at the fully tilted city view. */
+  maxOpacity: number;
 };
 
 /**
@@ -21,14 +20,18 @@ type ShadowCatcherProps = {
  * artefact rather than depth. So the shadow fades in with the tilt and is
  * gone by the time the view is flat.
  */
-export function ShadowCatcher({ progressRef, enabled }: ShadowCatcherProps) {
+export function ShadowCatcher({
+  progressRef,
+  enabled,
+  maxOpacity,
+}: ShadowCatcherProps) {
   const materialRef = useRef<THREE.ShadowMaterial>(null);
 
   useFrame(() => {
     const material = materialRef.current;
     if (!material) return;
 
-    const next = MAX_SHADOW_OPACITY * easeInOutCubic(progressRef.current);
+    const next = maxOpacity * easeInOutCubic(progressRef.current);
     if (material.opacity !== next) material.opacity = next;
   });
 

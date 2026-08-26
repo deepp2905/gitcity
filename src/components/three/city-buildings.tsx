@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { ContributionDay } from "@/lib/contributions/types";
-import {
-  computeBuildingHeight,
-  GROUND_TILE_HEIGHT,
-} from "@/lib/contributions/height";
 import { maxCountOf } from "@/lib/contributions/grid";
+import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
-import { columnProgress, easeInOutCubic } from "@/lib/three/camera";
+import { easeInOutCubic } from "@/lib/three/camera";
+import {
+  MAX_ACCUMULATED_S,
+  SPRING_TIMESTEP_S,
+  columnDelayMs,
+  stepSpring,
+} from "@/lib/three/spring";
+import type { SceneConfig } from "@/lib/three/config";
 import { contributionRampColor, palette } from "@/lib/theme/palette";
-import type { SceneTile } from "@/lib/contributions/scene-tiles";
 
 /** Reused scratch objects — allocating per frame would churn the GC. */
 const scratchMatrix = new THREE.Matrix4();
@@ -22,70 +25,91 @@ const scratchQuaternion = new THREE.Quaternion();
 const scratchScale = new THREE.Vector3();
 const scratchColor = new THREE.Color();
 
+/** Future tiles sit slightly lower than a zero-contribution ground tile,
+ * reading as an empty lot rather than a day with no activity. */
+const FUTURE_TILE_HEIGHT_SCALE = 0.45;
+
 type BuildingLayout = {
   /** Null for padded future days, which are inert scaffolding. */
   day: ContributionDay | null;
   weekIndex: number;
   x: number;
   z: number;
-  flatHeight: number;
-  targetHeight: number;
+  restHeight: number;
+  riseHeight: number;
+  delayMs: number;
   color: THREE.Color;
 };
 
 type CityBuildingsProps = {
   tiles: SceneTile[];
   weekCount: number;
-  /** Shared 0..1 transform progress, written by the camera rig. */
-  progressRef: RefObject<number>;
+  /** 1 while the city is wanted, 0 while flattening. */
+  target: number;
+  config: SceneConfig;
+  reducedMotion: boolean;
   onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
 };
 
-/** Future tiles sit slightly lower than a zero-contribution ground tile,
- * reading as an empty lot rather than a day with no activity. */
-const FUTURE_TILE_HEIGHT_SCALE = 0.45;
-
 /**
- * Every day in the period as one InstancedMesh — a single draw call for
- * the whole city. Heights are a pure function of the shared transform
- * progress, so the rise is inherently reversible and interruptible:
- * scrubbing progress back lowers the buildings along the same curve.
+ * Every day in the period as one InstancedMesh: a single draw call for
+ * the whole city.
  *
- * A separate damping pass eases heights toward that computed target,
- * which also covers period changes (the target moves, the damping
- * catches up over ~450ms) without any separate animation bookkeeping.
+ * Rising is sprung — each building is its own damped spring, released on
+ * a per-column delay so the wave sweeps left to right. Flattening is
+ * eased instead: a spring caught mid-bounce still carries velocity, and
+ * letting that fight the descent reads as a glitch rather than as
+ * character.
  */
 export function CityBuildings({
   tiles,
   weekCount,
-  progressRef,
+  target,
+  config,
+  reducedMotion,
   onHoverDay,
 }: CityBuildingsProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
-  // One geometry shared by every instance; rebuilt never, disposed on
-  // unmount.
-  const geometry = useMemo(() => createBuildingGeometry(), []);
+  const geometry = useMemo(
+    () => createBuildingGeometry(config.cornerRadiusRatio),
+    [config.cornerRadiusRatio],
+  );
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   const layout = useMemo<BuildingLayout[]>(() => {
     const maxCount = maxCountOf(
       tiles.flatMap((tile) => (tile.day ? [tile.day] : [])),
     );
-    const groundHeight = worldHeight(GROUND_TILE_HEIGHT);
-    const futureHeight = groundHeight * FUTURE_TILE_HEIGHT_SCALE;
+    const groundHeight = worldHeight(
+      config.groundTileHeight,
+      config.sceneMaxHeight,
+    );
 
     return tiles.map((tile) => {
-      const { x, z } = tilePosition(tile.weekIndex, tile.weekday, weekCount);
+      const { x, z } = tilePosition(
+        tile.weekIndex,
+        tile.weekday,
+        weekCount,
+        config.cellGap,
+      );
+      const delayMs = columnDelayMs(
+        tile.weekIndex,
+        weekCount,
+        config.staggerTotalMs,
+        config.staggerCurve,
+      );
 
       if (!tile.day) {
+        const futureHeight = groundHeight * FUTURE_TILE_HEIGHT_SCALE;
         return {
           day: null,
           weekIndex: tile.weekIndex,
           x,
           z,
-          flatHeight: futureHeight,
-          targetHeight: futureHeight,
+          restHeight: futureHeight,
+          riseHeight: futureHeight,
+          delayMs,
           color: new THREE.Color(palette.futureTile),
         };
       }
@@ -94,33 +118,46 @@ export function CityBuildings({
       // The same sqrt-normalized value drives both height and color, so
       // a taller building is always a deeper green.
       const normalized = maxCount > 0 ? Math.sqrt(day.count / maxCount) : 0;
+      const scaled =
+        day.count > 0
+          ? config.groundTileHeight +
+            normalized * (1 - config.groundTileHeight)
+          : config.groundTileHeight;
 
       return {
         day,
         weekIndex: tile.weekIndex,
         x,
         z,
-        flatHeight: groundHeight,
-        targetHeight: worldHeight(computeBuildingHeight(day.count, maxCount)),
+        restHeight: groundHeight,
+        riseHeight: worldHeight(scaled, config.sceneMaxHeight),
+        delayMs,
         color: new THREE.Color(
           contributionRampColor(normalized, day.count > 0),
         ),
       };
     });
-  }, [tiles, weekCount]);
+  }, [tiles, weekCount, config]);
 
-  /** Current rendered height per instance, damped toward the target. */
+  /** Live spring state, one entry per instance. */
   const heightsRef = useRef<Float32Array>(new Float32Array(0));
+  const velocitiesRef = useRef<Float32Array>(new Float32Array(0));
+  /** Heights when the current flatten began, for the eased descent. */
+  const flattenFromRef = useRef<Float32Array>(new Float32Array(0));
+
+  const elapsedRef = useRef(0);
+  const accumulatorRef = useRef(0);
+  const lastTargetRef = useRef(target);
 
   useEffect(() => {
     const previous = heightsRef.current;
     const next = new Float32Array(layout.length);
     for (let i = 0; i < layout.length; i++) {
-      // Carry the in-flight height forward where the instance still
-      // exists, so switching year morphs rather than collapsing first.
-      next[i] = i < previous.length ? previous[i] : layout[i].flatHeight;
+      next[i] = i < previous.length ? previous[i] : layout[i].restHeight;
     }
     heightsRef.current = next;
+    velocitiesRef.current = new Float32Array(layout.length);
+    flattenFromRef.current = next.slice();
   }, [layout]);
 
   useFrame((_, delta) => {
@@ -128,42 +165,77 @@ export function CityBuildings({
     if (!mesh) return;
 
     const heights = heightsRef.current;
+    const velocities = velocitiesRef.current;
     if (heights.length !== layout.length) return;
 
-    const progress = progressRef.current;
-
-    // Critically damped: smooth, never overshoots, and stays correct when
-    // the target moves mid-flight.
-    const blend = 1 - Math.exp(-11 * delta);
-    let moved = false;
-
-    for (let i = 0; i < layout.length; i++) {
-      const item = layout[i];
-      const eased = easeInOutCubic(
-        columnProgress(progress, item.weekIndex, weekCount),
-      );
-      const target =
-        item.flatHeight + (item.targetHeight - item.flatHeight) * eased;
-
-      const current = heights[i];
-      const next =
-        Math.abs(target - current) < 0.0005
-          ? target
-          : current + (target - current) * blend;
-
-      if (next !== current) {
-        heights[i] = next;
-        moved = true;
-      }
-
-      const height = Math.max(heights[i], 0.001);
-      scratchPosition.set(item.x, height / 2, item.z);
-      scratchScale.set(CELL_SIZE, height, CELL_SIZE);
-      scratchMatrix.compose(scratchPosition, scratchQuaternion, scratchScale);
-      mesh.setMatrixAt(i, scratchMatrix);
+    // Restart the clock whenever the direction changes, and snapshot the
+    // current heights so a flatten eases from wherever the bounce got to.
+    if (target !== lastTargetRef.current) {
+      lastTargetRef.current = target;
+      elapsedRef.current = 0;
+      accumulatorRef.current = 0;
+      flattenFromRef.current = heights.slice();
     }
 
-    if (moved) mesh.instanceMatrix.needsUpdate = true;
+    elapsedRef.current += delta * 1000;
+    const elapsed = elapsedRef.current;
+
+    if (target === 0 || reducedMotion) {
+      // Eased descent (or an instant switch under reduced motion).
+      const t = reducedMotion
+        ? 1
+        : Math.min(1, elapsed / Math.max(1, config.flattenDurationMs));
+      const eased = easeInOutCubic(t);
+      const from = flattenFromRef.current;
+
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        const start = reducedMotion ? item.restHeight : from[i];
+        heights[i] = start + (item.restHeight - start) * eased;
+        velocities[i] = 0;
+        writeInstance(mesh, i, item, heights[i]);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      return;
+    }
+
+    // Rising: fixed-timestep spring integration. Stepping with the raw
+    // frame delta goes unstable when a frame is dropped.
+    accumulatorRef.current = Math.min(
+      accumulatorRef.current + delta,
+      MAX_ACCUMULATED_S,
+    );
+
+    const settings = {
+      stiffness: config.stiffness,
+      dampingRatio: config.dampingRatio,
+    };
+
+    while (accumulatorRef.current >= SPRING_TIMESTEP_S) {
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        // Held at rest until this column's turn.
+        const springTarget =
+          elapsed >= item.delayMs ? item.riseHeight : item.restHeight;
+
+        const stepped = stepSpring(
+          heights[i],
+          velocities[i],
+          springTarget,
+          settings,
+          SPRING_TIMESTEP_S,
+        );
+        // Never let a bounce sink a building through the ground.
+        heights[i] = Math.max(stepped.value, item.restHeight);
+        velocities[i] = stepped.velocity;
+      }
+      accumulatorRef.current -= SPRING_TIMESTEP_S;
+    }
+
+    for (let i = 0; i < layout.length; i++) {
+      writeInstance(mesh, i, layout[i], heights[i]);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
   });
 
   // Per-instance colors only change when the period does.
@@ -198,4 +270,17 @@ export function CityBuildings({
       <meshLambertMaterial />
     </instancedMesh>
   );
+}
+
+function writeInstance(
+  mesh: THREE.InstancedMesh,
+  index: number,
+  item: BuildingLayout,
+  rawHeight: number,
+) {
+  const height = Math.max(rawHeight, 0.001);
+  scratchPosition.set(item.x, height / 2, item.z);
+  scratchScale.set(CELL_SIZE, height, CELL_SIZE);
+  scratchMatrix.compose(scratchPosition, scratchQuaternion, scratchScale);
+  mesh.setMatrixAt(index, scratchMatrix);
 }

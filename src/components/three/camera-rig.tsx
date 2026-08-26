@@ -15,8 +15,7 @@ import {
  * radius has no effect on scale. */
 const CAMERA_RADIUS = 220;
 
-/** Seconds for a full 0 -> 1 transform. Matches the spec's ~800ms tilt. */
-const TRANSFORM_DURATION_S = 0.8;
+
 
 /** The scene is always orthographic, but R3F types the frame camera as
  * perspective. Narrow on Three's own runtime discriminator rather than
@@ -44,6 +43,9 @@ type CameraRigProps = {
   maxHeight: number;
   canvasWidth: number;
   canvasHeight: number;
+  /** Milliseconds for a full 0 -> 1 transform. */
+  durationMs: number;
+  zoomPadding: number;
   reducedMotion: boolean;
   onProgress: (progress: number) => void;
   onSettled: (settled: boolean) => void;
@@ -73,6 +75,8 @@ export function CameraRig({
   maxHeight,
   canvasWidth,
   canvasHeight,
+  durationMs,
+  zoomPadding,
   reducedMotion,
   onProgress,
   onSettled,
@@ -114,7 +118,7 @@ export function CameraRig({
     if (reducedMotion) {
       next = target;
     } else {
-      const step = delta / TRANSFORM_DURATION_S;
+      const step = delta / Math.max(0.001, durationMs / 1000);
       next =
         target > current
           ? Math.min(target, current + step)
@@ -136,6 +140,7 @@ export function CameraRig({
       gridDepth,
       maxHeight * next,
       view,
+      zoomPadding,
     );
     camera.updateProjectionMatrix();
 

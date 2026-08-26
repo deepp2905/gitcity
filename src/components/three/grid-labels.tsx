@@ -2,7 +2,7 @@
 
 import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { buildMonthLabels } from "@/lib/contributions/grid";
-import { CELL_SIZE, PITCH, tilePosition } from "@/lib/three/layout";
+import { CELL_SIZE, tilePosition } from "@/lib/three/layout";
 import { projectFlat } from "@/lib/three/camera";
 
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -14,6 +14,8 @@ type GridLabelsProps = {
   width: number;
   height: number;
   zoom: number;
+  /** Tile gap in world units, so labels track a retuned grid. */
+  cellGap: number;
   /** 0 = flat (labels fully visible), 1 = city (fully faded). */
   progress: number;
 };
@@ -32,6 +34,7 @@ export function GridLabels({
   width,
   height,
   zoom,
+  cellGap,
   progress,
 }: GridLabelsProps) {
   if (width === 0 || height === 0 || weekCount === 0) return null;
@@ -51,7 +54,7 @@ export function GridLabels({
       style={{ opacity }}
     >
       {months.map((month) => {
-        const { x, z } = tilePosition(month.weekIndex, 0, weekCount);
+        const { x, z } = tilePosition(month.weekIndex, 0, weekCount, cellGap);
         const { left, top } = projectFlat(x, z, width, height, zoom);
         return (
           <span
@@ -66,7 +69,7 @@ export function GridLabels({
 
       {WEEKDAY_SHORT.map((name, weekday) => {
         if (!VISIBLE_WEEKDAY_ROWS.has(weekday)) return null;
-        const { x, z } = tilePosition(0, weekday, weekCount);
+        const { x, z } = tilePosition(0, weekday, weekCount, cellGap);
         const { left, top } = projectFlat(x, z, width, height, zoom);
         return (
           <span
@@ -85,6 +88,3 @@ export function GridLabels({
     </div>
   );
 }
-
-/** Exported for the scene to size its padding consistently. */
-export const LABEL_GUTTER_PX = PITCH;

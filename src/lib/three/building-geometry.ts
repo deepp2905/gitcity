@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { CELL_SIZE } from "./layout";
+import { DEFAULT_SCENE_CONFIG } from "./config";
 
 /**
  * A unit box whose four vertical edges are rounded.
@@ -14,9 +15,6 @@ import { CELL_SIZE } from "./layout";
  * It also gives the flat, top-down view soft rounded squares, matching
  * the rounded cells of the 2D heatmap.
  */
-
-/** Fraction of the tile width taken by the corner radius. */
-const CORNER_RADIUS_RATIO = 0.18;
 
 /** Segments per corner. Four is plenty at this scale and keeps the
  * vertex count low across ~370 instances. */
@@ -45,11 +43,10 @@ function roundedSquareShape(size: number, radius: number): THREE.Shape {
  * height, sitting on the origin so scaling Y grows it upward from its
  * own centre exactly as a BoxGeometry would.
  */
-export function createBuildingGeometry(): THREE.ExtrudeGeometry {
-  const shape = roundedSquareShape(
-    CELL_SIZE,
-    CELL_SIZE * CORNER_RADIUS_RATIO,
-  );
+export function createBuildingGeometry(
+  cornerRadiusRatio: number = DEFAULT_SCENE_CONFIG.cornerRadiusRatio,
+): THREE.ExtrudeGeometry {
+  const shape = roundedSquareShape(CELL_SIZE, CELL_SIZE * cornerRadiusRatio);
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth: 1,

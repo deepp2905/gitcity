@@ -11,7 +11,11 @@ import {
   sceneWeekCount,
 } from "@/lib/contributions/scene-tiles";
 import { emptyPeriodMessage } from "@/lib/contributions/empty-message";
-import { SCENE_MAX_HEIGHT, gridDepth, gridWidth } from "@/lib/three/layout";
+import { gridDepth, gridWidth } from "@/lib/three/layout";
+import {
+  DEFAULT_SCENE_CONFIG,
+  type SceneConfig,
+} from "@/lib/three/config";
 import {
   CITY_VIEW,
   FLAT_VIEW,
@@ -26,6 +30,7 @@ import { CameraRig } from "./camera-rig";
 import { GridLabels } from "./grid-labels";
 import { FpsMeter } from "./fps-meter";
 import { ShadowCatcher } from "./shadow-catcher";
+import { TuningPanel } from "./tuning-panel";
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -76,6 +81,10 @@ export function CityScene({
   /** True once the transform has arrived and the user may orbit. */
   const [orbiting, setOrbiting] = useState(false);
 
+  /** Live scene constants. Only the dev tuning panel ever changes these;
+   * in production this stays at its defaults for the session. */
+  const [config, setConfig] = useState<SceneConfig>(DEFAULT_SCENE_CONFIG);
+
   // Flattening resets the angle: the transform always returns to the
   // scripted flat view, so a separate reset control has nothing to do.
   const resetCityView = useCallback(() => {
@@ -95,8 +104,8 @@ export function CityScene({
   const isEmpty = period.totalContributions === 0;
   const emptyMessage = emptyPeriodMessage(period.id);
 
-  const sceneWidth = gridWidth(weekCount);
-  const sceneDepth = gridDepth();
+  const sceneWidth = gridWidth(weekCount, config.cellGap);
+  const sceneDepth = gridDepth(config.cellGap);
 
   // Zoom at the flat view, used to place the DOM label overlay. The rig
   // recomputes the live zoom each frame from the same function.
@@ -107,6 +116,7 @@ export function CityScene({
     sceneDepth,
     0,
     FLAT_VIEW,
+    config.zoomPadding,
   );
 
   /**
@@ -214,10 +224,10 @@ export function CityScene({
           >
             <color attach="background" args={[palette.canvas]} />
 
-            <ambientLight intensity={1.7} />
+            <ambientLight intensity={config.ambientIntensity} />
             <directionalLight
-              position={[30, 50, 20]}
-              intensity={1.9}
+              position={[config.lightX, config.lightY, config.lightZ]}
+              intensity={config.directionalIntensity}
               castShadow={!isMobile}
               shadow-mapSize={[1024, 1024]}
               shadow-camera-left={-70}
@@ -226,12 +236,18 @@ export function CityScene({
               shadow-camera-bottom={-50}
             />
 
-            <ShadowCatcher progressRef={progressRef} enabled={!isMobile} />
+            <ShadowCatcher
+              progressRef={progressRef}
+              enabled={!isMobile}
+              maxOpacity={config.maxShadowOpacity}
+            />
 
             <CityBuildings
               tiles={tiles}
               weekCount={weekCount}
-              progressRef={progressRef}
+              target={target}
+              config={config}
+              reducedMotion={reducedMotion}
               onHoverDay={handleHoverDay}
             />
 
@@ -242,9 +258,11 @@ export function CityScene({
               orbiting={orbiting}
               gridWidth={sceneWidth}
               gridDepth={sceneDepth}
-              maxHeight={SCENE_MAX_HEIGHT}
+              maxHeight={config.sceneMaxHeight}
               canvasWidth={size.width}
               canvasHeight={size.height}
+              durationMs={config.transformDurationMs}
+              zoomPadding={config.zoomPadding}
               reducedMotion={reducedMotion}
               onProgress={setLabelProgress}
               onSettled={setOrbiting}
@@ -271,10 +289,15 @@ export function CityScene({
           width={size.width}
           height={size.height}
           zoom={baseZoom}
+          cellGap={config.cellGap}
           progress={labelProgress}
         />
 
         <FpsMeter />
+
+        {process.env.NODE_ENV === "development" ? (
+          <TuningPanel config={config} onChange={setConfig} />
+        ) : null}
 
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">

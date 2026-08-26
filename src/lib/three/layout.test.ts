@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
   CELL_SIZE,
-  PITCH,
-  RISE_WAVE_DURATION_MS,
-  SCENE_MAX_HEIGHT,
   WEEKDAY_COUNT,
   gridDepth,
   gridWidth,
-  riseDelayMs,
+  pitch,
   tilePosition,
   worldHeight,
 } from "./layout";
+import { DEFAULT_SCENE_CONFIG } from "./config";
+
+const GAP = DEFAULT_SCENE_CONFIG.cellGap;
 
 describe("gridWidth / gridDepth", () => {
   it("has no trailing gap after the last column", () => {
     expect(gridWidth(1)).toBeCloseTo(CELL_SIZE);
-    expect(gridWidth(2)).toBeCloseTo(PITCH + CELL_SIZE);
+    expect(gridWidth(2)).toBeCloseTo(pitch() + CELL_SIZE);
   });
 
   it("is zero for an empty period", () => {
@@ -23,7 +23,11 @@ describe("gridWidth / gridDepth", () => {
   });
 
   it("always spans seven weekday rows", () => {
-    expect(gridDepth()).toBeCloseTo(WEEKDAY_COUNT * PITCH - (PITCH - CELL_SIZE));
+    expect(gridDepth()).toBeCloseTo(WEEKDAY_COUNT * pitch() - GAP);
+  });
+
+  it("widens with a larger gap", () => {
+    expect(gridWidth(53, 0.5)).toBeGreaterThan(gridWidth(53, 0.1));
   });
 });
 
@@ -40,14 +44,14 @@ describe("tilePosition", () => {
   it("advances one pitch per week along X", () => {
     const a = tilePosition(0, 0, 53);
     const b = tilePosition(1, 0, 53);
-    expect(b.x - a.x).toBeCloseTo(PITCH);
+    expect(b.x - a.x).toBeCloseTo(pitch());
     expect(b.z).toBeCloseTo(a.z);
   });
 
   it("advances one pitch per weekday along Z", () => {
     const a = tilePosition(0, 0, 53);
     const b = tilePosition(0, 1, 53);
-    expect(b.z - a.z).toBeCloseTo(PITCH);
+    expect(b.z - a.z).toBeCloseTo(pitch());
     expect(b.x).toBeCloseTo(a.x);
   });
 
@@ -55,29 +59,27 @@ describe("tilePosition", () => {
     expect(tilePosition(5, 0, 53).x).toBeGreaterThan(tilePosition(4, 0, 53).x);
     expect(tilePosition(0, 5, 53).z).toBeGreaterThan(tilePosition(0, 4, 53).z);
   });
+
+  it("stays centred at any gap", () => {
+    for (const gap of [0, 0.5, 1]) {
+      const first = tilePosition(0, 0, 53, gap);
+      const last = tilePosition(52, 6, 53, gap);
+      expect(first.x).toBeCloseTo(-last.x);
+      expect(first.z).toBeCloseTo(-last.z);
+    }
+  });
 });
 
 describe("worldHeight", () => {
   it("maps the normalized range onto the scene maximum", () => {
     expect(worldHeight(0)).toBe(0);
-    expect(worldHeight(1)).toBe(SCENE_MAX_HEIGHT);
-    expect(worldHeight(0.5)).toBeCloseTo(SCENE_MAX_HEIGHT / 2);
-  });
-});
-
-describe("riseDelayMs", () => {
-  it("starts the first week immediately and ends the last at the full wave", () => {
-    expect(riseDelayMs(0, 53)).toBe(0);
-    expect(riseDelayMs(52, 53)).toBeCloseTo(RISE_WAVE_DURATION_MS);
+    expect(worldHeight(1)).toBe(DEFAULT_SCENE_CONFIG.sceneMaxHeight);
+    expect(worldHeight(0.5)).toBeCloseTo(
+      DEFAULT_SCENE_CONFIG.sceneMaxHeight / 2,
+    );
   });
 
-  it("spreads the same budget regardless of period length", () => {
-    expect(riseDelayMs(9, 10)).toBeCloseTo(RISE_WAVE_DURATION_MS);
-    expect(riseDelayMs(4, 10)).toBeCloseTo(RISE_WAVE_DURATION_MS * (4 / 9));
-  });
-
-  it("handles a single-column period without dividing by zero", () => {
-    expect(riseDelayMs(0, 1)).toBe(0);
-    expect(riseDelayMs(0, 0)).toBe(0);
+  it("honours an overridden maximum", () => {
+    expect(worldHeight(1, 12)).toBe(12);
   });
 });
