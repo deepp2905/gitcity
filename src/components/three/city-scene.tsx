@@ -107,7 +107,10 @@ export function CityScene({
     <div className="relative">
       <div
         ref={containerRef}
-        className="relative h-[320px] w-full overflow-hidden rounded-xl border border-border bg-canvas sm:h-[420px]"
+        // No border, background or radius: the canvas already clears to
+        // the page colour, so the scene reads as part of the page rather
+        // than a panel sitting on it.
+        className="relative h-[320px] w-full sm:h-[440px]"
         // Decorative: the sr-only heatmap carries the same information.
         aria-hidden="true"
       >

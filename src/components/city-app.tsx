@@ -14,7 +14,7 @@ import {
   type ViewMode,
 } from "@/lib/state/url-state";
 import { SearchForm } from "./search-form";
-import { ProfileHeader } from "./profile-header";
+import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
 
@@ -170,22 +170,22 @@ export function CityApp() {
 
       {data && activePeriod ? (
         <>
-          <section className="flex flex-col gap-6 rounded-xl border border-border bg-canvas-raised p-5 shadow-sm sm:p-6">
-            <ProfileHeader profile={data.profile} period={activePeriod} />
-            <Visualization
-              period={activePeriod}
-              profile={data.profile}
-              view={view}
-              onToggleView={handleToggleView}
-            />
-          </section>
+          <ProfileIdentity profile={data.profile} />
 
-          <div className="flex justify-center">
+          <Visualization
+            period={activePeriod}
+            profile={data.profile}
+            view={view}
+            onToggleView={handleToggleView}
+          />
+
+          <div className="flex flex-col items-center gap-3">
             <PeriodTabs
               periods={data.periods}
               activeId={activePeriod.id}
               onSelect={handleSelectPeriod}
             />
+            <PeriodTotal period={activePeriod} />
           </div>
         </>
       ) : null}
