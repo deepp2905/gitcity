@@ -25,6 +25,7 @@ import { CityBuildings } from "./city-buildings";
 import { CameraRig } from "./camera-rig";
 import { GridLabels } from "./grid-labels";
 import { FpsMeter } from "./fps-meter";
+import { ShadowCatcher } from "./shadow-catcher";
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -225,20 +226,7 @@ export function CityScene({
               shadow-camera-bottom={-50}
             />
 
-            {/*
-              Shadow catcher, not a surface. A painted plane was visible
-              as a distinct slab once you zoomed out; shadowMaterial
-              renders only where shadows fall, so the city sits on the
-              page background with its shadows intact.
-            */}
-            <mesh
-              rotation={[-Math.PI / 2, 0, 0]}
-              position={[0, -0.02, 0]}
-              receiveShadow={!isMobile}
-            >
-              <planeGeometry args={[600, 600]} />
-              <shadowMaterial transparent opacity={0.14} />
-            </mesh>
+            <ShadowCatcher progressRef={progressRef} enabled={!isMobile} />
 
             <CityBuildings
               tiles={tiles}
