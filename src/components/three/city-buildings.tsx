@@ -46,6 +46,12 @@ type CityBuildingsProps = {
   weekCount: number;
   /** 1 while the city is wanted, 0 while flattening. */
   target: number;
+  /**
+   * Identity of what is being shown. Changing it replays the staggered
+   * rise, so switching year rebuilds the city rather than silently
+   * retargeting springs that are already extended.
+   */
+  riseKey: string;
   config: SceneConfig;
   reducedMotion: boolean;
   onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
@@ -65,6 +71,7 @@ export function CityBuildings({
   tiles,
   weekCount,
   target,
+  riseKey,
   config,
   reducedMotion,
   onHoverDay,
@@ -148,6 +155,7 @@ export function CityBuildings({
   const elapsedRef = useRef(0);
   const accumulatorRef = useRef(0);
   const lastTargetRef = useRef(target);
+  const lastRiseKeyRef = useRef(riseKey);
 
   useEffect(() => {
     const previous = heightsRef.current;
@@ -168,30 +176,57 @@ export function CityBuildings({
     const velocities = velocitiesRef.current;
     if (heights.length !== layout.length) return;
 
-    // Restart the clock whenever the direction changes, and snapshot the
-    // current heights so a flatten eases from wherever the bounce got to.
-    if (target !== lastTargetRef.current) {
+    // Replay the staggered rise whenever the direction changes or the
+    // period does. Without the riseKey check a year switch simply
+    // retargeted springs that were already extended, so the wave only
+    // ever played on first load.
+    const directionChanged = target !== lastTargetRef.current;
+    const periodChanged = riseKey !== lastRiseKeyRef.current;
+
+    if (directionChanged || periodChanged) {
       lastTargetRef.current = target;
+      lastRiseKeyRef.current = riseKey;
       elapsedRef.current = 0;
       accumulatorRef.current = 0;
+
+      // Drop back to the ground so the wave has something to travel
+      // across; a rise that starts from full height is invisible.
+      if (target === 1 && !reducedMotion) {
+        for (let i = 0; i < layout.length; i++) {
+          heights[i] = layout[i].restHeight;
+          velocities[i] = 0;
+        }
+      }
+      // Snapshot for the eased descent, after any reset above.
       flattenFromRef.current = heights.slice();
     }
 
     elapsedRef.current += delta * 1000;
     const elapsed = elapsedRef.current;
 
-    if (target === 0 || reducedMotion) {
-      // Eased descent (or an instant switch under reduced motion).
-      const t = reducedMotion
-        ? 1
-        : Math.min(1, elapsed / Math.max(1, config.flattenDurationMs));
+    if (reducedMotion) {
+      // Snap to whichever state was asked for. No travel, but still the
+      // correct end result: sharing the descent branch here left the city
+      // permanently flat even in 3D.
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        heights[i] = target === 1 ? item.riseHeight : item.restHeight;
+        velocities[i] = 0;
+        writeInstance(mesh, i, item, heights[i]);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      return;
+    }
+
+    if (target === 0) {
+      // Eased descent from wherever the bounce got to.
+      const t = Math.min(1, elapsed / Math.max(1, config.flattenDurationMs));
       const eased = easeInOutCubic(t);
       const from = flattenFromRef.current;
 
       for (let i = 0; i < layout.length; i++) {
         const item = layout[i];
-        const start = reducedMotion ? item.restHeight : from[i];
-        heights[i] = start + (item.restHeight - start) * eased;
+        heights[i] = from[i] + (item.restHeight - from[i]) * eased;
         velocities[i] = 0;
         writeInstance(mesh, i, item, heights[i]);
       }
