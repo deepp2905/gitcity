@@ -1,6 +1,6 @@
 "use client";
 
-import type { ContributionDay } from "@/lib/contributions/types";
+import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { buildMonthLabels } from "@/lib/contributions/grid";
 import { CELL_SIZE, PITCH, tilePosition } from "@/lib/three/layout";
 import { projectFlat } from "@/lib/three/camera";
@@ -9,7 +9,7 @@ const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const VISIBLE_WEEKDAY_ROWS = new Set([1, 3, 5]);
 
 type GridLabelsProps = {
-  days: ContributionDay[];
+  tiles: SceneTile[];
   weekCount: number;
   width: number;
   height: number;
@@ -27,7 +27,7 @@ type GridLabelsProps = {
  * matches, and the city doesn't want chart furniture anyway.
  */
 export function GridLabels({
-  days,
+  tiles,
   weekCount,
   width,
   height,
@@ -41,7 +41,7 @@ export function GridLabels({
   const opacity = Math.max(0, 1 - progress * 5);
   if (opacity === 0) return null;
 
-  const months = buildMonthLabels(days);
+  const months = buildMonthLabels(tiles);
   const halfCell = (CELL_SIZE / 2) * zoom;
 
   return (

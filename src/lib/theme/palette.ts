@@ -24,6 +24,11 @@ export const palette = {
 
   danger: "#b5432a",
   dangerBg: "#fbeee9",
+
+  /** Padding tiles for days a year hasn't reached yet — lighter than a
+   * zero-contribution tile, so an unlived day reads as an empty lot
+   * rather than an idle one. */
+  futureTile: "#f2efe8",
 } as const;
 
 /**

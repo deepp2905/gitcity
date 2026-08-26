@@ -3,7 +3,11 @@
 import { useCallback, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
-import { buildHeatmapGrid, formatDayLabel } from "@/lib/contributions/grid";
+import { formatDayLabel } from "@/lib/contributions/grid";
+import {
+  buildSceneTiles,
+  sceneWeekCount,
+} from "@/lib/contributions/scene-tiles";
 import { gridDepth, gridWidth } from "@/lib/three/layout";
 import { fitZoom } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
@@ -44,7 +48,10 @@ export function CityScene({
   /** Sparse mirror of progress, only to fade the DOM label overlay. */
   const [labelProgress, setLabelProgress] = useState(target);
 
-  const { weekCount } = buildHeatmapGrid(period.days);
+  // Tiles, not raw days: a year still in progress is padded out to its
+  // full calendar year so every year keeps the same footprint.
+  const tiles = buildSceneTiles(period);
+  const weekCount = sceneWeekCount(tiles);
 
   // Leave room for the label gutter so the grid isn't flush to the edges.
   const baseZoom = fitZoom(
@@ -102,7 +109,7 @@ export function CityScene({
             </mesh>
 
             <CityBuildings
-              days={period.days}
+              tiles={tiles}
               weekCount={weekCount}
               progressRef={progressRef}
               onHoverDay={handleHoverDay}
@@ -119,7 +126,7 @@ export function CityScene({
         ) : null}
 
         <GridLabels
-          days={period.days}
+          tiles={tiles}
           weekCount={weekCount}
           width={size.width}
           height={size.height}

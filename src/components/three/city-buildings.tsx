@@ -11,7 +11,8 @@ import {
 import { maxCountOf } from "@/lib/contributions/grid";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { columnProgress, easeInOutCubic } from "@/lib/three/camera";
-import { contributionRampColor } from "@/lib/theme/palette";
+import { contributionRampColor, palette } from "@/lib/theme/palette";
+import type { SceneTile } from "@/lib/contributions/scene-tiles";
 
 /** Reused scratch objects — allocating per frame would churn the GC. */
 const scratchMatrix = new THREE.Matrix4();
@@ -21,7 +22,9 @@ const scratchScale = new THREE.Vector3();
 const scratchColor = new THREE.Color();
 
 type BuildingLayout = {
-  day: ContributionDay;
+  /** Null for padded future days, which are inert scaffolding. */
+  day: ContributionDay | null;
+  weekIndex: number;
   x: number;
   z: number;
   flatHeight: number;
@@ -30,12 +33,16 @@ type BuildingLayout = {
 };
 
 type CityBuildingsProps = {
-  days: ContributionDay[];
+  tiles: SceneTile[];
   weekCount: number;
   /** Shared 0..1 transform progress, written by the camera rig. */
   progressRef: RefObject<number>;
   onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
 };
+
+/** Future tiles sit slightly lower than a zero-contribution ground tile,
+ * reading as an empty lot rather than a day with no activity. */
+const FUTURE_TILE_HEIGHT_SCALE = 0.45;
 
 /**
  * Every day in the period as one InstancedMesh — a single draw call for
@@ -48,7 +55,7 @@ type CityBuildingsProps = {
  * catches up over ~450ms) without any separate animation bookkeeping.
  */
 export function CityBuildings({
-  days,
+  tiles,
   weekCount,
   progressRef,
   onHoverDay,
@@ -56,27 +63,45 @@ export function CityBuildings({
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
   const layout = useMemo<BuildingLayout[]>(() => {
-    const maxCount = maxCountOf(days);
-    const flatHeight = worldHeight(GROUND_TILE_HEIGHT);
+    const maxCount = maxCountOf(
+      tiles.flatMap((tile) => (tile.day ? [tile.day] : [])),
+    );
+    const groundHeight = worldHeight(GROUND_TILE_HEIGHT);
+    const futureHeight = groundHeight * FUTURE_TILE_HEIGHT_SCALE;
 
-    return days.map((day) => {
-      const { x, z } = tilePosition(day.weekIndex, day.weekday, weekCount);
+    return tiles.map((tile) => {
+      const { x, z } = tilePosition(tile.weekIndex, tile.weekday, weekCount);
+
+      if (!tile.day) {
+        return {
+          day: null,
+          weekIndex: tile.weekIndex,
+          x,
+          z,
+          flatHeight: futureHeight,
+          targetHeight: futureHeight,
+          color: new THREE.Color(palette.futureTile),
+        };
+      }
+
+      const { day } = tile;
       // The same sqrt-normalized value drives both height and color, so
       // a taller building is always a deeper green.
       const normalized = maxCount > 0 ? Math.sqrt(day.count / maxCount) : 0;
 
       return {
         day,
+        weekIndex: tile.weekIndex,
         x,
         z,
-        flatHeight,
+        flatHeight: groundHeight,
         targetHeight: worldHeight(computeBuildingHeight(day.count, maxCount)),
         color: new THREE.Color(
           contributionRampColor(normalized, day.count > 0),
         ),
       };
     });
-  }, [days, weekCount]);
+  }, [tiles, weekCount]);
 
   /** Current rendered height per instance, damped toward the target. */
   const heightsRef = useRef<Float32Array>(new Float32Array(0));
@@ -109,7 +134,7 @@ export function CityBuildings({
     for (let i = 0; i < layout.length; i++) {
       const item = layout[i];
       const eased = easeInOutCubic(
-        columnProgress(progress, item.day.weekIndex, weekCount),
+        columnProgress(progress, item.weekIndex, weekCount),
       );
       const target =
         item.flatHeight + (item.targetHeight - item.flatHeight) * eased;
@@ -158,6 +183,7 @@ export function CityBuildings({
         event.stopPropagation();
         const index = event.instanceId;
         if (index === undefined) return;
+        // Future tiles have no day and deliberately show no tooltip.
         onHoverDay(layout[index]?.day ?? null, event.clientX, event.clientY);
       }}
       onPointerOut={() => onHoverDay(null, 0, 0)}

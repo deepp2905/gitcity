@@ -68,9 +68,14 @@ const MIN_MONTH_COLUMNS = 2;
  * omitted.
  */
 export function buildMonthLabels(
-  days: readonly ContributionDay[],
+  // Structural, so 3D scene tiles (which include padded future days)
+  // can produce labels for the whole calendar year too.
+  days: readonly { date: string; weekIndex: number }[],
 ): MonthLabel[] {
-  const firstDayOfWeekColumn = new Map<number, ContributionDay>();
+  const firstDayOfWeekColumn = new Map<
+    number,
+    { date: string; weekIndex: number }
+  >();
   for (const day of days) {
     const existing = firstDayOfWeekColumn.get(day.weekIndex);
     if (!existing || day.date < existing.date) {
