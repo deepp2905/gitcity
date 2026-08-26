@@ -67,6 +67,19 @@ export function currentCalendarYearRange(now: Date): { from: Date; to: Date } {
 }
 
 /**
+ * The four calendar years we always query GitHub for, before we know
+ * which years the account actually has contribution history in: the
+ * current year and the three preceding it. `buildPeriodBoundaries` (used
+ * once we know `contributionYears`) picks the tabs to actually show from
+ * among these — see src/lib/github/query.ts for why the query has to
+ * commit to a fixed candidate set up front (GraphQL aliases are static).
+ */
+export function staticCandidateYears(now: Date): number[] {
+  const year = now.getUTCFullYear();
+  return [year, year - 1, year - 2, year - 3];
+}
+
+/**
  * Caps the calendar-year tabs to the most recent `MAX_CALENDAR_YEARS`
  * years GitHub reports as having contribution history, newest first.
  * Combined with the rolling period this yields "five tabs total".

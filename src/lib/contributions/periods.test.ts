@@ -6,6 +6,7 @@ import {
   enumerateDays,
   rollingLast12MonthsFrom,
   selectCalendarYears,
+  staticCandidateYears,
   startOfGridWeek,
   toIsoDate,
   weekIndexOf,
@@ -100,6 +101,13 @@ describe("buildPeriodBoundaries", () => {
     expect(buildPeriodBoundaries(now, []).map((b) => b.id)).toEqual([
       "last-12-months",
     ]);
+  });
+});
+
+describe("staticCandidateYears", () => {
+  it("returns the current year and the three preceding it", () => {
+    const now = new Date(Date.UTC(2026, 7, 26));
+    expect(staticCandidateYears(now)).toEqual([2026, 2025, 2024, 2023]);
   });
 });
 
