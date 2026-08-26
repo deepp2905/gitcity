@@ -173,8 +173,6 @@ export function CityApp() {
 
       {data && activePeriod ? (
         <>
-          <ProfileIdentity profile={data.profile} />
-
           <Visualization
             period={activePeriod}
             profile={data.profile}
@@ -185,6 +183,7 @@ export function CityApp() {
 
           <div className="flex flex-col items-center gap-3">
             <div className="flex flex-wrap items-center justify-center gap-2">
+              <ProfileIdentity profile={data.profile} />
               <PeriodTabs
                 periods={data.periods}
                 activeId={activePeriod.id}

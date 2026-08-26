@@ -4,9 +4,8 @@ import type { ContributionPeriod, GithubProfile } from "@/lib/contributions/type
 const numberFormatter = new Intl.NumberFormat("en-US");
 
 /**
- * Who the city belongs to. Sits directly under the search form, since it
- * answers the same question the input asked, and reads as a caption
- * rather than a panel now that the surrounding card is gone.
+ * Who the city belongs to. Sits at the left of the controls row, sharing
+ * the pill treatment of the tabs and toggle beside it.
  */
 export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
   return (
@@ -14,7 +13,7 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
       href={profile.profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group mx-auto flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3 transition-colors hover:bg-ink/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="group flex min-h-11 items-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] py-1 pl-1 pr-3.5 shadow-[var(--shadow-soft)] backdrop-blur-md transition-colors hover:bg-canvas-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <Image
         src={profile.avatarUrl}
