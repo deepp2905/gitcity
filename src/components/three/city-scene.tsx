@@ -17,6 +17,7 @@ import { useElementSize } from "@/lib/hooks/use-element-size";
 import { CityBuildings } from "./city-buildings";
 import { CameraRig } from "./camera-rig";
 import { GridLabels } from "./grid-labels";
+import { FpsMeter } from "./fps-meter";
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -158,6 +159,8 @@ export function CityScene({
           zoom={baseZoom}
           progress={labelProgress}
         />
+
+        <FpsMeter />
 
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
