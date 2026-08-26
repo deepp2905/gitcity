@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type ComponentRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
@@ -62,14 +62,16 @@ export function CityScene({
 
   /** True once the transform has arrived and the user may orbit. */
   const [orbiting, setOrbiting] = useState(false);
-  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
 
-  const resetView = useCallback(() => {
+  // Flattening resets the angle: the transform always returns to the
+  // scripted flat view, so a separate reset control has nothing to do.
+  const resetCityView = useCallback(() => {
     cityViewRef.current = { ...CITY_VIEW };
-    // Drop out of orbit for a frame so the rig repositions the camera,
-    // then control returns automatically once it settles again.
-    setOrbiting(false);
   }, []);
+
+  useEffect(() => {
+    if (target === 0) resetCityView();
+  }, [target, resetCityView]);
 
   // Tiles, not raw days: a year still in progress is padded out to its
   // full calendar year so every year keeps the same footprint.
@@ -176,7 +178,6 @@ export function CityScene({
             {/* Guided orbit: only once the city has arrived, and never
                 pan, flip under the ground, or zoom out of frame. */}
             <OrbitControls
-              ref={controlsRef}
               enabled={orbiting}
               enablePan={false}
               enableDamping
@@ -199,16 +200,6 @@ export function CityScene({
         />
 
         <FpsMeter />
-
-        {orbiting ? (
-          <button
-            type="button"
-            onClick={resetView}
-            className="absolute right-3 top-3 z-10 min-h-11 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-3 text-sm font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md transition-colors hover:bg-canvas-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            Reset view
-          </button>
-        ) : null}
 
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
