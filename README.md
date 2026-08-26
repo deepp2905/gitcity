@@ -39,18 +39,16 @@ token needed, no rate limit consumed, and identical response shapes
 because the fixtures are captured normalized responses. A username with
 no matching `fixtures/<name>.json` returns `NOT_FOUND`.
 
-Two fixtures ship with the repo:
-
-| Fixture      | Why it's useful                                                        |
-| ------------ | ---------------------------------------------------------------------- |
-| `deepp2905`  | Edge cases: 2025 and 2024 are entirely empty (`maxCount` 0), 2023 is sparse |
-| `torvalds`   | Dense graph across all five periods, good for height-scale work        |
-
-Capture a new one by unsetting the flag and saving the response:
+`fixtures/` is gitignored — fixtures are local-only, never committed.
+Capture your own with the flag unset (so the request hits the live API):
 
 ```bash
 curl "http://localhost:3000/api/contributions?user=NAME" > fixtures/NAME.json
 ```
+
+Worth capturing at least one sparse account alongside a dense one: a
+profile with an entirely empty calendar year exercises the `maxCount`
+of 0 path in the height scale, which a busy graph never reaches.
 
 ## Scripts
 
