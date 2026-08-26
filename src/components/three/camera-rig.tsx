@@ -94,7 +94,12 @@ export function CameraRig({
 
     // Hands off: OrbitControls owns the camera. Track where the user has
     // moved it so a later flatten departs from exactly there.
-    if (orbiting) {
+    //
+    // Only while the city is still the requested state: without the
+    // target check the rig stayed in this branch after a flatten was
+    // requested and silently ignored it, so the toggle changed state but
+    // the camera never moved.
+    if (orbiting && target === 1) {
       cityViewRef.current = cartesianToSpherical(
         camera.position.x,
         camera.position.y,
