@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ComponentRef } from "react";
 import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
 import { formatDayLabel } from "@/lib/contributions/grid";
 import {
@@ -10,7 +11,12 @@ import {
 } from "@/lib/contributions/scene-tiles";
 import { emptyPeriodMessage } from "@/lib/contributions/empty-message";
 import { SCENE_MAX_HEIGHT, gridDepth, gridWidth } from "@/lib/three/layout";
-import { FLAT_VIEW, fitZoomForView } from "@/lib/three/camera";
+import {
+  CITY_VIEW,
+  FLAT_VIEW,
+  fitZoomForView,
+  type CameraView,
+} from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
 import { palette } from "@/lib/theme/palette";
 import { useElementSize } from "@/lib/hooks/use-element-size";
@@ -49,6 +55,21 @@ export function CityScene({
 
   /** Sparse mirror of progress, only to fade the DOM label overlay. */
   const [labelProgress, setLabelProgress] = useState(target);
+
+  /** Where the tilted view currently is. Orbiting rewrites this, so
+   * flattening later departs from wherever the user left the camera. */
+  const cityViewRef = useRef<CameraView>({ ...CITY_VIEW });
+
+  /** True once the transform has arrived and the user may orbit. */
+  const [orbiting, setOrbiting] = useState(false);
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
+
+  const resetView = useCallback(() => {
+    cityViewRef.current = { ...CITY_VIEW };
+    // Drop out of orbit for a frame so the rig repositions the camera,
+    // then control returns automatically once it settles again.
+    setOrbiting(false);
+  }, []);
 
   // Tiles, not raw days: a year still in progress is padded out to its
   // full calendar year so every year keeps the same footprint.
@@ -140,6 +161,8 @@ export function CityScene({
             <CameraRig
               target={target}
               progressRef={progressRef}
+              cityViewRef={cityViewRef}
+              orbiting={orbiting}
               gridWidth={sceneWidth}
               gridDepth={sceneDepth}
               maxHeight={SCENE_MAX_HEIGHT}
@@ -147,6 +170,21 @@ export function CityScene({
               canvasHeight={size.height}
               reducedMotion={reducedMotion}
               onProgress={setLabelProgress}
+              onSettled={setOrbiting}
+            />
+
+            {/* Guided orbit: only once the city has arrived, and never
+                pan, flip under the ground, or zoom out of frame. */}
+            <OrbitControls
+              ref={controlsRef}
+              enabled={orbiting}
+              enablePan={false}
+              enableDamping
+              dampingFactor={0.08}
+              minPolarAngle={Math.PI * 0.08}
+              maxPolarAngle={Math.PI * 0.47}
+              minZoom={baseZoom * 0.4}
+              maxZoom={baseZoom * 4}
             />
           </Canvas>
         ) : null}
@@ -161,6 +199,16 @@ export function CityScene({
         />
 
         <FpsMeter />
+
+        {orbiting ? (
+          <button
+            type="button"
+            onClick={resetView}
+            className="absolute right-3 top-3 z-10 min-h-11 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-3 text-sm font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md transition-colors hover:bg-canvas-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Reset view
+          </button>
+        ) : null}
 
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">

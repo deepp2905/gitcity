@@ -64,12 +64,39 @@ export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-/** Interpolates the camera between the flat and tilted views. */
-export function lerpView(t: number): CameraView {
+/**
+ * Interpolates the camera between the flat view and a tilted view.
+ *
+ * The tilted end is a parameter rather than a constant because orbiting
+ * redefines it: wherever the user leaves the camera becomes the "3D"
+ * end of the transform, so flattening from a manually orbited angle
+ * travels from exactly where they are instead of snapping back first.
+ */
+export function lerpView(t: number, cityView: CameraView = CITY_VIEW): CameraView {
   const eased = easeInOutCubic(t);
+
+  let thetaDelta = cityView.theta - FLAT_VIEW.theta;
+  if (thetaDelta > Math.PI) thetaDelta -= Math.PI * 2;
+  if (thetaDelta < -Math.PI) thetaDelta += Math.PI * 2;
+
   return {
-    phi: lerp(FLAT_VIEW.phi, CITY_VIEW.phi, eased),
-    theta: lerp(FLAT_VIEW.theta, CITY_VIEW.theta, eased),
+    phi: lerp(FLAT_VIEW.phi, cityView.phi, eased),
+    theta: FLAT_VIEW.theta + thetaDelta * eased,
+  };
+}
+
+/** Inverse of sphericalToCartesian — recovers the angles the user has
+ * orbited to, so the rig can adopt them as the tilted view. */
+export function cartesianToSpherical(
+  x: number,
+  y: number,
+  z: number,
+): CameraView {
+  const radius = Math.hypot(x, y, z);
+  if (radius === 0) return { ...CITY_VIEW };
+  return {
+    phi: Math.acos(Math.min(1, Math.max(-1, y / radius))),
+    theta: Math.atan2(x, z),
   };
 }
 

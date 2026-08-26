@@ -4,45 +4,49 @@ import { useEffect, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import type * as THREE from "three";
 import {
+  cartesianToSpherical,
   fitZoomForView,
   lerpView,
   sphericalToCartesian,
+  type CameraView,
 } from "@/lib/three/camera";
 
 /** Far enough to clear the geometry; under orthographic projection the
  * radius has no effect on scale. */
 const CAMERA_RADIUS = 220;
 
-/**
- * The scene is always orthographic, but R3F types the frame camera as
+/** Seconds for a full 0 -> 1 transform. Matches the spec's ~800ms tilt. */
+const TRANSFORM_DURATION_S = 0.8;
+
+/** The scene is always orthographic, but R3F types the frame camera as
  * perspective. Narrow on Three's own runtime discriminator rather than
  * casting — and accept `unknown`, because R3F's bundled camera type and
  * the installed @types/three are structurally incompatible over
- * `isCamera` even though they describe the same object.
- */
+ * `isCamera` even though they describe the same object. */
 function isOrthographic(camera: unknown): camera is THREE.OrthographicCamera {
   return (
     (camera as THREE.OrthographicCamera | null)?.isOrthographicCamera === true
   );
 }
 
-/** Seconds for a full 0 -> 1 transform. Matches the spec's ~800ms tilt. */
-const TRANSFORM_DURATION_S = 0.8;
-
 type CameraRigProps = {
   /** Where the transform should settle: 0 = flat, 1 = city. */
   target: number;
   /** Shared, frame-updated progress the buildings also read. */
   progressRef: RefObject<number>;
-  /** Scene bounds used to frame the city at every angle. */
+  /** Mutable tilted-view angles, updated while the user orbits. */
+  cityViewRef: RefObject<CameraView>;
+  /** True once the transform has settled at the city view and the user
+   * has taken over via OrbitControls. */
+  orbiting: boolean;
   gridWidth: number;
   gridDepth: number;
   maxHeight: number;
   canvasWidth: number;
   canvasHeight: number;
   reducedMotion: boolean;
-  /** Called when progress changes, to drive the DOM label overlay. */
   onProgress: (progress: number) => void;
+  onSettled: (settled: boolean) => void;
 };
 
 /**
@@ -54,10 +58,16 @@ type CameraRigProps = {
  * easing lives in lerpView and the per-column rise curve. Reversing
  * mid-flight simply flips the direction from wherever progress currently
  * is, which is what makes the toggle interruptible.
+ *
+ * Once settled at the city view the rig stops writing the camera and
+ * hands over to OrbitControls, tracking the resulting angles so that
+ * flattening later starts from wherever the user left it.
  */
 export function CameraRig({
   target,
   progressRef,
+  cityViewRef,
+  orbiting,
   gridWidth,
   gridDepth,
   maxHeight,
@@ -65,6 +75,7 @@ export function CameraRig({
   canvasHeight,
   reducedMotion,
   onProgress,
+  onSettled,
 }: CameraRigProps) {
   const lastReported = useRef(-1);
 
@@ -81,6 +92,17 @@ export function CameraRig({
     const camera = state.camera;
     if (!isOrthographic(camera)) return;
 
+    // Hands off: OrbitControls owns the camera. Track where the user has
+    // moved it so a later flatten departs from exactly there.
+    if (orbiting) {
+      cityViewRef.current = cartesianToSpherical(
+        camera.position.x,
+        camera.position.y,
+        camera.position.z,
+      );
+      return;
+    }
+
     const current = progressRef.current;
 
     let next: number;
@@ -95,7 +117,7 @@ export function CameraRig({
     }
     progressRef.current = next;
 
-    const view = lerpView(next);
+    const view = lerpView(next, cityViewRef.current);
     const position = sphericalToCartesian(view.phi, view.theta, CAMERA_RADIUS);
 
     camera.position.set(position.x, position.y, position.z);
@@ -119,6 +141,9 @@ export function CameraRig({
         onProgress(next);
       }
     }
+
+    // Only give the camera away once fully arrived at the city view.
+    onSettled(next === 1 && target === 1);
   });
 
   return null;
