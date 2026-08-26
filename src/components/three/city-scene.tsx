@@ -185,7 +185,7 @@ export function CityScene({
         // No border, background or radius: the canvas already clears to
         // the page colour, so the scene reads as part of the page rather
         // than a panel sitting on it.
-        className="relative h-[320px] w-full cursor-pointer sm:h-[440px]"
+        className="relative h-[380px] w-full cursor-pointer sm:h-[560px]"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}

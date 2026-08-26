@@ -134,7 +134,7 @@ export function CityApp() {
     data?.periods.find((p) => p.id === period) ?? data?.periods[0] ?? null;
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12 sm:py-16">
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-6 py-12 sm:py-16">
       <header className="flex flex-col items-center gap-6 text-center">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-ink text-balance sm:text-4xl">
