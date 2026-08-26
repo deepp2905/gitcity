@@ -45,10 +45,12 @@ export function SearchForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full max-w-md">
-      <label
-        htmlFor={inputId}
-        className="block text-sm font-medium text-ink-muted mb-2"
-      >
+      {/*
+        Visually replaced by the placeholder, but kept in the accessible
+        tree: a placeholder alone vanishes as soon as the user types, so
+        it can't be the only label.
+      */}
+      <label htmlFor={inputId} className="sr-only">
         GitHub username or URL
       </label>
 
@@ -62,7 +64,7 @@ export function SearchForm({
             setValue(event.target.value);
             if (error) setError(null);
           }}
-          placeholder="octocat"
+          placeholder="GitHub username or URL"
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
