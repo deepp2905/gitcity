@@ -10,6 +10,7 @@ import {
 } from "@/lib/contributions/height";
 import { maxCountOf } from "@/lib/contributions/grid";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
+import { createBuildingGeometry } from "@/lib/three/building-geometry";
 import { columnProgress, easeInOutCubic } from "@/lib/three/camera";
 import { contributionRampColor, palette } from "@/lib/theme/palette";
 import type { SceneTile } from "@/lib/contributions/scene-tiles";
@@ -61,6 +62,11 @@ export function CityBuildings({
   onHoverDay,
 }: CityBuildingsProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+
+  // One geometry shared by every instance; rebuilt never, disposed on
+  // unmount.
+  const geometry = useMemo(() => createBuildingGeometry(), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   const layout = useMemo<BuildingLayout[]>(() => {
     const maxCount = maxCountOf(
@@ -188,7 +194,7 @@ export function CityBuildings({
       }}
       onPointerOut={() => onHoverDay(null, 0, 0)}
     >
-      <boxGeometry args={[1, 1, 1]} />
+      <primitive object={geometry} attach="geometry" />
       <meshLambertMaterial />
     </instancedMesh>
   );
