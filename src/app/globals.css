@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
+/*
+ * Contribution City design tokens.
+ *
+ * Light-only, warm "daylight" theme (see README assumptions) — no dark-mode
+ * media query on purpose. The heatmap / building level colors mirror
+ * src/lib/theme/palette.ts 1:1; keep both in sync if you change a value,
+ * since the 3D scene reads the TS copy directly for Three.js materials.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --color-canvas: #faf8f3;
+  --color-canvas-raised: #ffffff;
+  --color-border: #e5e1d8;
+
+  /* Typography */
+  --color-ink: #171412;
+  --color-ink-muted: #6b6459;
+  --color-ink-subtle: #948c7e;
+
+  /* Brand / accent (GitHub-inspired green) */
+  --color-accent: #216e39;
+  --color-accent-strong: #196c2e;
+
+  /* Contribution heatmap levels (GitHub-style quartiles) */
+  --color-level-0: #ebe8e0;
+  --color-level-1: #9be9a8;
+  --color-level-2: #40c463;
+  --color-level-3: #30a14e;
+  --color-level-4: #216e39;
+
+  /* Feedback */
+  --color-danger: #b5432a;
+  --color-danger-bg: #fbeee9;
+
+  /* Elevation */
+  --shadow-soft: 0 1px 2px rgba(23, 20, 18, 0.04), 0 4px 12px rgba(23, 20, 18, 0.06);
+  --shadow-raised: 0 2px 4px rgba(23, 20, 18, 0.05), 0 12px 24px rgba(23, 20, 18, 0.08);
+
+  /* Translucent controls (segmented control, floating buttons) */
+  --surface-translucent: rgba(255, 255, 254, 0.72);
+  --surface-translucent-border: rgba(23, 20, 18, 0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-canvas: var(--color-canvas);
+  --color-canvas-raised: var(--color-canvas-raised);
+  --color-border: var(--color-border);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-ink-subtle: var(--color-ink-subtle);
+
+  --color-accent: var(--color-accent);
+  --color-accent-strong: var(--color-accent-strong);
+
+  --color-level-0: var(--color-level-0);
+  --color-level-1: var(--color-level-1);
+  --color-level-2: var(--color-level-2);
+  --color-level-3: var(--color-level-3);
+  --color-level-4: var(--color-level-4);
+
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+
+  --font-sans: var(--font-inter);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+/*
+ * Tabular numerals are opt-in per element (Tailwind's `tabular-nums`
+ * utility) rather than global — they belong on counts/dates/stats, not on
+ * prose headings and copy.
+ */
