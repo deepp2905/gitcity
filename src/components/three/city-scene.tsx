@@ -8,6 +8,7 @@ import {
   buildSceneTiles,
   sceneWeekCount,
 } from "@/lib/contributions/scene-tiles";
+import { emptyPeriodMessage } from "@/lib/contributions/empty-message";
 import { gridDepth, gridWidth } from "@/lib/three/layout";
 import { fitZoom } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
@@ -52,6 +53,10 @@ export function CityScene({
   // full calendar year so every year keeps the same footprint.
   const tiles = buildSceneTiles(period);
   const weekCount = sceneWeekCount(tiles);
+
+  // A blank grid with no explanation reads as a loading bug.
+  const isEmpty = period.totalContributions === 0;
+  const emptyMessage = emptyPeriodMessage(period.id);
 
   // Leave room for the label gutter so the grid isn't flush to the edges.
   const baseZoom = fitZoom(
@@ -133,6 +138,19 @@ export function CityScene({
           zoom={baseZoom}
           progress={labelProgress}
         />
+
+        {isEmpty ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+            <div className="rounded-xl border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-4 py-3 text-center shadow-[var(--shadow-soft)] backdrop-blur-md">
+              <p className="text-sm font-semibold text-ink">
+                {emptyMessage.headline}
+              </p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {emptyMessage.detail}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {tooltip ? (
