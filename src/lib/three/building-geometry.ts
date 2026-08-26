@@ -57,10 +57,14 @@ export function createBuildingGeometry(): THREE.ExtrudeGeometry {
     curveSegments: CORNER_SEGMENTS,
   });
 
-  // Extrude builds along +Z from z=0; rotate so it grows along +Y, then
-  // centre it vertically to match BoxGeometry's origin.
+  // Extrude runs along +Z from z=0, so after rotating it into place the
+  // box occupies y 0..1. Shift down by half to centre it on the origin,
+  // matching BoxGeometry: instances are scaled by their height and
+  // positioned at height/2, which only lands on the ground if the
+  // geometry is centred. Translating the wrong way floats every building
+  // by its own height.
   geometry.rotateX(-Math.PI / 2);
-  geometry.translate(0, 0.5, 0);
+  geometry.translate(0, -0.5, 0);
   geometry.computeVertexNormals();
 
   return geometry;
