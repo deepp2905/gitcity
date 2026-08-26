@@ -25,20 +25,16 @@ export type CameraView = {
   phi: number;
   /** Azimuth around the Y axis, radians. */
   theta: number;
-  /** Multiplier on the fitted zoom — the tilted view needs room for height. */
-  zoomScale: number;
 };
 
 export const FLAT_VIEW: CameraView = {
   phi: degToRad(FLAT_POLAR_DEG),
   theta: 0,
-  zoomScale: 1,
 };
 
 export const CITY_VIEW: CameraView = {
   phi: degToRad(CITY_POLAR_DEG),
   theta: degToRad(CITY_AZIMUTH_DEG),
-  zoomScale: 0.72,
 };
 
 /** Spherical -> cartesian, with phi measured from +Y so phi=0 is directly
@@ -74,7 +70,6 @@ export function lerpView(t: number): CameraView {
   return {
     phi: lerp(FLAT_VIEW.phi, CITY_VIEW.phi, eased),
     theta: lerp(FLAT_VIEW.theta, CITY_VIEW.theta, eased),
-    zoomScale: lerp(FLAT_VIEW.zoomScale, CITY_VIEW.zoomScale, eased),
   };
 }
 
@@ -99,6 +94,106 @@ export function fitZoom(
   return Math.min(
     (canvasWidth * padding) / gridWidth,
     (canvasHeight * padding) / gridDepth,
+  );
+}
+
+type Vec3 = { x: number; y: number; z: number };
+
+function subtract(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+function cross(a: Vec3, b: Vec3): Vec3 {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x,
+  };
+}
+function dot(a: Vec3, b: Vec3): number {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+function normalize(v: Vec3): Vec3 {
+  const length = Math.hypot(v.x, v.y, v.z) || 1;
+  return { x: v.x / length, y: v.y / length, z: v.z / length };
+}
+
+/**
+ * The camera's screen-space axes for a view, looking at the origin with
+ * world +Y as up. Screen-right and screen-up let us project the scene's
+ * bounding box without involving Three.
+ */
+export function viewBasis(view: CameraView): { right: Vec3; up: Vec3 } {
+  const position = sphericalToCartesian(view.phi, view.theta, 1);
+  const forward = normalize(subtract({ x: 0, y: 0, z: 0 }, position));
+  const right = normalize(cross(forward, { x: 0, y: 1, z: 0 }));
+  return { right, up: cross(right, forward) };
+}
+
+/**
+ * Screen-space extent of the city's bounding box at a given view, in
+ * world units. Projects all eight corners rather than guessing, so the
+ * fit stays correct as the camera tilts and the buildings' height starts
+ * contributing to the vertical extent.
+ */
+export function projectedExtent(
+  gridWidth: number,
+  gridDepth: number,
+  maxHeight: number,
+  view: CameraView,
+): { width: number; height: number } {
+  const { right, up } = viewBasis(view);
+  const halfWidth = gridWidth / 2;
+  const halfDepth = gridDepth / 2;
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  for (const x of [-halfWidth, halfWidth]) {
+    for (const y of [0, maxHeight]) {
+      for (const z of [-halfDepth, halfDepth]) {
+        const corner = { x, y, z };
+        const screenX = dot(corner, right);
+        const screenY = dot(corner, up);
+        minX = Math.min(minX, screenX);
+        maxX = Math.max(maxX, screenX);
+        minY = Math.min(minY, screenY);
+        maxY = Math.max(maxY, screenY);
+      }
+    }
+  }
+
+  return { width: maxX - minX, height: maxY - minY };
+}
+
+/**
+ * Orthographic zoom that frames the city at a given view.
+ *
+ * Fitting the real projected bounds — rather than the flat footprint
+ * times a fixed fudge factor — keeps the city filling the canvas
+ * throughout the transform. Rotating the grid actually *shrinks* its
+ * projected width, so a fixed scale factor compounded with that left the
+ * city marooned in the middle of the canvas.
+ */
+export function fitZoomForView(
+  canvasWidth: number,
+  canvasHeight: number,
+  gridWidth: number,
+  gridDepth: number,
+  maxHeight: number,
+  view: CameraView,
+  padding = 0.9,
+): number {
+  if (gridWidth <= 0 || gridDepth <= 0) return 1;
+  if (canvasWidth <= 0 || canvasHeight <= 0) return 1;
+
+  const extent = projectedExtent(gridWidth, gridDepth, maxHeight, view);
+  if (extent.width <= 0 || extent.height <= 0) return 1;
+
+  return Math.min(
+    (canvasWidth * padding) / extent.width,
+    (canvasHeight * padding) / extent.height,
   );
 }
 

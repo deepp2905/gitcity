@@ -3,7 +3,11 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import type * as THREE from "three";
-import { lerpView, sphericalToCartesian } from "@/lib/three/camera";
+import {
+  fitZoomForView,
+  lerpView,
+  sphericalToCartesian,
+} from "@/lib/three/camera";
 
 /** Far enough to clear the geometry; under orthographic projection the
  * radius has no effect on scale. */
@@ -30,8 +34,12 @@ type CameraRigProps = {
   target: number;
   /** Shared, frame-updated progress the buildings also read. */
   progressRef: RefObject<number>;
-  /** Base zoom in pixels per world unit, fitted to the canvas. */
-  baseZoom: number;
+  /** Scene bounds used to frame the city at every angle. */
+  gridWidth: number;
+  gridDepth: number;
+  maxHeight: number;
+  canvasWidth: number;
+  canvasHeight: number;
   reducedMotion: boolean;
   /** Called when progress changes, to drive the DOM label overlay. */
   onProgress: (progress: number) => void;
@@ -50,7 +58,11 @@ type CameraRigProps = {
 export function CameraRig({
   target,
   progressRef,
-  baseZoom,
+  gridWidth,
+  gridDepth,
+  maxHeight,
+  canvasWidth,
+  canvasHeight,
   reducedMotion,
   onProgress,
 }: CameraRigProps) {
@@ -88,7 +100,16 @@ export function CameraRig({
 
     camera.position.set(position.x, position.y, position.z);
     camera.lookAt(0, 0, 0);
-    camera.zoom = baseZoom * view.zoomScale;
+    // Re-fit every frame against the real projected bounds, so the city
+    // stays framed as it tilts and grows rather than drifting small.
+    camera.zoom = fitZoomForView(
+      canvasWidth,
+      canvasHeight,
+      gridWidth,
+      gridDepth,
+      maxHeight * next,
+      view,
+    );
     camera.updateProjectionMatrix();
 
     // Report sparsely: the overlay only needs enough resolution to fade.

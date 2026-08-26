@@ -9,8 +9,8 @@ import {
   sceneWeekCount,
 } from "@/lib/contributions/scene-tiles";
 import { emptyPeriodMessage } from "@/lib/contributions/empty-message";
-import { gridDepth, gridWidth } from "@/lib/three/layout";
-import { fitZoom } from "@/lib/three/camera";
+import { SCENE_MAX_HEIGHT, gridDepth, gridWidth } from "@/lib/three/layout";
+import { FLAT_VIEW, fitZoomForView } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
 import { palette } from "@/lib/theme/palette";
 import { useElementSize } from "@/lib/hooks/use-element-size";
@@ -58,13 +58,18 @@ export function CityScene({
   const isEmpty = period.totalContributions === 0;
   const emptyMessage = emptyPeriodMessage(period.id);
 
-  // Leave room for the label gutter so the grid isn't flush to the edges.
-  const baseZoom = fitZoom(
+  const sceneWidth = gridWidth(weekCount);
+  const sceneDepth = gridDepth();
+
+  // Zoom at the flat view, used to place the DOM label overlay. The rig
+  // recomputes the live zoom each frame from the same function.
+  const baseZoom = fitZoomForView(
     size.width,
     size.height,
-    gridWidth(weekCount),
-    gridDepth(),
-    0.82,
+    sceneWidth,
+    sceneDepth,
+    0,
+    FLAT_VIEW,
   );
 
   const handleHoverDay = useCallback(
@@ -134,7 +139,11 @@ export function CityScene({
             <CameraRig
               target={target}
               progressRef={progressRef}
-              baseZoom={baseZoom}
+              gridWidth={sceneWidth}
+              gridDepth={sceneDepth}
+              maxHeight={SCENE_MAX_HEIGHT}
+              canvasWidth={size.width}
+              canvasHeight={size.height}
               reducedMotion={reducedMotion}
               onProgress={setLabelProgress}
             />

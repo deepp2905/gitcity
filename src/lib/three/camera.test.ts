@@ -4,10 +4,12 @@ import {
   FLAT_VIEW,
   columnProgress,
   easeInOutCubic,
-  fitZoom,
+  fitZoomForView,
   lerpView,
   projectFlat,
+  projectedExtent,
   sphericalToCartesian,
+  viewBasis,
 } from "./camera";
 
 describe("sphericalToCartesian", () => {
@@ -66,29 +68,95 @@ describe("lerpView", () => {
     const end = lerpView(1);
     expect(end.phi).toBeCloseTo(CITY_VIEW.phi);
     expect(end.theta).toBeCloseTo(CITY_VIEW.theta);
-    expect(end.zoomScale).toBeCloseTo(CITY_VIEW.zoomScale);
   });
 
-  it("tilts monotonically and zooms out as it goes", () => {
+  it("tilts monotonically", () => {
     expect(lerpView(0.5).phi).toBeGreaterThan(lerpView(0.25).phi);
-    expect(lerpView(1).zoomScale).toBeLessThan(lerpView(0).zoomScale);
+    expect(lerpView(0.75).phi).toBeGreaterThan(lerpView(0.5).phi);
   });
 });
 
-describe("fitZoom", () => {
+describe("viewBasis", () => {
+  it("maps world +X to screen right and world +Z to screen down when flat", () => {
+    const { right, up } = viewBasis(FLAT_VIEW);
+    expect(right.x).toBeCloseTo(1, 2);
+    // Screen-up points along -Z, so +Z is downward — matching the
+    // heatmap, where later weekdays sit lower.
+    expect(up.z).toBeCloseTo(-1, 1);
+  });
+
+  it("produces orthonormal axes", () => {
+    for (const view of [FLAT_VIEW, CITY_VIEW, lerpView(0.5)]) {
+      const { right, up } = viewBasis(view);
+      expect(Math.hypot(right.x, right.y, right.z)).toBeCloseTo(1);
+      expect(Math.hypot(up.x, up.y, up.z)).toBeCloseTo(1);
+      expect(right.x * up.x + right.y * up.y + right.z * up.z).toBeCloseTo(0);
+    }
+  });
+});
+
+describe("projectedExtent", () => {
+  it("matches the raw footprint when flat and flat-heighted", () => {
+    const extent = projectedExtent(100, 10, 0, FLAT_VIEW);
+    expect(extent.width).toBeCloseTo(100, 0);
+    expect(extent.height).toBeCloseTo(10, 0);
+  });
+
+  it("narrows the projected width when the grid rotates", () => {
+    const flat = projectedExtent(100, 10, 0, FLAT_VIEW);
+    const tilted = projectedExtent(100, 10, 0, CITY_VIEW);
+    // Rotating a long ribbon away from screen-parallel shortens it, which
+    // is why a fixed zoom-out factor left the city too small.
+    expect(tilted.width).toBeLessThan(flat.width);
+  });
+
+  it("grows vertically once buildings have height", () => {
+    const flatBuildings = projectedExtent(100, 10, 0, CITY_VIEW);
+    const tallBuildings = projectedExtent(100, 10, 6, CITY_VIEW);
+    expect(tallBuildings.height).toBeGreaterThan(flatBuildings.height);
+  });
+});
+
+describe("fitZoomForView", () => {
   it("fits the constraining axis", () => {
-    // A wide, shallow grid in a square canvas is limited by width.
-    const zoom = fitZoom(1000, 1000, 100, 10, 1);
-    expect(zoom).toBeCloseTo(10);
+    const zoom = fitZoomForView(1000, 1000, 100, 10, 0, FLAT_VIEW, 1);
+    expect(zoom).toBeCloseTo(10, 1);
   });
 
   it("applies padding", () => {
-    expect(fitZoom(1000, 1000, 100, 10, 0.9)).toBeCloseTo(9);
+    expect(fitZoomForView(1000, 1000, 100, 10, 0, FLAT_VIEW, 0.9)).toBeCloseTo(
+      9,
+      1,
+    );
+  });
+
+  it("keeps the city inside the canvas at both ends of the transform", () => {
+    const canvasWidth = 900;
+    const canvasHeight = 420;
+
+    for (const [t, height] of [
+      [0, 0],
+      [0.5, 3],
+      [1, 6],
+    ] as const) {
+      const view = lerpView(t);
+      const zoom = fitZoomForView(
+        canvasWidth,
+        canvasHeight,
+        65,
+        8.4,
+        height,
+        view,
+      );
+      const extent = projectedExtent(65, 8.4, height, view);
+      expect(extent.width * zoom).toBeLessThanOrEqual(canvasWidth + 0.001);
+      expect(extent.height * zoom).toBeLessThanOrEqual(canvasHeight + 0.001);
+    }
   });
 
   it("degrades safely on empty or unmeasured input", () => {
-    expect(fitZoom(1000, 1000, 0, 0)).toBe(1);
-    expect(fitZoom(0, 0, 100, 10)).toBe(1);
+    expect(fitZoomForView(1000, 1000, 0, 0, 0, FLAT_VIEW)).toBe(1);
+    expect(fitZoomForView(0, 0, 100, 10, 0, FLAT_VIEW)).toBe(1);
   });
 });
 
