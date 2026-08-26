@@ -94,7 +94,9 @@ export function FpsMeter() {
   }, []);
 
   return (
-    <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-2 py-1.5 shadow-[var(--shadow-soft)] backdrop-blur-md">
+    // Fixed to the viewport, not the scene: it is a developer readout
+    // that should stay put while the page scrolls.
+    <div className="pointer-events-none fixed right-3 top-3 z-50 flex items-center gap-2 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-2 py-1.5 shadow-[var(--shadow-soft)] backdrop-blur-md">
       <div className="flex items-baseline gap-1">
         <span
           ref={valueRef}
