@@ -84,7 +84,11 @@ export function CityScene({
       >
         {size.width > 0 ? (
           <Canvas
-            shadows={!isMobile}
+            // "percentage" is PCFShadowMap. R3F's `shadows` boolean picks
+            // PCFSoftShadowMap, which three deprecated in r185 and
+            // silently downgrades to PCFShadowMap anyway — so this is the
+            // same output without the console warning.
+            shadows={isMobile ? false : "percentage"}
             dpr={pixelRatioCap(isMobile)}
             orthographic
             camera={{ position: [0, 200, 8], zoom: baseZoom, near: 1, far: 600 }}

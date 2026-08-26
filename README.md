@@ -31,6 +31,15 @@ browser.
 pnpm dev
 ```
 
+## Pinned dependency
+
+`three` is pinned to **0.182.0**, the last release before r183 deprecated
+`THREE.Clock`. React Three Fiber 9.7.0 still constructs a `Clock`
+internally, so any newer three prints a deprecation warning on every
+page load that no application code can silence.
+
+Unpin this (back to `^0.185` or later) once R3F migrates to `THREE.Timer`.
+
 ## Offline development
 
 Set `USE_FIXTURES=true` in `.env.local` and the API route serves saved

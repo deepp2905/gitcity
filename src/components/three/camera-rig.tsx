@@ -9,6 +9,19 @@ import { lerpView, sphericalToCartesian } from "@/lib/three/camera";
  * radius has no effect on scale. */
 const CAMERA_RADIUS = 220;
 
+/**
+ * The scene is always orthographic, but R3F types the frame camera as
+ * perspective. Narrow on Three's own runtime discriminator rather than
+ * casting — and accept `unknown`, because R3F's bundled camera type and
+ * the installed @types/three are structurally incompatible over
+ * `isCamera` even though they describe the same object.
+ */
+function isOrthographic(camera: unknown): camera is THREE.OrthographicCamera {
+  return (
+    (camera as THREE.OrthographicCamera | null)?.isOrthographicCamera === true
+  );
+}
+
 /** Seconds for a full 0 -> 1 transform. Matches the spec's ~800ms tilt. */
 const TRANSFORM_DURATION_S = 0.8;
 
@@ -53,7 +66,9 @@ export function CameraRig({
   // The camera comes from the frame state rather than useThree: it's the
   // renderer's own mutable object, not a value owned by React render.
   useFrame((state, delta) => {
-    const camera = state.camera as THREE.OrthographicCamera;
+    const camera = state.camera;
+    if (!isOrthographic(camera)) return;
+
     const current = progressRef.current;
 
     let next: number;
