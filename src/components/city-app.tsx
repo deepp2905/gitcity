@@ -15,6 +15,8 @@ import {
 } from "@/lib/state/url-state";
 import { SearchForm } from "./search-form";
 import { ProfileHeader } from "./profile-header";
+import { Heatmap } from "./heatmap";
+import { PeriodTabs } from "./period-tabs";
 
 type FetchError = { code: ContributionErrorCode; message: string };
 
@@ -107,6 +109,11 @@ export function CityApp() {
     [navigate, user],
   );
 
+  const handleSelectPeriod = useCallback(
+    (nextPeriod: PeriodId) => navigate({ period: nextPeriod }, true),
+    [navigate],
+  );
+
   // Loading and error are derived, never synced in an effect: a request is
   // in flight whenever the settled outcome doesn't answer the key the
   // current URL asks for, and an error only counts while it's still the
@@ -157,13 +164,24 @@ export function CityApp() {
       ) : null}
 
       {data && activePeriod ? (
-        <section className="flex flex-col gap-6 rounded-xl border border-border bg-canvas-raised p-5 shadow-sm sm:p-6">
-          <ProfileHeader profile={data.profile} period={activePeriod} />
-          <p className="text-sm text-ink-subtle">
-            Heatmap and 3D city land in the next commits — {activePeriod.days.length}{" "}
-            days loaded for {activePeriod.label}.
-          </p>
-        </section>
+        <>
+          <section className="flex flex-col gap-6 rounded-xl border border-border bg-canvas-raised p-5 shadow-sm sm:p-6">
+            <ProfileHeader profile={data.profile} period={activePeriod} />
+            <Heatmap
+              key={activePeriod.id}
+              period={activePeriod}
+              login={data.profile.login}
+            />
+          </section>
+
+          <div className="flex justify-center">
+            <PeriodTabs
+              periods={data.periods}
+              activeId={activePeriod.id}
+              onSelect={handleSelectPeriod}
+            />
+          </div>
+        </>
       ) : null}
 
       <footer className="mt-auto pt-4 text-center text-xs text-ink-subtle">
