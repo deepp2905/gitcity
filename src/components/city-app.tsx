@@ -275,13 +275,6 @@ export function CityApp() {
             <PeriodTotal period={activePeriod} />
           </>
         ) : null}
-
-        <p
-          className="chrome-enter text-xs text-ink-subtle"
-          style={{ "--enter-delay": "160ms" } as React.CSSProperties}
-        >
-          Data from GitHub. Not affiliated with GitHub, Inc.
-        </p>
       </footer>
     </main>
   );
