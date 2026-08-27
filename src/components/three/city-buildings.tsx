@@ -290,6 +290,18 @@ export function CityBuildings({
         writeInstance(mesh, i, item, heights[i]);
       }
       mesh.instanceMatrix.needsUpdate = true;
+
+      // Snap colour too, or this early return would leave the previous
+      // period's colours on screen.
+      if (colorFadingRef.current) {
+        colorFadingRef.current = fadeColors(
+          mesh,
+          layout,
+          colorsRef.current,
+          colorFromRef.current,
+          () => 1,
+        );
+      }
       return;
     }
 
@@ -306,6 +318,26 @@ export function CityBuildings({
         writeInstance(mesh, i, item, heights[i]);
       }
       mesh.instanceMatrix.needsUpdate = true;
+
+      // Colour is the whole visualisation in the flat state, so it has to
+      // update here too. This branch returns early, which previously left
+      // a year switch in 2D showing the previous year's colours.
+      if (colorFadingRef.current) {
+        const duration = Math.max(1, config.flattenDurationMs);
+        colorFadingRef.current = fadeColors(
+          mesh,
+          layout,
+          colorsRef.current,
+          colorFromRef.current,
+          (i) =>
+            easeInOutCubic(
+              Math.min(
+                1,
+                Math.max(0, (elapsed - layout[i].delayMs) / duration),
+              ),
+            ),
+        );
+      }
       return;
     }
 
@@ -350,36 +382,22 @@ export function CityBuildings({
     mesh.instanceMatrix.needsUpdate = true;
 
     if (colorFadingRef.current) {
-      const colors = colorsRef.current;
-      const from = colorFromRef.current;
       const hold = holdHeightsRef.current;
-      let stillFading = false;
-
-      for (let i = 0; i < layout.length; i++) {
-        const item = layout[i];
-        const span = item.riseHeight - hold[i];
-        // Tie colour to how far this building has travelled, so the two
-        // move as one gesture instead of recolouring then dropping. A
-        // building whose height is unchanged has an unchanged colour too,
-        // since both derive from the same normalized value.
-        const travelled =
-          Math.abs(span) < 1e-6
-            ? 1
-            : Math.min(1, Math.max(0, (heights[i] - hold[i]) / span));
-
-        if (travelled < 1) stillFading = true;
-
-        const base = i * 3;
-        const target = item.color;
-        colors[base] = from[base] + (target.r - from[base]) * travelled;
-        colors[base + 1] =
-          from[base + 1] + (target.g - from[base + 1]) * travelled;
-        colors[base + 2] =
-          from[base + 2] + (target.b - from[base + 2]) * travelled;
-      }
-
-      writeColors(mesh, colors, layout.length);
-      colorFadingRef.current = stillFading;
+      colorFadingRef.current = fadeColors(
+        mesh,
+        layout,
+        colorsRef.current,
+        colorFromRef.current,
+        (i) => {
+          // Tie colour to how far this building has travelled, so the two
+          // move as one gesture instead of recolouring then dropping. A
+          // building whose height is unchanged has an unchanged colour
+          // too, since both derive from the same normalized value.
+          const span = layout[i].riseHeight - hold[i];
+          if (Math.abs(span) < 1e-6) return 1;
+          return Math.min(1, Math.max(0, (heights[i] - hold[i]) / span));
+        },
+      );
     }
   });
 
@@ -432,6 +450,39 @@ export function CityBuildings({
       <meshLambertMaterial />
     </instancedMesh>
   );
+}
+
+/**
+ * Advances the colour fade and pushes it to the mesh. Returns whether any
+ * instance is still short of its target.
+ *
+ * `progressOf` is supplied per call because the two states measure
+ * progress differently: raised buildings tie colour to how far they have
+ * travelled, so the two read as one gesture, while a flat grid has no
+ * height motion to couple to and falls back to elapsed time.
+ */
+function fadeColors(
+  mesh: THREE.InstancedMesh,
+  layout: BuildingLayout[],
+  colors: Float32Array,
+  from: Float32Array,
+  progressOf: (index: number) => number,
+): boolean {
+  let stillFading = false;
+
+  for (let i = 0; i < layout.length; i++) {
+    const progress = progressOf(i);
+    if (progress < 1) stillFading = true;
+
+    const base = i * 3;
+    const target = layout[i].color;
+    colors[base] = from[base] + (target.r - from[base]) * progress;
+    colors[base + 1] = from[base + 1] + (target.g - from[base + 1]) * progress;
+    colors[base + 2] = from[base + 2] + (target.b - from[base + 2]) * progress;
+  }
+
+  writeColors(mesh, colors, layout.length);
+  return stillFading;
 }
 
 function writeColors(
