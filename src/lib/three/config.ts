@@ -71,7 +71,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   zoomPadding: 0.6,
 
   sceneMaxHeight: 8,
-  groundTileHeight: 0.4,
+  groundTileHeight: 0.04,
   cellGap: 0.24,
   cornerRadiusRatio: 0.24,
 
@@ -169,7 +169,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
     title: "Geometry",
     controls: [
       { key: "sceneMaxHeight", label: "Max height", min: 1, max: 20, step: 0.5 },
-      { key: "groundTileHeight", label: "Ground tile", min: 0.002, max: 0.8, step: 0.002 },
+      { key: "groundTileHeight", label: "Ground tile", min: 0.002, max: 0.3, step: 0.002 },
       { key: "cellGap", label: "Cell gap", min: 0, max: 1, step: 0.01 },
       { key: "cornerRadiusRatio", label: "Corner radius", min: 0, max: 0.5, step: 0.01 },
     ],
