@@ -168,7 +168,13 @@ export function CameraRig({
       // Throttled, and only when it actually moved: this drives React
       // state, so reporting every frame would re-render continuously.
       const last = lastOrbitReport.current;
+      // No previous report yet. Comparing against NaN yields NaN, which is
+      // never greater than the epsilon, so this has to be handled up front
+      // or the first report never fires and the values stay NaN forever.
+      const firstReport =
+        !Number.isFinite(last.phi) || !Number.isFinite(last.theta);
       const moved =
+        firstReport ||
         Math.abs(orbited.phi - last.phi) > ORBIT_REPORT_EPSILON ||
         Math.abs(orbited.theta - last.theta) > ORBIT_REPORT_EPSILON;
 
