@@ -74,7 +74,12 @@ export function GridLabels({
         return (
           <span
             key={name}
-            className="absolute -translate-y-1/2 text-right"
+            // The vertical centring lives in the transform below, and
+            // only there. Tailwind's -translate-y-1/2 sets the standalone
+            // `translate` property in v4, which composes with `transform`
+            // rather than being overridden by it -- so having both shifted
+            // every label a full line-box up instead of half.
+            className="absolute text-right"
             style={{
               left: left - halfCell - 8,
               top,
