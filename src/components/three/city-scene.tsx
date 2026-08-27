@@ -251,6 +251,7 @@ export function CityScene({
               tiles={tiles}
               weekCount={weekCount}
               target={target}
+              progressRef={progressRef}
               riseKey={period.id}
               config={config}
               reducedMotion={reducedMotion}

@@ -25,6 +25,12 @@ export type SceneConfig = {
   staggerCurve: number;
   /** Flattening is eased rather than sprung, over this long. */
   flattenDurationMs: number;
+  /**
+   * How far the camera must have tilted before the rise starts, 0..1.
+   * Straight down under orthographic projection shows no height at all,
+   * so a wave that runs while the camera is still overhead is invisible.
+   */
+  riseStartProgress: number;
 
   // --- Camera transform ---
   transformDurationMs: number;
@@ -56,6 +62,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   staggerTotalMs: 400,
   staggerCurve: 1,
   flattenDurationMs: 800,
+  riseStartProgress: 0.28,
 
   transformDurationMs: 800,
   flatPolarDeg: 2,
@@ -137,6 +144,14 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 1600,
         step: 20,
         hint: "Eased, never sprung",
+      },
+      {
+        key: "riseStartProgress",
+        label: "Rise start",
+        min: 0,
+        max: 0.8,
+        step: 0.01,
+        hint: "Tilt reached before rising",
       },
     ],
   },

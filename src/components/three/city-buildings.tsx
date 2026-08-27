@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { ContributionDay } from "@/lib/contributions/types";
@@ -46,6 +46,8 @@ type CityBuildingsProps = {
   weekCount: number;
   /** 1 while the city is wanted, 0 while flattening. */
   target: number;
+  /** Shared camera transform progress, 0..1. */
+  progressRef: RefObject<number>;
   /**
    * Identity of what is being shown. Changing it replays the staggered
    * rise, so switching year rebuilds the city rather than silently
@@ -71,6 +73,7 @@ export function CityBuildings({
   tiles,
   weekCount,
   target,
+  progressRef,
   riseKey,
   config,
   reducedMotion,
@@ -151,6 +154,17 @@ export function CityBuildings({
   const velocitiesRef = useRef<Float32Array>(new Float32Array(0));
   /** Heights when the current flatten began, for the eased descent. */
   const flattenFromRef = useRef<Float32Array>(new Float32Array(0));
+  /**
+   * Height each building holds at until its column's delay elapses.
+   *
+   * Ground level when rising from flat, so the wave has something to
+   * travel across. The *current* height when the period changes, so
+   * switching year morphs each column in turn instead of collapsing the
+   * city and rebuilding it.
+   */
+  const holdHeightsRef = useRef<Float32Array>(new Float32Array(0));
+  /** False until the camera has tilted far enough for height to read. */
+  const riseStartedRef = useRef(false);
 
   const elapsedRef = useRef(0);
   const accumulatorRef = useRef(0);
@@ -166,6 +180,7 @@ export function CityBuildings({
     heightsRef.current = next;
     velocitiesRef.current = new Float32Array(layout.length);
     flattenFromRef.current = next.slice();
+    holdHeightsRef.current = next.slice();
   }, [layout]);
 
   useFrame((_, delta) => {
@@ -189,9 +204,17 @@ export function CityBuildings({
       elapsedRef.current = 0;
       accumulatorRef.current = 0;
 
-      // Drop back to the ground so the wave has something to travel
-      // across; a rise that starts from full height is invisible.
-      if (target === 1 && !reducedMotion) {
+      // A change of direction starts the rise from the ground and waits
+      // for the camera; a change of period keeps the city standing and
+      // morphs it column by column, starting immediately because the
+      // camera is already tilted.
+      riseStartedRef.current = !directionChanged;
+
+      const hold = holdHeightsRef.current;
+      for (let i = 0; i < layout.length; i++) {
+        hold[i] = directionChanged ? layout[i].restHeight : heights[i];
+      }
+      if (directionChanged && target === 1 && !reducedMotion) {
         for (let i = 0; i < layout.length; i++) {
           heights[i] = layout[i].restHeight;
           velocities[i] = 0;
@@ -201,7 +224,13 @@ export function CityBuildings({
       flattenFromRef.current = heights.slice();
     }
 
-    elapsedRef.current += delta * 1000;
+    // Under orthographic projection a straight-down camera shows no
+    // height whatsoever, so a wave that plays while the camera is still
+    // overhead is invisible. Hold the clock until the tilt is readable.
+    if (!riseStartedRef.current && progressRef.current >= config.riseStartProgress) {
+      riseStartedRef.current = true;
+    }
+    if (riseStartedRef.current) elapsedRef.current += delta * 1000;
     const elapsed = elapsedRef.current;
 
     if (reducedMotion) {
@@ -251,7 +280,9 @@ export function CityBuildings({
         const item = layout[i];
         // Held at rest until this column's turn.
         const springTarget =
-          elapsed >= item.delayMs ? item.riseHeight : item.restHeight;
+          riseStartedRef.current && elapsed >= item.delayMs
+            ? item.riseHeight
+            : holdHeightsRef.current[i];
 
         const stepped = stepSpring(
           heights[i],
@@ -261,7 +292,7 @@ export function CityBuildings({
           SPRING_TIMESTEP_S,
         );
         // Never let a bounce sink a building through the ground.
-        heights[i] = Math.max(stepped.value, item.restHeight);
+        heights[i] = Math.max(stepped.value, layout[i].restHeight);
         velocities[i] = stepped.velocity;
       }
       accumulatorRef.current -= SPRING_TIMESTEP_S;
