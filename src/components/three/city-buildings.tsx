@@ -23,7 +23,7 @@ import {
   stepSpring,
 } from "@/lib/three/spring";
 import type { SceneConfig } from "@/lib/three/config";
-import { contributionRampColor, palette } from "@/lib/theme/palette";
+import { contributionRampColor, palette, waveRampColor } from "@/lib/theme/palette";
 
 /** Reused scratch objects — allocating per frame would churn the GC. */
 const scratchMatrix = new THREE.Matrix4();
@@ -324,24 +324,35 @@ export function CityBuildings({
     const elapsed = elapsedRef.current;
 
     if (waving) {
-      // A search is in flight. Height and colour come from one sine, so
-      // the same wave reads in both states: colour carries it while the
-      // camera is flat, height takes over the moment there is any tilt.
+      // A search is in flight. The wave is purely a colour wave: it only
+      // ever runs in the flat state, where an orthographic camera looking
+      // straight down renders no height at all, so driving height here
+      // would be work nobody can see.
+      //
+      // Heights instead ease to the ground on the flatten's own budget,
+      // because the search is what flattened the city in the first place
+      // and that descent is still readable through the tilt.
       waveElapsedRef.current += delta;
 
       const colors = colorsRef.current;
       const elapsedSeconds = waveElapsedRef.current;
+      const descent = easeInOutCubic(
+        Math.min(
+          1,
+          (elapsedSeconds * 1000) / Math.max(1, config.flattenDurationMs),
+        ),
+      );
+      const from = flattenFromRef.current;
 
       for (let i = 0; i < layout.length; i++) {
         const item = layout[i];
         const amount = reducedMotion ? 0.5 : waveAt(item.weekIndex, elapsedSeconds);
 
-        heights[i] =
-          item.restHeight + (item.riseHeight - item.restHeight) * amount;
+        heights[i] = from[i] + (item.restHeight - from[i]) * descent;
         velocities[i] = 0;
         writeInstance(mesh, i, item, heights[i]);
 
-        scratchColor.set(contributionRampColor(amount, true));
+        scratchColor.set(waveRampColor(amount));
         const base = i * 3;
         colors[base] = scratchColor.r;
         colors[base + 1] = scratchColor.g;

@@ -83,3 +83,17 @@ export function contributionRampColor(
   if (!hasContributions) return levelColors[0];
   return rgbToHex(oklchToRgb(lerpOklch(rampStart, rampEnd, normalized)));
 }
+
+/**
+ * Ramp for the loading wave, which runs only in the flat state.
+ *
+ * It starts at the neutral ground colour rather than at the lightest
+ * green, so the wave travels the full distance from an empty city to a
+ * full one. The contribution ramp deliberately skips that stretch —
+ * there, cream means "no contributions" and must not read as a low count.
+ */
+const waveStart = rgbToOklch(hexToRgb(levelColors[0]));
+
+export function waveRampColor(amount: number): string {
+  return rgbToHex(oklchToRgb(lerpOklch(waveStart, rampEnd, amount)));
+}

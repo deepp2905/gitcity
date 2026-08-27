@@ -5,10 +5,10 @@
  * Driven per column rather than per day, so each week moves as one unit
  * and the wave reads as a single front crossing the city instead of noise.
  *
- * The same value drives height *and* colour. Under orthographic
- * projection a straight-down camera shows no height at all, so in the flat
- * state a height-only wave would be invisible; colour is what carries it
- * there, and height carries it the moment there is any tilt.
+ * It drives colour only. The wave runs exclusively in the flat state,
+ * where an orthographic camera looking straight down renders no height
+ * whatsoever, so colour is the only channel that can carry it: each
+ * column sweeps between the neutral ground cream and the deepest green.
  */
 
 /** Columns per full wavelength. Roughly a quarter of a year per crest. */
