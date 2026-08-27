@@ -5,6 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { ContributionDay } from "@/lib/contributions/types";
 import { maxCountOf } from "@/lib/contributions/grid";
+import { normalizeCount, scaleHeight } from "@/lib/contributions/height";
 import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
@@ -125,13 +126,18 @@ export function CityBuildings({
       }
 
       const { day } = tile;
-      // The same sqrt-normalized value drives both height and color, so
-      // a taller building is always a deeper green.
-      const normalized = maxCount > 0 ? Math.sqrt(day.count / maxCount) : 0;
+      // One normalized value drives both height and color, so a taller
+      // building is always a deeper green. Switching the scale therefore
+      // changes both, which is what makes the comparison honest: linear
+      // flattens the palette exactly as it flattens the skyline.
+      const normalized = normalizeCount(
+        day.count,
+        maxCount,
+        config.heightScale,
+      );
       const scaled =
         day.count > 0
-          ? config.groundTileHeight +
-            normalized * (1 - config.groundTileHeight)
+          ? scaleHeight(normalized, config.groundTileHeight)
           : config.groundTileHeight;
 
       return {

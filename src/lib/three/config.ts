@@ -1,3 +1,5 @@
+import type { HeightScale } from "@/lib/contributions/height";
+
 /**
  * Every tunable constant for the scene, in one place.
  *
@@ -8,6 +10,13 @@
  */
 
 export type SceneConfig = {
+  /**
+   * How a day's count maps onto height. "sqrt" lifts the low end so
+   * ordinary days still read as buildings; "linear" is exposed purely to
+   * compare the two in the dev panel.
+   */
+  heightScale: HeightScale;
+
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
   stiffness: number;
@@ -57,6 +66,8 @@ export type SceneConfig = {
 };
 
 export const DEFAULT_SCENE_CONFIG: SceneConfig = {
+  heightScale: "sqrt",
+
   stiffness: 190,
   dampingRatio: 0.4,
   staggerTotalMs: 400,
@@ -83,10 +94,14 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   maxShadowOpacity: 0.14,
 };
 
-export type ControlKind = "slider";
+/** Keys whose value is a number, and so drivable by a slider. */
+type NumericKey = {
+  [K in keyof SceneConfig]: SceneConfig[K] extends number ? K : never;
+}[keyof SceneConfig];
 
-export type ControlSpec = {
-  key: keyof SceneConfig;
+export type SliderSpec = {
+  kind: "slider";
+  key: NumericKey;
   label: string;
   min: number;
   max: number;
@@ -94,6 +109,16 @@ export type ControlSpec = {
   /** Short note shown under the control. */
   hint?: string;
 };
+
+export type ChoiceSpec = {
+  kind: "choice";
+  key: "heightScale";
+  label: string;
+  options: readonly { value: HeightScale; label: string }[];
+  hint?: string;
+};
+
+export type ControlSpec = SliderSpec | ChoiceSpec;
 
 export type ControlGroup = {
   title: string;
@@ -106,6 +131,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
     title: "Building spring",
     controls: [
       {
+        kind: "slider",
         key: "stiffness",
         label: "Stiffness",
         min: 20,
@@ -114,6 +140,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         hint: "Speed of the rise",
       },
       {
+        kind: "slider",
         key: "dampingRatio",
         label: "Damping ratio",
         min: 0.2,
@@ -122,6 +149,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         hint: "1 = no bounce, lower = bouncier",
       },
       {
+        kind: "slider",
         key: "staggerTotalMs",
         label: "Stagger total",
         min: 0,
@@ -130,6 +158,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         hint: "Time for the wave to cross",
       },
       {
+        kind: "slider",
         key: "staggerCurve",
         label: "Stagger curve",
         min: 0.3,
@@ -138,6 +167,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         hint: "1 = linear, >1 starts slow",
       },
       {
+        kind: "slider",
         key: "flattenDurationMs",
         label: "Flatten duration",
         min: 120,
@@ -146,6 +176,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         hint: "Eased, never sprung",
       },
       {
+        kind: "slider",
         key: "riseStartProgress",
         label: "Rise start",
         min: 0,
@@ -156,33 +187,63 @@ export const CONTROL_GROUPS: ControlGroup[] = [
     ],
   },
   {
+    title: "Height scale",
+    controls: [
+      {
+        kind: "choice",
+        key: "heightScale",
+        label: "Curve",
+        options: [
+          { value: "sqrt", label: "Square root" },
+          { value: "linear", label: "Linear" },
+        ],
+        hint: "Linear lets one busy day flatten the rest",
+      },
+    ],
+  },
+  {
     title: "Camera",
     controls: [
-      { key: "transformDurationMs", label: "Transform", min: 200, max: 2500, step: 25 },
-      { key: "flatPolarDeg", label: "Flat angle", min: 0.5, max: 12, step: 0.5 },
-      { key: "cityPolarDeg", label: "City angle", min: 15, max: 80, step: 1 },
-      { key: "cityAzimuthDeg", label: "Azimuth", min: -180, max: 180, step: 1 },
-      { key: "zoomPadding", label: "Zoom padding", min: 0.5, max: 1, step: 0.01 },
+      { kind: "slider",
+        key: "transformDurationMs", label: "Transform", min: 200, max: 2500, step: 25 },
+      { kind: "slider",
+        key: "flatPolarDeg", label: "Flat angle", min: 0.5, max: 12, step: 0.5 },
+      { kind: "slider",
+        key: "cityPolarDeg", label: "City angle", min: 15, max: 80, step: 1 },
+      { kind: "slider",
+        key: "cityAzimuthDeg", label: "Azimuth", min: -180, max: 180, step: 1 },
+      { kind: "slider",
+        key: "zoomPadding", label: "Zoom padding", min: 0.5, max: 1, step: 0.01 },
     ],
   },
   {
     title: "Geometry",
     controls: [
-      { key: "sceneMaxHeight", label: "Max height", min: 1, max: 20, step: 0.5 },
-      { key: "groundTileHeight", label: "Ground tile", min: 0.002, max: 0.3, step: 0.002 },
-      { key: "cellGap", label: "Cell gap", min: 0, max: 1, step: 0.01 },
-      { key: "cornerRadiusRatio", label: "Corner radius", min: 0, max: 0.5, step: 0.01 },
+      { kind: "slider",
+        key: "sceneMaxHeight", label: "Max height", min: 1, max: 20, step: 0.5 },
+      { kind: "slider",
+        key: "groundTileHeight", label: "Ground tile", min: 0.002, max: 0.3, step: 0.002 },
+      { kind: "slider",
+        key: "cellGap", label: "Cell gap", min: 0, max: 1, step: 0.01 },
+      { kind: "slider",
+        key: "cornerRadiusRatio", label: "Corner radius", min: 0, max: 0.5, step: 0.01 },
     ],
   },
   {
     title: "Light and shadow",
     controls: [
-      { key: "ambientIntensity", label: "Ambient", min: 0, max: 4, step: 0.05 },
-      { key: "directionalIntensity", label: "Directional", min: 0, max: 5, step: 0.05 },
-      { key: "lightX", label: "Light X", min: -100, max: 100, step: 1 },
-      { key: "lightY", label: "Light Y", min: 5, max: 150, step: 1 },
-      { key: "lightZ", label: "Light Z", min: -100, max: 100, step: 1 },
-      { key: "maxShadowOpacity", label: "Shadow", min: 0, max: 0.6, step: 0.01 },
+      { kind: "slider",
+        key: "ambientIntensity", label: "Ambient", min: 0, max: 4, step: 0.05 },
+      { kind: "slider",
+        key: "directionalIntensity", label: "Directional", min: 0, max: 5, step: 0.05 },
+      { kind: "slider",
+        key: "lightX", label: "Light X", min: -100, max: 100, step: 1 },
+      { kind: "slider",
+        key: "lightY", label: "Light Y", min: 5, max: 150, step: 1 },
+      { kind: "slider",
+        key: "lightZ", label: "Light Z", min: -100, max: 100, step: 1 },
+      { kind: "slider",
+        key: "maxShadowOpacity", label: "Shadow", min: 0, max: 0.6, step: 0.01 },
     ],
   },
 ];

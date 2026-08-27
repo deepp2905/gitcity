@@ -1,30 +1,41 @@
 /**
- * Square-root building-height scale for the 3D skyline.
+ * Building-height scale for the 3D skyline.
  *
- * Zero-contribution days stay thin ground tiles, distinct from the small
- * base a real (low-count) building starts at. Each period is normalized
- * independently by its own `maxCount`, per spec.
+ * Each period is normalized independently by its own `maxCount`, per
+ * spec, so a sparse year still produces a readable skyline rather than a
+ * flat lot. The trade-off is that heights are not comparable between
+ * periods; the tooltip carries the exact count.
  */
 
-/** Thin ground-tile height for days with zero contributions. */
-export const GROUND_TILE_HEIGHT = 0.04;
-
-/** Smallest height a building (count >= 1) can have. */
-export const BUILDING_MIN_HEIGHT = 0.12;
-
-/** Fixed scene maximum every period's tallest building reaches. */
-export const BUILDING_MAX_HEIGHT = 1;
+export type HeightScale = "sqrt" | "linear";
 
 /**
- * `normalized = sqrt(count / maxCount)`, mapped onto
- * [BUILDING_MIN_HEIGHT, BUILDING_MAX_HEIGHT] for active days, or
- * GROUND_TILE_HEIGHT for zero-contribution days.
+ * Where a count sits within its period, as 0..1.
+ *
+ * Contribution data is heavily skewed: a single busy day sets `maxCount`
+ * and, under a linear scale, flattens every ordinary day against it. The
+ * square root lifts the low end so those days still read as buildings —
+ * at 1/82 of the max it returns 0.11 rather than 0.01.
+ *
+ * `linear` is offered for comparison in the dev tuning panel.
  */
-export function computeBuildingHeight(count: number, maxCount: number): number {
-  if (count <= 0 || maxCount <= 0) return GROUND_TILE_HEIGHT;
+export function normalizeCount(
+  count: number,
+  maxCount: number,
+  scale: HeightScale = "sqrt",
+): number {
+  if (count <= 0 || maxCount <= 0) return 0;
 
-  const normalized = Math.sqrt(Math.min(count, maxCount) / maxCount);
-  return (
-    BUILDING_MIN_HEIGHT + normalized * (BUILDING_MAX_HEIGHT - BUILDING_MIN_HEIGHT)
-  );
+  const fraction = Math.min(count, maxCount) / maxCount;
+  return scale === "sqrt" ? Math.sqrt(fraction) : fraction;
+}
+
+/**
+ * Maps a normalized 0..1 value onto [floor, 1].
+ *
+ * The floor is reserved, not added: the data gets the remaining range, so
+ * raising it compresses the skyline rather than lifting it.
+ */
+export function scaleHeight(normalized: number, floor: number): number {
+  return floor + normalized * (1 - floor);
 }

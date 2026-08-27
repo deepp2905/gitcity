@@ -25,17 +25,15 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
   const [open, setOpen] = useState(false);
   const [copiedGroup, setCopiedGroup] = useState<string | null>(null);
 
-  function set(key: keyof SceneConfig, value: number) {
-    onChange({ ...config, [key]: value });
-  }
-
   /** Restores just this section, leaving other sections as tuned. */
   function resetGroup(group: ControlGroup) {
-    const restored: Partial<SceneConfig> = {};
+    const next = { ...config };
     for (const control of group.controls) {
-      restored[control.key] = DEFAULT_SCENE_CONFIG[control.key];
+      // Key and value are drawn from the same shape, but TypeScript can't
+      // correlate a union of keys with its matching union of value types.
+      Object.assign(next, { [control.key]: DEFAULT_SCENE_CONFIG[control.key] });
     }
-    onChange({ ...config, ...restored });
+    onChange(next);
   }
 
   /** Copies just this section's values, ready to paste over the matching
@@ -107,16 +105,53 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
             </span>
           </legend>
 
-          {group.controls.map((control) => {
-            const value = config[control.key];
-            return (
+          {group.controls.map((control) =>
+            control.kind === "choice" ? (
+              <div key={control.key} className="mb-2">
+                <span className="text-xs text-ink-muted">{control.label}</span>
+                <div
+                  role="tablist"
+                  aria-label={control.label}
+                  className="mt-1 flex gap-1 rounded-lg border border-border p-0.5"
+                >
+                  {control.options.map((option) => {
+                    const active = config[control.key] === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() =>
+                          onChange({ ...config, [control.key]: option.value })
+                        }
+                        className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                          active
+                            ? "bg-ink text-white"
+                            : "text-ink-muted hover:bg-ink/5"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {control.hint ? (
+                  <span className="text-[10px] text-ink-subtle">
+                    {control.hint}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
               <label key={control.key} className="mb-2 block">
                 <span className="flex items-baseline justify-between gap-2">
                   <span className="text-xs text-ink-muted">{control.label}</span>
                   <span className="text-xs tabular-nums text-ink">
                     {Number.isInteger(control.step)
-                      ? value
-                      : value.toFixed(String(control.step).split(".")[1]?.length ?? 2)}
+                      ? config[control.key]
+                      : config[control.key].toFixed(
+                          String(control.step).split(".")[1]?.length ?? 2,
+                        )}
                   </span>
                 </span>
                 <input
@@ -124,9 +159,12 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                   min={control.min}
                   max={control.max}
                   step={control.step}
-                  value={value}
+                  value={config[control.key]}
                   onChange={(event) =>
-                    set(control.key, Number(event.target.value))
+                    onChange({
+                      ...config,
+                      [control.key]: Number(event.target.value),
+                    })
                   }
                   className="mt-1 w-full accent-[var(--color-accent)]"
                 />
@@ -136,8 +174,8 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                   </span>
                 ) : null}
               </label>
-            );
-          })}
+            ),
+          )}
         </fieldset>
       ))}
 
