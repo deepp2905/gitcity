@@ -29,6 +29,15 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
     onChange({ ...config, [key]: value });
   }
 
+  /** Restores just this section, leaving other sections as tuned. */
+  function resetGroup(group: ControlGroup) {
+    const restored: Partial<SceneConfig> = {};
+    for (const control of group.controls) {
+      restored[control.key] = DEFAULT_SCENE_CONFIG[control.key];
+    }
+    onChange({ ...config, ...restored });
+  }
+
   /** Copies just this section's values, ready to paste over the matching
    * block of DEFAULT_SCENE_CONFIG. */
   function copyGroup(group: ControlGroup) {
@@ -80,13 +89,22 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         <fieldset key={group.title} className="mb-3 border-0 p-0">
           <legend className="mb-1 flex w-full items-center justify-between gap-2">
             <span className="text-xs font-semibold text-ink">{group.title}</span>
-            <button
-              type="button"
-              onClick={() => copyGroup(group)}
-              className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
-            >
-              {copiedGroup === group.title ? "Copied" : "Copy"}
-            </button>
+            <span className="flex gap-0.5">
+              <button
+                type="button"
+                onClick={() => copyGroup(group)}
+                className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+              >
+                {copiedGroup === group.title ? "Copied" : "Copy"}
+              </button>
+              <button
+                type="button"
+                onClick={() => resetGroup(group)}
+                className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+              >
+                Reset
+              </button>
+            </span>
           </legend>
 
           {group.controls.map((control) => {
