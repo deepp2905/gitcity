@@ -1,0 +1,54 @@
+/**
+ * The loading wave: a sine travelling across the week columns while a
+ * search is in flight.
+ *
+ * Driven per column rather than per day, so each week moves as one unit
+ * and the wave reads as a single front crossing the city instead of noise.
+ *
+ * The same value drives height *and* colour. Under orthographic
+ * projection a straight-down camera shows no height at all, so in the flat
+ * state a height-only wave would be invisible; colour is what carries it
+ * there, and height carries it the moment there is any tilt.
+ */
+
+/** Columns per full wavelength. Roughly a quarter of a year per crest. */
+export const WAVE_WAVELENGTH_COLUMNS = 13;
+
+/** Crests per second. */
+export const WAVE_SPEED_HZ = 0.55;
+
+/**
+ * How much per-column randomness rides on top, as a fraction of the
+ * amplitude. Enough to stop it looking like a rendered formula, small
+ * enough that the front still reads as a front.
+ */
+export const WAVE_JITTER = 0.22;
+
+/** Deterministic per-column offset in -1..1, so a column keeps the same
+ * character frame to frame rather than shimmering. */
+export function columnJitter(weekIndex: number): number {
+  const hashed = Math.sin(weekIndex * 12.9898 + 78.233) * 43758.5453;
+  return (hashed - Math.floor(hashed)) * 2 - 1;
+}
+
+/**
+ * Wave amplitude for a column at a point in time, as 0..1.
+ *
+ * `elapsedSeconds` rather than a frame count so the wave runs at the same
+ * speed whatever the frame rate.
+ */
+export function waveAt(
+  weekIndex: number,
+  elapsedSeconds: number,
+  jitterAmount = WAVE_JITTER,
+): number {
+  const phase =
+    elapsedSeconds * WAVE_SPEED_HZ * Math.PI * 2 -
+    (weekIndex / WAVE_WAVELENGTH_COLUMNS) * Math.PI * 2;
+
+  // sin is -1..1; shift to 0..1 so it maps straight onto height and colour.
+  const base = 0.5 + 0.5 * Math.sin(phase);
+  const jittered = base + columnJitter(weekIndex) * jitterAmount;
+
+  return jittered > 0 ? (jittered < 1 ? jittered : 1) : 0;
+}
