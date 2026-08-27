@@ -13,10 +13,6 @@ export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
-export function radToDeg(radians: number): number {
-  return (radians * 180) / Math.PI;
-}
-
 /**
  * Not exactly 0°: at a perfectly vertical view the camera's up vector is
  * parallel to its view direction and lookAt degenerates. 2° keeps the
@@ -84,10 +80,9 @@ export function lerp(a: number, b: number, t: number): number {
 /**
  * Interpolates the camera between the flat view and a tilted view.
  *
- * The tilted end is a parameter rather than a constant because orbiting
- * redefines it: wherever the user leaves the camera becomes the "3D"
- * end of the transform, so flattening from a manually orbited angle
- * travels from exactly where they are instead of snapping back first.
+ * Both ends are parameters rather than constants so the scene can drive
+ * them from config, which is what makes the camera-angle controls take
+ * effect live.
  */
 export function lerpView(
   t: number,
@@ -103,21 +98,6 @@ export function lerpView(
   return {
     phi: lerp(flatView.phi, cityView.phi, eased),
     theta: flatView.theta + thetaDelta * eased,
-  };
-}
-
-/** Inverse of sphericalToCartesian — recovers the angles the user has
- * orbited to, so the rig can adopt them as the tilted view. */
-export function cartesianToSpherical(
-  x: number,
-  y: number,
-  z: number,
-): CameraView {
-  const radius = Math.hypot(x, y, z);
-  if (radius === 0) return { ...CITY_VIEW };
-  return {
-    phi: Math.acos(Math.min(1, Math.max(-1, y / radius))),
-    theta: Math.atan2(x, z),
   };
 }
 

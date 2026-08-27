@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
 import type { ViewMode } from "@/lib/state/url-state";
 import { formatDayLabel } from "@/lib/contributions/grid";
@@ -19,7 +18,6 @@ import {
 import {
   degToRad,
   fitZoomForView,
-  radToDeg,
   type CameraView,
 } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
@@ -99,79 +97,6 @@ export function CityScene({
     [config.cityPolarDeg, config.cityAzimuthDeg],
   );
 
-  /** Where the tilted view currently is. Orbiting rewrites this, so
-   * flattening later departs from wherever the user left the camera. */
-  const cityViewRef = useRef<CameraView>({ ...configCityView });
-
-  /** Queued placement for the rig to apply while OrbitControls has the
-   * camera. Without this, tuning the angles did nothing until a 2D round
-   * trip handed control back to the rig. */
-  const cameraOverrideRef = useRef<CameraView | null>(null);
-
-  /**
-   * The last angles the orbit itself pushed into config.
-   *
-   * Orbiting updates the sliders, and a slider change moves the camera --
-   * so without recognising its own echo, the effect below would queue an
-   * override on every frame of a drag and fight the user's mouse.
-   */
-  const orbitEchoRef = useRef<{ polar: number; azimuth: number } | null>(null);
-
-  const handleOrbit = useCallback((orbited: CameraView) => {
-    const polar = Math.round(radToDeg(orbited.phi));
-    const azimuth = Math.round(radToDeg(orbited.theta));
-
-    setConfig((previous) => {
-      if (
-        previous.cityPolarDeg === polar &&
-        previous.cityAzimuthDeg === azimuth
-      ) {
-        return previous;
-      }
-      orbitEchoRef.current = { polar, azimuth };
-      return { ...previous, cityPolarDeg: polar, cityAzimuthDeg: azimuth };
-    });
-  }, []);
-
-  // Angles changed: go there -- unless the change came from the orbit.
-  useEffect(() => {
-    cityViewRef.current = { ...configCityView };
-
-    const echo = orbitEchoRef.current;
-    if (
-      echo &&
-      echo.polar === config.cityPolarDeg &&
-      echo.azimuth === config.cityAzimuthDeg
-    ) {
-      orbitEchoRef.current = null;
-      return;
-    }
-
-    cameraOverrideRef.current = { ...configCityView };
-  }, [configCityView, config.cityPolarDeg, config.cityAzimuthDeg]);
-
-  // Framing changed: keep the current angle, but re-fit.
-  useEffect(() => {
-    cameraOverrideRef.current = { ...cityViewRef.current };
-  }, [config.zoomPadding, config.sceneMaxHeight, config.cellGap]);
-
-  /** True once the transform has arrived and the user may orbit. */
-  const [orbiting, setOrbiting] = useState(false);
-
-  // Flattening resets the angle: the transform always returns to the
-  // scripted flat view, so a separate reset control has nothing to do.
-  const resetCityView = useCallback(() => {
-    cityViewRef.current = { ...configCityView };
-  }, [configCityView]);
-
-  // Only once the flatten has fully arrived. Resetting as soon as a
-  // flatten was requested snapped the camera to the default tilted view
-  // and animated from there, instead of departing from wherever the user
-  // had orbited to.
-  useEffect(() => {
-    if (target === 0 && labelProgress === 0) resetCityView();
-  }, [target, labelProgress, resetCityView]);
-
   // Tiles, not raw days: a year still in progress is padded out to its
   // full calendar year so every year keeps the same footprint.
   // Memoized deliberately. These feed the buildings' layout memo, and the
@@ -244,10 +169,9 @@ export function CityScene({
   useEffect(() => cancelDismiss, [cancelDismiss]);
 
   /**
-   * Clicking the scene toggles the view, but the same gesture also drives
-   * orbit once the city has arrived. Distinguish them by movement: a
-   * press that barely moves is a click, anything further is a drag and
-   * belongs to OrbitControls.
+   * Clicking the scene toggles the view. Movement still disqualifies a
+   * press: a drag across the scene is someone selecting or gesturing, not
+   * asking to transform, and toggling under them would be a surprise.
    */
   const pressRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -379,10 +303,8 @@ export function CityScene({
             <CameraRig
               target={target}
               progressRef={progressRef}
-              cityViewRef={cityViewRef}
               flatView={flatView}
-              cameraOverrideRef={cameraOverrideRef}
-              orbiting={orbiting}
+              cityView={configCityView}
               gridWidth={sceneWidth}
               gridDepth={sceneDepth}
               maxHeight={config.sceneMaxHeight}
@@ -392,22 +314,10 @@ export function CityScene({
               zoomPadding={config.zoomPadding}
               reducedMotion={reducedMotion}
               onProgress={setLabelProgress}
-              onSettled={setOrbiting}
-              onOrbit={handleOrbit}
             />
 
             {/* Guided orbit: only once the city has arrived, and never
                 pan, flip under the ground, or zoom out of frame. */}
-            <OrbitControls
-              enabled={orbiting}
-              enablePan={false}
-              enableDamping
-              dampingFactor={0.08}
-              minPolarAngle={Math.PI * 0.08}
-              maxPolarAngle={Math.PI * 0.47}
-              minZoom={baseZoom * 0.4}
-              maxZoom={baseZoom * 4}
-            />
           </Canvas>
         ) : null}
 

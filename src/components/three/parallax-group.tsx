@@ -31,10 +31,10 @@ type ParallaxGroupProps = {
 /**
  * Leans the city slightly toward the pointer.
  *
- * The city rotates, not the camera: once the transform settles the camera
- * belongs to OrbitControls, and writing to it here would fight both the
- * user's drag and the controls' damping. Rotating the group instead
- * composes with orbiting rather than competing with it.
+ * The city rotates, not the camera. The rig owns the camera and rewrites
+ * it every frame from the transform, so a lean written there would be
+ * overwritten immediately. Rotating the group composes with the transform
+ * instead of competing with it.
  *
  * The range is bounded by construction. The pointer is normalized to
  * -1..1 across the viewport and multiplied by a fixed maximum, so the

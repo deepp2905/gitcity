@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   CITY_VIEW,
   FLAT_VIEW,
-  cartesianToSpherical,
   columnProgress,
   easeInOutCubic,
   easeOutCubic,
@@ -84,36 +83,19 @@ describe("lerpView", () => {
   });
 });
 
-describe("cartesianToSpherical", () => {
-  it("inverts sphericalToCartesian", () => {
-    for (const view of [FLAT_VIEW, CITY_VIEW, { phi: 0.9, theta: -2.1 }]) {
-      const p = sphericalToCartesian(view.phi, view.theta, 220);
-      const recovered = cartesianToSpherical(p.x, p.y, p.z);
-      expect(recovered.phi).toBeCloseTo(view.phi, 5);
-      expect(recovered.theta).toBeCloseTo(view.theta, 5);
-    }
-  });
-
-  it("falls back to the city view at the origin rather than producing NaN", () => {
-    const recovered = cartesianToSpherical(0, 0, 0);
-    expect(Number.isFinite(recovered.phi)).toBe(true);
-    expect(Number.isFinite(recovered.theta)).toBe(true);
-  });
-});
-
 describe("lerpView with a custom tilted view", () => {
-  it("ends at whatever angle the user orbited to", () => {
+  it("ends at whatever tilted angle it is given", () => {
     const orbited = { phi: 1.1, theta: 2.4 };
     const end = lerpView(1, orbited);
     expect(end.phi).toBeCloseTo(orbited.phi);
     expect(end.theta).toBeCloseTo(orbited.theta);
   });
 
-  it("still starts flat, so the 2D state is unaffected by orbiting", () => {
+  it("still starts flat whatever the tilted end is", () => {
     expect(lerpView(0, { phi: 1.1, theta: 2.4 })).toEqual(FLAT_VIEW);
   });
 
-  it("takes the short way around when the user orbited past half a turn", () => {
+  it("takes the short way around past half a turn", () => {
     // theta just under -PI should travel forward through -PI, not all the
     // way back around through 0.
     const mid = lerpView(0.5, { phi: 0.9, theta: -3.0 });
