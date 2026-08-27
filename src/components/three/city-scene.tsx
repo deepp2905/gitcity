@@ -24,7 +24,7 @@ import {
 } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
 import { palette } from "@/lib/theme/palette";
-import { useElementSize } from "@/lib/hooks/use-element-size";
+import { useViewportSize } from "@/lib/hooks/use-viewport-size";
 import { CityBuildings } from "./city-buildings";
 import { CameraRig } from "./camera-rig";
 import { GridLabels } from "./grid-labels";
@@ -64,7 +64,9 @@ export function CityScene({
   isMobile,
   onToggleView,
 }: CitySceneProps) {
-  const [containerRef, size] = useElementSize();
+  // The scene fills the viewport, so read it directly instead of
+  // measuring the container.
+  const size = useViewportSize();
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
 
   /** Written every frame by the rig, read every frame by the buildings —
@@ -190,13 +192,16 @@ export function CityScene({
   );
 
   return (
-    <div className="relative">
+    // Fixed to the viewport and behind everything: the city is the page's
+    // backdrop, and the controls sit above it on their own stacking
+    // level. Pointer events stay on so the scene remains clickable and
+    // hoverable through the gaps between controls.
+    <div className="fixed inset-0 z-0">
       <div
-        ref={containerRef}
         // No border, background or radius: the canvas already clears to
         // the page colour, so the scene reads as part of the page rather
         // than a panel sitting on it.
-        className="relative h-[380px] w-full cursor-pointer sm:h-[560px]"
+        className="relative h-full w-full cursor-pointer"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}

@@ -134,8 +134,12 @@ export function CityApp() {
     data?.periods.find((p) => p.id === period) ?? data?.periods[0] ?? null;
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-6 py-12 sm:py-16">
-      <header className="flex flex-col items-center gap-6 text-center">
+    // The city is a fixed full-viewport backdrop behind this, so the page
+    // content sits on its own stacking level above it. pointer-events are
+    // off here and re-enabled per control, letting clicks and hovers reach
+    // the scene through every gap between them.
+    <main className="pointer-events-none relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-1 flex-col justify-between gap-8 px-6 py-8 sm:py-10">
+      <header className="pointer-events-auto flex flex-col items-center gap-6 text-center">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight text-ink text-balance sm:text-4xl">
             Build your contribution city
@@ -159,14 +163,14 @@ export function CityApp() {
       {error ? (
         <p
           role="alert"
-          className="mx-auto w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-3 text-sm text-danger"
+          className="pointer-events-auto mx-auto w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-3 text-sm text-danger"
         >
           {error.message}
         </p>
       ) : null}
 
       {isLoading && !data ? (
-        <p className="text-center text-sm text-ink-muted">
+        <p className="pointer-events-auto text-center text-sm text-ink-muted">
           Loading contributions…
         </p>
       ) : null}
@@ -181,7 +185,7 @@ export function CityApp() {
             onToggleView={handleToggleView}
           />
 
-          <div className="flex flex-col items-center gap-3">
+          <div className="pointer-events-auto flex flex-col items-center gap-3">
             <div className="flex flex-wrap items-center justify-center gap-2">
               <ProfileIdentity profile={data.profile} />
               <PeriodTabs
@@ -198,7 +202,7 @@ export function CityApp() {
         </>
       ) : null}
 
-      <footer className="mt-auto pt-4 text-center text-xs text-ink-subtle">
+      <footer className="pointer-events-auto pt-4 text-center text-xs text-ink-subtle">
         Data from GitHub. Not affiliated with GitHub, Inc.
       </footer>
     </main>

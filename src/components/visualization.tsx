@@ -15,7 +15,7 @@ const CityScene = dynamic(
   () => import("./three/city-scene").then((m) => m.CityScene),
   {
     ssr: false,
-    loading: () => <div className="h-[380px] w-full sm:h-[560px]" />,
+    loading: () => null,
   },
 );
 
