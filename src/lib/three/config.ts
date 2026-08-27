@@ -17,6 +17,9 @@ export type SceneConfig = {
    */
   heightScale: HeightScale;
 
+  /** Frame-rate readout in the corner of the viewport. */
+  showFps: boolean;
+
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
   stiffness: number;
@@ -85,21 +88,22 @@ export type SceneConfig = {
 
 export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   heightScale: "sqrt",
+  showFps: false,
 
   stiffness: 160,
   dampingRatio: 0.4,
   staggerTotalMs: 600,
   staggerCurve: 1,
-  flattenDurationMs: 800,
+  flattenDurationMs: 600,
 
   colorStaggerMs: 0,
   colorFadeMs: 280,
   riseStartProgress: 0.24,
 
-  transformDurationMs: 800,
+  transformDurationMs: 600,
   flatPolarDeg: 2,
-  cityPolarDeg: 52,
-  cityAzimuthDeg: -34,
+  cityPolarDeg: 63,
+  cityAzimuthDeg: -16,
   zoomPadding: 0.6,
 
   sceneMaxHeight: 8,
@@ -131,13 +135,23 @@ export type SliderSpec = {
   hint?: string;
 };
 
-export type ChoiceSpec = {
-  kind: "choice";
-  key: "heightScale";
-  label: string;
-  options: readonly { value: HeightScale; label: string }[];
-  hint?: string;
-};
+/** A control whose value is picked from a small fixed set. Written as a
+ * union per key so each spec's options are typed to that key's value. */
+export type ChoiceSpec =
+  | {
+      kind: "choice";
+      key: "heightScale";
+      label: string;
+      options: readonly { value: HeightScale; label: string }[];
+      hint?: string;
+    }
+  | {
+      kind: "choice";
+      key: "showFps";
+      label: string;
+      options: readonly { value: boolean; label: string }[];
+      hint?: string;
+    };
 
 export type ControlSpec = SliderSpec | ChoiceSpec;
 
@@ -278,6 +292,20 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         key: "cellGap", label: "Cell gap", min: 0, max: 1, step: 0.01 },
       { kind: "slider",
         key: "cornerRadiusRatio", label: "Corner radius", min: 0, max: 0.5, step: 0.01 },
+    ],
+  },
+  {
+    title: "Debug",
+    controls: [
+      {
+        kind: "choice",
+        key: "showFps",
+        label: "FPS monitor",
+        options: [
+          { value: false, label: "No" },
+          { value: true, label: "Yes" },
+        ],
+      },
     ],
   },
   {
