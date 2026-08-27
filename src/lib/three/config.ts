@@ -70,6 +70,12 @@ export type SceneConfig = {
   cityAzimuthDeg: number;
   /** Fraction of the canvas the city fills. */
   zoomPadding: number;
+  /**
+   * How far the city leans toward the pointer, in degrees at the edge of
+   * the viewport. Bounded by construction: the tilt tracks where the
+   * cursor is, not how far it has moved.
+   */
+  hoverTiltDeg: number;
 
   // --- Scene geometry ---
   sceneMaxHeight: number;
@@ -105,6 +111,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   cityPolarDeg: 63,
   cityAzimuthDeg: -16,
   zoomPadding: 0.6,
+  hoverTiltDeg: 6,
 
   sceneMaxHeight: 8,
   groundTileHeight: 0.04,
@@ -279,6 +286,15 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         key: "cityAzimuthDeg", label: "Azimuth", min: -180, max: 180, step: 1 },
       { kind: "slider",
         key: "zoomPadding", label: "Zoom padding", min: 0.5, max: 1, step: 0.01 },
+      {
+        kind: "slider",
+        key: "hoverTiltDeg",
+        label: "Hover tilt",
+        min: 0,
+        max: 15,
+        step: 0.5,
+        hint: "Lean toward the pointer; 0 disables",
+      },
     ],
   },
   {

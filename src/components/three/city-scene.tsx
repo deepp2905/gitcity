@@ -31,6 +31,7 @@ import { GridLabels } from "./grid-labels";
 import { FpsMeter } from "./fps-meter";
 import { ShadowCatcher } from "./shadow-catcher";
 import { TuningPanel } from "./tuning-panel";
+import { ParallaxGroup, type Pointer } from "./parallax-group";
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -250,6 +251,26 @@ export function CityScene({
    */
   const pressRef = useRef<{ x: number; y: number } | null>(null);
 
+  /**
+   * Pointer position over the viewport, normalized to -1..1 per axis, for
+   * the hover lean. A ref rather than state: this updates on every mouse
+   * move and must not re-render React.
+   */
+  const pointerRef = useRef<Pointer>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMove = (event: PointerEvent) => {
+      pointerRef.current = {
+        x: (event.clientX / window.innerWidth) * 2 - 1,
+        y: (event.clientY / window.innerHeight) * 2 - 1,
+      };
+    };
+    // On the window, not the canvas: the lean should answer the pointer
+    // anywhere on the page, including over the controls.
+    window.addEventListener("pointermove", handleMove);
+    return () => window.removeEventListener("pointermove", handleMove);
+  }, []);
+
   const handlePointerDown = useCallback((event: React.PointerEvent) => {
     pressRef.current = { x: event.clientX, y: event.clientY };
   }, []);
@@ -334,18 +355,25 @@ export function CityScene({
               maxOpacity={config.maxShadowOpacity}
             />
 
-            <CityBuildings
-              tiles={tiles}
-              weekCount={weekCount}
-              target={target}
+            <ParallaxGroup
+              pointerRef={pointerRef}
               progressRef={progressRef}
+              strengthDeg={config.hoverTiltDeg}
+              reducedMotion={reducedMotion}
+            >
+              <CityBuildings
+                tiles={tiles}
+                weekCount={weekCount}
+                target={target}
+                progressRef={progressRef}
               // Account as well as period: switching user while staying
               // on the same tab is still an entirely new dataset.
-              riseKey={`${login}:${period.id}`}
-              config={config}
-              reducedMotion={reducedMotion}
-              onHoverDay={handleHoverDay}
-            />
+                riseKey={`${login}:${period.id}`}
+                config={config}
+                reducedMotion={reducedMotion}
+                onHoverDay={handleHoverDay}
+              />
+            </ParallaxGroup>
 
             <CameraRig
               target={target}
