@@ -215,7 +215,10 @@ export function CityScene({
         // No border, background or radius: the canvas already clears to
         // the page colour, so the scene reads as part of the page rather
         // than a panel sitting on it.
-        className="relative h-full w-full cursor-pointer"
+        // pointer-events must be re-enabled explicitly: the page wrapper
+        // disables them so the scene shows through the gaps between
+        // controls, and pointer-events inherits.
+        className="pointer-events-auto relative h-full w-full cursor-pointer"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
