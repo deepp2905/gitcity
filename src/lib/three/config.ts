@@ -111,12 +111,12 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   cellGap: 0.24,
   cornerRadiusRatio: 0.24,
 
-  ambientIntensity: 1.7,
-  directionalIntensity: 1.9,
-  lightX: 30,
-  lightY: 50,
-  lightZ: 20,
-  maxShadowOpacity: 0.14,
+  ambientIntensity: 1.6,
+  directionalIntensity: 2,
+  lightX: 16,
+  lightY: 48,
+  lightZ: 86,
+  maxShadowOpacity: 0.06,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
