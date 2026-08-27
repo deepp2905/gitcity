@@ -23,12 +23,11 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
         className="size-8 rounded-full border border-border bg-canvas-raised"
         unoptimized
       />
-      <span className="text-sm font-semibold text-ink group-hover:underline">
-        {profile.name ?? profile.login}
+      {/* Username only. The display name added a second, variable-width
+          label to a row of otherwise compact pills. */}
+      <span className="text-sm font-medium text-ink group-hover:underline">
+        @{profile.login}
       </span>
-      {profile.name ? (
-        <span className="text-sm text-ink-muted">@{profile.login}</span>
-      ) : null}
     </a>
   );
 }
