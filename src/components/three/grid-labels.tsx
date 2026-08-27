@@ -59,7 +59,7 @@ export function GridLabels({
       // a tilting city.
       className={`pointer-events-none absolute inset-0 text-xs text-ink-muted transition-opacity ${
         settledFlat
-          ? "opacity-100 delay-200 duration-300 ease-out"
+          ? "opacity-100 delay-100 duration-300 ease-out"
           : "opacity-0 delay-0 duration-0"
       }`}
     >
