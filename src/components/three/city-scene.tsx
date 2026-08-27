@@ -17,8 +17,7 @@ import {
   type SceneConfig,
 } from "@/lib/three/config";
 import {
-  CITY_VIEW,
-  FLAT_VIEW,
+  degToRad,
   fitZoomForView,
   type CameraView,
 } from "@/lib/three/camera";
@@ -76,22 +75,41 @@ export function CityScene({
   /** Sparse mirror of progress, only to fade the DOM label overlay. */
   const [labelProgress, setLabelProgress] = useState(target);
 
-  /** Where the tilted view currently is. Orbiting rewrites this, so
-   * flattening later departs from wherever the user left the camera. */
-  const cityViewRef = useRef<CameraView>({ ...CITY_VIEW });
-
-  /** True once the transform has arrived and the user may orbit. */
-  const [orbiting, setOrbiting] = useState(false);
-
   /** Live scene constants. Only the dev tuning panel ever changes these;
    * in production this stays at its defaults for the session. */
   const [config, setConfig] = useState<SceneConfig>(DEFAULT_SCENE_CONFIG);
 
+  // Both ends of the transform come from config rather than constants, so
+  // the camera-angle sliders actually drive the scene.
+  const flatView = useMemo<CameraView>(
+    () => ({ phi: degToRad(config.flatPolarDeg), theta: 0 }),
+    [config.flatPolarDeg],
+  );
+  const configCityView = useMemo<CameraView>(
+    () => ({
+      phi: degToRad(config.cityPolarDeg),
+      theta: degToRad(config.cityAzimuthDeg),
+    }),
+    [config.cityPolarDeg, config.cityAzimuthDeg],
+  );
+
+  /** Where the tilted view currently is. Orbiting rewrites this, so
+   * flattening later departs from wherever the user left the camera. */
+  const cityViewRef = useRef<CameraView>({ ...configCityView });
+
+  // Adopt slider changes, overriding whatever orbiting last wrote.
+  useEffect(() => {
+    cityViewRef.current = { ...configCityView };
+  }, [configCityView]);
+
+  /** True once the transform has arrived and the user may orbit. */
+  const [orbiting, setOrbiting] = useState(false);
+
   // Flattening resets the angle: the transform always returns to the
   // scripted flat view, so a separate reset control has nothing to do.
   const resetCityView = useCallback(() => {
-    cityViewRef.current = { ...CITY_VIEW };
-  }, []);
+    cityViewRef.current = { ...configCityView };
+  }, [configCityView]);
 
   // Only once the flatten has fully arrived. Resetting as soon as a
   // flatten was requested snapped the camera to the default tilted view
@@ -127,7 +145,7 @@ export function CityScene({
     sceneWidth,
     sceneDepth,
     0,
-    FLAT_VIEW,
+    flatView,
     config.zoomPadding,
   );
 
@@ -279,6 +297,7 @@ export function CityScene({
               target={target}
               progressRef={progressRef}
               cityViewRef={cityViewRef}
+              flatView={flatView}
               orbiting={orbiting}
               gridWidth={sceneWidth}
               gridDepth={sceneDepth}

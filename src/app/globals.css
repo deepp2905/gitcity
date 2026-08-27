@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Contribution City design tokens.
+ * gitCity design tokens.
  *
  * Light-only, warm "daylight" theme (see README assumptions) — no dark-mode
  * media query on purpose. The heatmap / building level colors mirror

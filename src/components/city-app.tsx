@@ -196,7 +196,7 @@ export function CityApp() {
           // made, and the visualization should own the viewport.
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold tracking-tight text-ink">
-              Contribution City
+              gitCity
             </p>
             <SearchForm
               key={user ?? "empty"}

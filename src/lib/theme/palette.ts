@@ -1,7 +1,7 @@
 import { hexToRgb, lerpOklch, oklchToRgb, rgbToHex, rgbToOklch } from "./color";
 
 /**
- * Contribution City color palette.
+ * gitCity color palette.
  *
  * This is the single JS/TS source of truth for colors the 3D scene needs as
  * real hex values (Three.js materials can't read CSS custom properties).

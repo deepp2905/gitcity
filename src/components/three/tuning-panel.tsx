@@ -24,6 +24,12 @@ type TuningPanelProps = {
 export function TuningPanel({ config, onChange }: TuningPanelProps) {
   const [open, setOpen] = useState(false);
   const [copiedGroup, setCopiedGroup] = useState<string | null>(null);
+  /** Collapsed sections, by title. All start open. */
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  function toggleGroup(title: string) {
+    setCollapsed((previous) => ({ ...previous, [title]: !previous[title] }));
+  }
 
   /** Restores just this section, leaving other sections as tuned. */
   function resetGroup(group: ControlGroup) {
@@ -86,7 +92,25 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
       {CONTROL_GROUPS.map((group) => (
         <fieldset key={group.title} className="mb-3 border-0 p-0">
           <legend className="mb-1 flex w-full items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-ink">{group.title}</span>
+            <button
+              type="button"
+              onClick={() => toggleGroup(group.title)}
+              aria-expanded={!collapsed[group.title]}
+              className="flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-ink hover:bg-ink/5"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-block text-[9px] text-ink-subtle transition-transform duration-150"
+                style={{
+                  transform: collapsed[group.title]
+                    ? "rotate(-90deg)"
+                    : "rotate(0deg)",
+                }}
+              >
+                &#9660;
+              </span>
+              {group.title}
+            </button>
             <span className="flex gap-0.5">
               <button
                 type="button"
@@ -105,7 +129,9 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
             </span>
           </legend>
 
-          {group.controls.map((control) =>
+          {collapsed[group.title]
+            ? null
+            : group.controls.map((control) =>
             control.kind === "choice" ? (
               <div key={control.key} className="mb-2">
                 <span className="text-xs text-ink-muted">{control.label}</span>
@@ -174,8 +200,8 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                   </span>
                 ) : null}
               </label>
-            ),
-          )}
+              ),
+              )}
         </fieldset>
       ))}
 

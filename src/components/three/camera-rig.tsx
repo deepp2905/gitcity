@@ -35,6 +35,8 @@ type CameraRigProps = {
   progressRef: RefObject<number>;
   /** Mutable tilted-view angles, updated while the user orbits. */
   cityViewRef: RefObject<CameraView>;
+  /** The near-vertical end of the transform, from scene config. */
+  flatView: CameraView;
   /** True once the transform has settled at the city view and the user
    * has taken over via OrbitControls. */
   orbiting: boolean;
@@ -69,6 +71,7 @@ export function CameraRig({
   target,
   progressRef,
   cityViewRef,
+  flatView,
   orbiting,
   gridWidth,
   gridDepth,
@@ -126,7 +129,7 @@ export function CameraRig({
     }
     progressRef.current = next;
 
-    const view = lerpView(next, cityViewRef.current);
+    const view = lerpView(next, cityViewRef.current, flatView);
     const position = sphericalToCartesian(view.phi, view.theta, CAMERA_RADIUS);
 
     camera.position.set(position.x, position.y, position.z);

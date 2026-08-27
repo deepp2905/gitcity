@@ -79,16 +79,20 @@ export function lerp(a: number, b: number, t: number): number {
  * end of the transform, so flattening from a manually orbited angle
  * travels from exactly where they are instead of snapping back first.
  */
-export function lerpView(t: number, cityView: CameraView = CITY_VIEW): CameraView {
+export function lerpView(
+  t: number,
+  cityView: CameraView = CITY_VIEW,
+  flatView: CameraView = FLAT_VIEW,
+): CameraView {
   const eased = easeInOutCubic(t);
 
-  let thetaDelta = cityView.theta - FLAT_VIEW.theta;
+  let thetaDelta = cityView.theta - flatView.theta;
   if (thetaDelta > Math.PI) thetaDelta -= Math.PI * 2;
   if (thetaDelta < -Math.PI) thetaDelta += Math.PI * 2;
 
   return {
-    phi: lerp(FLAT_VIEW.phi, cityView.phi, eased),
-    theta: FLAT_VIEW.theta + thetaDelta * eased,
+    phi: lerp(flatView.phi, cityView.phi, eased),
+    theta: flatView.theta + thetaDelta * eased,
   };
 }
 

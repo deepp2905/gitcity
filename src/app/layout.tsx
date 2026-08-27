@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Contribution City",
+  title: "gitCity",
   description:
     "Turn a GitHub contribution history into a 3D daylight skyline. Not affiliated with GitHub.",
 };
