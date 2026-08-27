@@ -29,7 +29,10 @@ function linearToSrgb(channel: number): number {
 }
 
 function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
+  // Written as comparisons rather than Math.min/max so a NaN falls
+  // through to 0. Math.min(1, Math.max(0, NaN)) is NaN, which propagated
+  // all the way to "#NaNNaNNaN" and an unparseable colour.
+  return value > 0 ? (value < 1 ? value : 1) : 0;
 }
 
 export function hexToRgb(hex: string): Rgb {

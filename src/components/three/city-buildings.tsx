@@ -14,7 +14,7 @@ import {
   worldHeight,
 } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
-import { easeInOutCubic } from "@/lib/three/camera";
+import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
 import {
   MAX_ACCUMULATED_S,
   SPRING_TIMESTEP_S,
@@ -345,13 +345,11 @@ export function CityBuildings({
           layout,
           colorsRef.current,
           colorFromRef.current,
+          // Ease-out, not ease-in-out: this is a value changing rather
+          // than an object moving, and the slow start of an ease-in-out
+          // reads as lag on a short fade.
           (i) =>
-            easeInOutCubic(
-              Math.min(
-                1,
-                Math.max(0, (elapsed - layout[i].colorDelayMs) / duration),
-              ),
-            ),
+            easeOutCubic((elapsed - layout[i].colorDelayMs) / duration),
         );
       }
       return;
@@ -508,7 +506,18 @@ function writeColors(
 ) {
   for (let i = 0; i < count; i++) {
     const base = i * 3;
-    scratchColor.setRGB(colors[base], colors[base + 1], colors[base + 2]);
+    const r = colors[base];
+    const g = colors[base + 1];
+    const b = colors[base + 2];
+
+    // A non-finite channel writes NaN into the instanceColor attribute,
+    // and NaN renders the instance black rather than failing loudly.
+    // Leave whatever the instance already had instead.
+    if (!Number.isFinite(r) || !Number.isFinite(g) || !Number.isFinite(b)) {
+      continue;
+    }
+
+    scratchColor.setRGB(r, g, b);
     mesh.setColorAt(i, scratchColor);
   }
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
