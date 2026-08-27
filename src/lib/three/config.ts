@@ -76,6 +76,8 @@ export type SceneConfig = {
    * cursor is, not how far it has moved.
    */
   hoverTiltDeg: number;
+  /** Vertical lean as a fraction of the horizontal. */
+  hoverTipRatio: number;
 
   // --- Scene geometry ---
   sceneMaxHeight: number;
@@ -112,6 +114,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   cityAzimuthDeg: -16,
   zoomPadding: 0.6,
   hoverTiltDeg: 6,
+  hoverTipRatio: 0.85,
 
   sceneMaxHeight: 8,
   groundTileHeight: 0.04,
@@ -294,6 +297,15 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 15,
         step: 0.5,
         hint: "Lean toward the pointer; 0 disables",
+      },
+      {
+        kind: "slider",
+        key: "hoverTipRatio",
+        label: "Hover tip",
+        min: 0,
+        max: 1.5,
+        step: 0.05,
+        hint: "Vertical lean, relative to horizontal",
       },
     ],
   },

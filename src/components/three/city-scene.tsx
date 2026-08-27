@@ -359,6 +359,7 @@ export function CityScene({
               pointerRef={pointerRef}
               progressRef={progressRef}
               strengthDeg={config.hoverTiltDeg}
+              tipRatio={config.hoverTipRatio}
               reducedMotion={reducedMotion}
             >
               <CityBuildings

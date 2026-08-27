@@ -9,10 +9,6 @@ import { degToRad } from "@/lib/three/camera";
  * city is heavy rather than glued to the cursor. */
 const FOLLOW_LAMBDA = 4;
 
-/** The tipping axis gets less range than the turning axis: rotating a
- * wide, shallow ribbon forward reads as much stronger than turning it. */
-const TIP_AXIS_SCALE = 0.55;
-
 export type Pointer = { x: number; y: number };
 
 type ParallaxGroupProps = {
@@ -22,6 +18,12 @@ type ParallaxGroupProps = {
   progressRef: RefObject<number>;
   /** Maximum rotation at the edge of the viewport, in degrees. */
   strengthDeg: number;
+  /**
+   * Vertical range as a fraction of the horizontal. Below 1 by default:
+   * tipping a wide, shallow ribbon forward reads more strongly than
+   * turning it, so equal angles feel lopsided.
+   */
+  tipRatio: number;
   reducedMotion: boolean;
   children: ReactNode;
 };
@@ -44,6 +46,7 @@ export function ParallaxGroup({
   pointerRef,
   progressRef,
   strengthDeg,
+  tipRatio,
   reducedMotion,
   children,
 }: ParallaxGroupProps) {
@@ -61,7 +64,7 @@ export function ParallaxGroup({
 
     const pointer = pointerRef.current;
     const targetY = pointer.x * strength;
-    const targetX = pointer.y * strength * TIP_AXIS_SCALE;
+    const targetX = pointer.y * strength * tipRatio;
 
     const blend = 1 - Math.exp(-FOLLOW_LAMBDA * delta);
     group.rotation.y += (targetY - group.rotation.y) * blend;
