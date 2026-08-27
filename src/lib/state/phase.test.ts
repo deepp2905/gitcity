@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isInteractive, resolvePhase, type PhaseInput } from "./phase";
+import {
+  LOADING_FLOOR_MAX_MS,
+  LOADING_FLOOR_MIN_MS,
+  isInteractive,
+  pickLoadingFloorMs,
+  resolvePhase,
+  type PhaseInput,
+} from "./phase";
 
 const base: PhaseInput = {
   user: null,
@@ -85,5 +92,22 @@ describe("isInteractive", () => {
     expect(isInteractive("idle")).toBe(false);
     expect(isInteractive("loading")).toBe(false);
     expect(isInteractive("ready")).toBe(true);
+  });
+});
+
+describe("pickLoadingFloorMs", () => {
+  it("spans the full range end to end", () => {
+    expect(pickLoadingFloorMs(() => 0)).toBe(LOADING_FLOOR_MIN_MS);
+    expect(pickLoadingFloorMs(() => 0.5)).toBe(2000);
+    // Math.random never returns 1, so this is the open upper bound.
+    expect(pickLoadingFloorMs(() => 1)).toBe(LOADING_FLOOR_MAX_MS);
+  });
+
+  it("stays inside the range for any draw", () => {
+    for (let i = 0; i < 200; i++) {
+      const floor = pickLoadingFloorMs();
+      expect(floor).toBeGreaterThanOrEqual(LOADING_FLOOR_MIN_MS);
+      expect(floor).toBeLessThanOrEqual(LOADING_FLOOR_MAX_MS);
+    }
   });
 });

@@ -19,16 +19,11 @@ import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 import { buildMockPeriod } from "@/lib/contributions/mock";
-import { isInteractive, resolvePhase } from "@/lib/state/phase";
+import { isInteractive, pickLoadingFloorMs, resolvePhase } from "@/lib/state/phase";
 
 /** How long real data is held flat before the city rises. */
 const INTRO_HOLD_MS = 800;
 
-/**
- * Shortest time the loading wave runs. A fixture or cached response can
- * answer in ~20ms, and without a floor the wave would flash past unseen.
- */
-const LOADING_MIN_MS = 900;
 
 /** Stand-in identity for the idle city, which belongs to nobody. */
 const MOCK_PROFILE = {
@@ -149,9 +144,11 @@ export function CityApp() {
 
   useEffect(() => {
     if (!user) return;
+    // Rolled per request, inside the effect: calling Math.random during
+    // render would differ between the server and client pass.
     const timer = window.setTimeout(
       () => setMinElapsedKey(requestKey),
-      LOADING_MIN_MS,
+      pickLoadingFloorMs(),
     );
     return () => window.clearTimeout(timer);
   }, [user, requestKey]);
