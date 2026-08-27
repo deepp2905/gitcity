@@ -15,15 +15,12 @@ type SearchFormProps = {
   /** Current username from the URL, used to seed the field on load. */
   initialValue?: string;
   isLoading: boolean;
-  /** Slimmer variant for the top bar once a city is on screen. */
-  compact?: boolean;
   onSubmit: (username: string) => void;
 };
 
 export function SearchForm({
   initialValue = "",
   isLoading,
-  compact = false,
   onSubmit,
 }: SearchFormProps) {
   const inputId = useId();
@@ -47,11 +44,7 @@ export function SearchForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      noValidate
-      className={compact ? "w-full min-w-0 max-w-sm" : "w-full max-w-md"}
-    >
+    <form onSubmit={handleSubmit} noValidate className="w-full max-w-md">
       {/*
         Visually replaced by the placeholder, but kept in the accessible
         tree: a placeholder alone vanishes as soon as the user types, so
@@ -65,7 +58,7 @@ export function SearchForm({
           min-width:auto and will not shrink past its intrinsic width, so
           the field pushed the submit button off the side of the form's
           own max-width. */}
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex items-center gap-2">
         <input
           id={inputId}
           name="user"
@@ -81,15 +74,21 @@ export function SearchForm({
           spellCheck={false}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className="min-h-11 w-full min-w-0 flex-1 rounded-lg border border-border bg-canvas-raised px-3.5 text-base text-ink shadow-sm outline-none transition-colors placeholder:text-ink-subtle focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 aria-[invalid]:border-danger"
+          className="min-h-11 w-full min-w-0 flex-1 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-5 text-base text-ink shadow-[var(--shadow-soft)] outline-none backdrop-blur-md transition-colors placeholder:text-ink-subtle focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 aria-[invalid]:border-danger"
         />
 
+        {/*
+          Icon only, so the accessible name has to come from aria-label.
+          A square button at the field's own height reads as part of the
+          same control rather than as a second, competing one.
+        */}
         <button
           type="submit"
           disabled={isLoading}
-          className="min-h-11 shrink-0 rounded-lg bg-accent px-5 text-base font-medium text-white shadow-sm transition-colors hover:bg-accent-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
+          aria-label={isLoading ? "Loading contributions" : "View contributions"}
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-white shadow-[var(--shadow-soft)] transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-ink/85 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
-          {isLoading ? "Loading…" : "View contributions"}
+          {isLoading ? <Spinner /> : <ArrowRight />}
         </button>
       </div>
 
@@ -99,5 +98,40 @@ export function SearchForm({
         </p>
       ) : null}
     </form>
+  );
+}
+
+function ArrowRight() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 10h12M11 5l5 5-5 5" />
+    </svg>
+  );
+}
+
+/** Spins via CSS, so it keeps turning without a frame loop. */
+function Spinner() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+      className="size-5 animate-spin"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
+      <circle cx="10" cy="10" r="7" className="opacity-30" />
+      <path d="M17 10a7 7 0 0 0-7-7" />
+    </svg>
   );
 }
