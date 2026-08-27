@@ -97,10 +97,21 @@ export function CityScene({
    * flattening later departs from wherever the user left the camera. */
   const cityViewRef = useRef<CameraView>({ ...configCityView });
 
-  // Adopt slider changes, overriding whatever orbiting last wrote.
+  /** Queued placement for the rig to apply while OrbitControls has the
+   * camera. Without this, tuning the angles did nothing until a 2D round
+   * trip handed control back to the rig. */
+  const cameraOverrideRef = useRef<CameraView | null>(null);
+
+  // Angles changed: go there.
   useEffect(() => {
     cityViewRef.current = { ...configCityView };
+    cameraOverrideRef.current = { ...configCityView };
   }, [configCityView]);
+
+  // Framing changed: keep the current angle, but re-fit.
+  useEffect(() => {
+    cameraOverrideRef.current = { ...cityViewRef.current };
+  }, [config.zoomPadding, config.sceneMaxHeight, config.cellGap]);
 
   /** True once the transform has arrived and the user may orbit. */
   const [orbiting, setOrbiting] = useState(false);
@@ -298,6 +309,7 @@ export function CityScene({
               progressRef={progressRef}
               cityViewRef={cityViewRef}
               flatView={flatView}
+              cameraOverrideRef={cameraOverrideRef}
               orbiting={orbiting}
               gridWidth={sceneWidth}
               gridDepth={sceneDepth}

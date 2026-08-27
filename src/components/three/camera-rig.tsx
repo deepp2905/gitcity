@@ -37,6 +37,12 @@ type CameraRigProps = {
   cityViewRef: RefObject<CameraView>;
   /** The near-vertical end of the transform, from scene config. */
   flatView: CameraView;
+  /**
+   * A one-shot camera placement to apply even while OrbitControls owns
+   * the camera. Set when a tuning slider changes the framing; the rig
+   * applies it, hands OrbitControls the result, and clears it.
+   */
+  cameraOverrideRef: RefObject<CameraView | null>;
   /** True once the transform has settled at the city view and the user
    * has taken over via OrbitControls. */
   orbiting: boolean;
@@ -72,6 +78,7 @@ export function CameraRig({
   progressRef,
   cityViewRef,
   flatView,
+  cameraOverrideRef,
   orbiting,
   gridWidth,
   gridDepth,
@@ -107,6 +114,38 @@ export function CameraRig({
     // requested and silently ignored it, so the toggle changed state but
     // the camera never moved.
     if (orbiting && target === 1) {
+      const override = cameraOverrideRef.current;
+
+      if (override) {
+        // A slider moved the framing. Place the camera, then let
+        // OrbitControls re-derive its own state from that position:
+        // update() rebuilds its spherical from the camera each call, so
+        // it adopts the new angle instead of snapping back to its own.
+        cameraOverrideRef.current = null;
+        cityViewRef.current = { ...override };
+
+        const placed = sphericalToCartesian(
+          override.phi,
+          override.theta,
+          CAMERA_RADIUS,
+        );
+        camera.position.set(placed.x, placed.y, placed.z);
+        camera.lookAt(0, 0, 0);
+        camera.zoom = fitZoomForView(
+          canvasWidth,
+          canvasHeight,
+          gridWidth,
+          gridDepth,
+          maxHeight,
+          override,
+          zoomPadding,
+        );
+        camera.updateProjectionMatrix();
+
+        (state.controls as { update?: () => void } | null)?.update?.();
+        return;
+      }
+
       cityViewRef.current = cartesianToSpherical(
         camera.position.x,
         camera.position.y,
@@ -114,6 +153,9 @@ export function CameraRig({
       );
       return;
     }
+
+    // The rig is authoritative here, so a queued override is redundant.
+    cameraOverrideRef.current = null;
 
     const current = progressRef.current;
 
