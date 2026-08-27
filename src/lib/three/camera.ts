@@ -210,10 +210,11 @@ export function fitZoomForView(
   gridDepth: number,
   maxHeight: number,
   view: CameraView,
-  // Close to 1: the city should nearly fill its canvas. The remaining
-  // margin exists to clear the month labels above the grid and the
-  // weekday labels to its left.
-  padding = 0.95,
+  // Fraction of the canvas the city fills. The margin clears the month
+  // labels above the grid and the weekday labels to its left, and keeps
+  // the city clear of the controls overlaying the viewport. Callers pass
+  // the tunable value from SceneConfig; this is only the fallback.
+  padding = 0.6,
 ): number {
   if (gridWidth <= 0 || gridDepth <= 0) return 1;
   if (canvasWidth <= 0 || canvasHeight <= 0) return 1;

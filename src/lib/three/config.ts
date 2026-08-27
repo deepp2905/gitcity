@@ -68,7 +68,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   flatPolarDeg: 2,
   cityPolarDeg: 52,
   cityAzimuthDeg: -34,
-  zoomPadding: 0.95,
+  zoomPadding: 0.6,
 
   sceneMaxHeight: 8,
   groundTileHeight: 0.012,
