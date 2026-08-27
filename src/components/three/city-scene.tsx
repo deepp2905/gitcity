@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
@@ -93,14 +93,24 @@ export function CityScene({
     cityViewRef.current = { ...CITY_VIEW };
   }, []);
 
+  // Only once the flatten has fully arrived. Resetting as soon as a
+  // flatten was requested snapped the camera to the default tilted view
+  // and animated from there, instead of departing from wherever the user
+  // had orbited to.
   useEffect(() => {
-    if (target === 0) resetCityView();
-  }, [target, resetCityView]);
+    if (target === 0 && labelProgress === 0) resetCityView();
+  }, [target, labelProgress, resetCityView]);
 
   // Tiles, not raw days: a year still in progress is padded out to its
   // full calendar year so every year keeps the same footprint.
-  const tiles = buildSceneTiles(period);
-  const weekCount = sceneWeekCount(tiles);
+  // Memoized deliberately. These feed the buildings' layout memo, and the
+  // rig re-renders this component ~100 times during a transform to report
+  // progress for the label fade. Rebuilding the array each render made the
+  // layout identity change every frame, which re-ran the effect that
+  // reallocates the spring state and zeroed every velocity mid-rise, so
+  // the buildings could not move until the camera settled.
+  const tiles = useMemo(() => buildSceneTiles(period), [period]);
+  const weekCount = useMemo(() => sceneWeekCount(tiles), [tiles]);
 
   // A blank grid with no explanation reads as a loading bug.
   const isEmpty = period.totalContributions === 0;
@@ -196,7 +206,11 @@ export function CityScene({
     // backdrop, and the controls sit above it on their own stacking
     // level. Pointer events stay on so the scene remains clickable and
     // hoverable through the gaps between controls.
-    <div className="fixed inset-0 z-0">
+    <>
+      {/* The city itself: a fixed backdrop behind the page. Its own
+          stacking context, so overlays below are siblings rather than
+          children or they would be trapped beneath the page content. */}
+      <div className="fixed inset-0 z-0">
       <div
         // No border, background or radius: the canvas already clears to
         // the page colour, so the scene reads as part of the page rather
@@ -300,11 +314,6 @@ export function CityScene({
           progress={labelProgress}
         />
 
-        <FpsMeter />
-
-        {process.env.NODE_ENV === "development" ? (
-          <TuningPanel config={config} onChange={setConfig} />
-        ) : null}
 
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
@@ -319,6 +328,15 @@ export function CityScene({
           </div>
         ) : null}
       </div>
+      </div>
+
+      {/* Outside the backdrop above: its stacking context would trap these
+          overlays below the page content. */}
+      <FpsMeter />
+
+      {process.env.NODE_ENV === "development" ? (
+        <TuningPanel config={config} onChange={setConfig} />
+      ) : null}
 
       {tooltip ? (
         <div
@@ -329,6 +347,6 @@ export function CityScene({
           {formatDayLabel(tooltip.day)}
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
