@@ -32,6 +32,7 @@ import { FpsMeter } from "./fps-meter";
 import { ShadowCatcher } from "./shadow-catcher";
 import { TuningPanel } from "./tuning-panel";
 import { ParallaxGroup, type Pointer } from "./parallax-group";
+import { SoftEnvironment } from "./soft-environment";
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -336,6 +337,8 @@ export function CityScene({
             camera={{ position: [0, 200, 8], zoom: baseZoom, near: 1, far: 600 }}
           >
             <color attach="background" args={[palette.canvas]} />
+
+            <SoftEnvironment />
 
             <ambientLight intensity={config.ambientIntensity} />
             <directionalLight

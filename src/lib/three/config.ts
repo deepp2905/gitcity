@@ -85,6 +85,22 @@ export type SceneConfig = {
   cellGap: number;
   cornerRadiusRatio: number;
 
+  // --- Building material ---
+  /** Surface roughness. 1 is fully matte, 0 a mirror. */
+  roughness: number;
+  /** Kept at 0 for painted concrete; raise for a metallic read. */
+  metalness: number;
+  /** Strength of the generated environment reflection. */
+  envIntensity: number;
+  /**
+   * How much darker a building is at its base than its top. Applied per
+   * building against its own height, so short and tall towers get the
+   * same shading rather than the short ones looking uniformly lit.
+   */
+  gradientStrength: number;
+  /** Per-building roughness jitter, so the city isn't uniformly polished. */
+  roughnessVariation: number;
+
   // --- Lighting and shadow ---
   ambientIntensity: number;
   directionalIntensity: number;
@@ -120,6 +136,12 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   groundTileHeight: 0.04,
   cellGap: 0.24,
   cornerRadiusRatio: 0.24,
+
+  roughness: 0.72,
+  metalness: 0,
+  envIntensity: 0.55,
+  gradientStrength: 0.32,
+  roughnessVariation: 0.14,
 
   ambientIntensity: 1.6,
   directionalIntensity: 2,
@@ -333,6 +355,48 @@ export const CONTROL_GROUPS: ControlGroup[] = [
           { value: false, label: "No" },
           { value: true, label: "Yes" },
         ],
+      },
+    ],
+  },
+  {
+    title: "Material",
+    controls: [
+      {
+        kind: "slider",
+        key: "roughness",
+        label: "Roughness",
+        min: 0,
+        max: 1,
+        step: 0.01,
+        hint: "1 matte, 0 mirror",
+      },
+      { kind: "slider", key: "metalness", label: "Metalness", min: 0, max: 1, step: 0.01 },
+      {
+        kind: "slider",
+        key: "envIntensity",
+        label: "Reflection",
+        min: 0,
+        max: 2,
+        step: 0.05,
+        hint: "Standard needs this to read as lit",
+      },
+      {
+        kind: "slider",
+        key: "gradientStrength",
+        label: "Base shading",
+        min: 0,
+        max: 0.8,
+        step: 0.01,
+        hint: "Darkening toward each building's base",
+      },
+      {
+        kind: "slider",
+        key: "roughnessVariation",
+        label: "Roughness jitter",
+        min: 0,
+        max: 0.5,
+        step: 0.01,
+        hint: "Per-building variation",
       },
     ],
   },

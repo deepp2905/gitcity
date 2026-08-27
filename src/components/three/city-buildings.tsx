@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { ContributionDay } from "@/lib/contributions/types";
@@ -30,6 +30,71 @@ const scratchPosition = new THREE.Vector3();
 const scratchQuaternion = new THREE.Quaternion();
 const scratchScale = new THREE.Vector3();
 const scratchColor = new THREE.Color();
+
+/**
+ * Injects a per-building height gradient and a roughness jitter into the
+ * standard material.
+ *
+ * `position.y` is the geometry's own local height, before the instance's
+ * Y scale, so the gradient is measured against each building's own
+ * height. A world-space gradient would leave short buildings uniformly
+ * lit while only tall ones showed any shading.
+ *
+ * The jitter seed comes from the instance's translation, so a given
+ * building keeps the same surface every frame rather than shimmering.
+ */
+function patchStandardShader(
+  shader: { vertexShader: string; fragmentShader: string; uniforms: Record<string, { value: number }> },
+  uniforms: { gradient: { value: number }; jitter: { value: number } },
+) {
+  shader.uniforms.uGradientStrength = uniforms.gradient;
+  shader.uniforms.uRoughnessJitter = uniforms.jitter;
+
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+       varying float vBuildingHeight;
+       varying float vBuildingSeed;`,
+    )
+    .replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+       vBuildingHeight = position.y + 0.5;
+       #ifdef USE_INSTANCING
+         vBuildingSeed = fract(
+           sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453
+         );
+       #else
+         vBuildingSeed = 0.5;
+       #endif`,
+    );
+
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+       uniform float uGradientStrength;
+       uniform float uRoughnessJitter;
+       varying float vBuildingHeight;
+       varying float vBuildingSeed;`,
+    )
+    // Before lighting, so the gradient is shaded rather than painted over.
+    .replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+       diffuseColor.rgb *= mix(1.0 - uGradientStrength, 1.0, vBuildingHeight);`,
+    )
+    .replace(
+      "#include <roughnessmap_fragment>",
+      `#include <roughnessmap_fragment>
+       roughnessFactor = clamp(
+         roughnessFactor + (vBuildingSeed - 0.5) * uRoughnessJitter,
+         0.04,
+         1.0
+       );`,
+    );
+}
 
 /** Future tiles sit slightly lower than a zero-contribution ground tile,
  * reading as an empty lot rather than a day with no activity. */
@@ -89,6 +154,30 @@ export function CityBuildings({
   onHoverDay,
 }: CityBuildingsProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
+
+  /** Shader uniforms held across recompiles, so moving a slider updates
+   * the value in place instead of rebuilding the program. */
+  const shaderUniforms = useRef({
+    gradient: { value: config.gradientStrength },
+    jitter: { value: config.roughnessVariation },
+  });
+
+  useEffect(() => {
+    shaderUniforms.current.gradient.value = config.gradientStrength;
+    shaderUniforms.current.jitter.value = config.roughnessVariation;
+  }, [config.gradientStrength, config.roughnessVariation]);
+
+  const handleBeforeCompile = useCallback(
+    (shader: Parameters<
+      NonNullable<THREE.MeshStandardMaterial["onBeforeCompile"]>
+    >[0]) => {
+      patchStandardShader(
+        shader as unknown as Parameters<typeof patchStandardShader>[0],
+        shaderUniforms.current,
+      );
+    },
+    [],
+  );
 
   const geometry = useMemo(
     () => createBuildingGeometry(config.cornerRadiusRatio),
@@ -475,7 +564,12 @@ export function CityBuildings({
       onPointerOut={() => onHoverDay(null, 0, 0)}
     >
       <primitive object={geometry} attach="geometry" />
-      <meshLambertMaterial />
+      <meshStandardMaterial
+        roughness={config.roughness}
+        metalness={config.metalness}
+        envMapIntensity={config.envIntensity}
+        onBeforeCompile={handleBeforeCompile}
+      />
     </instancedMesh>
   );
 }
