@@ -121,8 +121,8 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
   }
 
   return (
-    <div className="pointer-events-auto fixed bottom-3 right-3 z-50 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-border bg-canvas-raised p-3 pr-2 shadow-[var(--shadow-raised)] [scrollbar-gutter:stable]">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <div className="pointer-events-auto fixed bottom-3 right-3 z-50 flex max-h-[80vh] w-72 flex-col overflow-hidden rounded-xl border border-border bg-canvas-raised shadow-[var(--shadow-raised)]">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-3 py-2.5">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Scene tuning
         </h2>
@@ -146,7 +146,8 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         </button>
       </div>
 
-      {CONTROL_GROUPS.map((group) => (
+      <div className="tune-scroll min-h-0 flex-1 overflow-y-auto px-3 pt-3">
+        {CONTROL_GROUPS.map((group) => (
         <fieldset key={group.title} className="mb-3 border-0 p-0">
           <legend className="mb-1 flex w-full items-center justify-between gap-2">
             <button
@@ -276,11 +277,12 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
               ),
               )}
         </fieldset>
-      ))}
+        ))}
+      </div>
 
       {/* Both whole-panel actions together, away from the per-section
           ones so the two scopes don't read as the same control. */}
-      <div className="flex gap-1.5">
+      <div className="flex shrink-0 gap-1.5 border-t border-border/70 px-3 py-2.5">
         <button
           type="button"
           onClick={() => onChange({ ...DEFAULT_SCENE_CONFIG })}
