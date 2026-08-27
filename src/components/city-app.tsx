@@ -17,7 +17,6 @@ import { SearchForm } from "./search-form";
 import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
-import { ViewToggle } from "./view-toggle";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 
 /** How long the flat grid is held before it rises on first view. */
@@ -268,9 +267,6 @@ export function CityApp() {
                 activeId={activePeriod.id}
                 onSelect={handleSelectPeriod}
               />
-              {webglSupported ? (
-                <ViewToggle view={view} onToggle={handleToggleView} />
-              ) : null}
             </div>
             <PeriodTotal period={activePeriod} />
           </>

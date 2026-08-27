@@ -46,8 +46,7 @@ degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
 
 **Changing the view.** A search holds the flat grid briefly and then
 rises on its own, once per username. After that the only things that move
-the camera are the toggle beside the tabs, clicking the scene, and a
-small lean toward the pointer. There is no orbit, zoom or pan: the rig
+the camera are clicking the scene and a small lean toward the pointer. There is no orbit, zoom or pan: the rig
 owns the camera outright, so it never has to be handed to anything else
 and read back.
 
