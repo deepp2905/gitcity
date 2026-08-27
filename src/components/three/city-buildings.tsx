@@ -213,6 +213,9 @@ export function CityBuildings({
   /** True while a period change is easing heights to their new targets.
    * Springs are reserved for the 2D/3D transform. */
   const morphingRef = useRef(false);
+  /** True only for a 2D/3D rise, where columns are held at the ground
+   * until their turn. Outside that, springs simply hold their target. */
+  const staggeredRiseRef = useRef(false);
 
   const elapsedRef = useRef(0);
   const accumulatorRef = useRef(0);
@@ -279,6 +282,7 @@ export function CityBuildings({
       riseStartedRef.current = !directionChanged;
       // A period change morphs; only a change of direction springs.
       morphingRef.current = periodChanged && !directionChanged && target === 1;
+      staggeredRiseRef.current = directionChanged && target === 1;
 
       const hold = holdHeightsRef.current;
       for (let i = 0; i < layout.length; i++) {
@@ -412,11 +416,17 @@ export function CityBuildings({
     while (accumulatorRef.current >= SPRING_TIMESTEP_S) {
       for (let i = 0; i < layout.length; i++) {
         const item = layout[i];
-        // Held at rest until this column's turn.
-        const springTarget =
-          riseStartedRef.current && elapsed >= item.delayMs
+        // Held at rest until this column's turn -- but only during a
+        // rise. Once a morph hands back, elapsed has been reset and
+        // columns whose delay it has not yet passed would be targeted at
+        // the previous period's height, so the spring would haul them
+        // backwards and then forwards again: a bounce on a year change,
+        // which is exactly what the morph exists to avoid.
+        const springTarget = staggeredRiseRef.current
+          ? riseStartedRef.current && elapsed >= item.delayMs
             ? item.riseHeight
-            : holdHeightsRef.current[i];
+            : holdHeightsRef.current[i]
+          : item.riseHeight;
 
         const stepped = stepSpring(
           heights[i],
