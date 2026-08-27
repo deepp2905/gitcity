@@ -245,10 +245,13 @@ export function CityApp() {
      * control so taps and hovers reach the city through every gap.
      */
     <main className="safe-padding pointer-events-none relative z-10 flex min-h-dvh w-full flex-col">
-      <header
-        className="chrome-enter pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0"
-      >
-        <p className="text-sm font-semibold tracking-tight text-ink">gitCity</p>
+      {/* Pointer events stay off: the wordmark isn't interactive, and a
+          full-width bar that swallowed them would put a dead strip across
+          the top of the city. */}
+      <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0">
+        <p className="text-center text-sm font-semibold tracking-tight text-ink">
+          gitCity
+        </p>
       </header>
 
       {/* The city shows through here. Nothing is laid out over it. */}
