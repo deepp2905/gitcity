@@ -169,6 +169,13 @@ export function CityBuildings({
    * city and rebuilding it.
    */
   const holdHeightsRef = useRef<Float32Array>(new Float32Array(0));
+  /** Current rendered colour per instance, as flat RGB triples. */
+  const colorsRef = useRef<Float32Array>(new Float32Array(0));
+  /** Colour each instance held when the period changed, for the fade. */
+  const colorFromRef = useRef<Float32Array>(new Float32Array(0));
+  /** True while a period change is still fading colours toward their
+   * new targets. */
+  const colorFadingRef = useRef(false);
   /** False until the camera has tilted far enough for height to read. */
   const riseStartedRef = useRef(false);
 
@@ -187,6 +194,26 @@ export function CityBuildings({
     velocitiesRef.current = new Float32Array(layout.length);
     flattenFromRef.current = next.slice();
     holdHeightsRef.current = next.slice();
+
+    // Carry existing colours forward so a period change fades from what
+    // is on screen; only brand-new instances start at their target.
+    const previousColors = colorsRef.current;
+    const nextColors = new Float32Array(layout.length * 3);
+    for (let i = 0; i < layout.length; i++) {
+      const base = i * 3;
+      if (base + 2 < previousColors.length) {
+        nextColors[base] = previousColors[base];
+        nextColors[base + 1] = previousColors[base + 1];
+        nextColors[base + 2] = previousColors[base + 2];
+      } else {
+        const { r, g, b } = layout[i].color;
+        nextColors[base] = r;
+        nextColors[base + 1] = g;
+        nextColors[base + 2] = b;
+      }
+    }
+    colorsRef.current = nextColors;
+    colorFromRef.current = nextColors.slice();
   }, [layout]);
 
   useFrame((_, delta) => {
@@ -219,6 +246,14 @@ export function CityBuildings({
       const hold = holdHeightsRef.current;
       for (let i = 0; i < layout.length; i++) {
         hold[i] = directionChanged ? layout[i].restHeight : heights[i];
+      }
+
+      // A period change is the only thing that alters colour. Fade from
+      // whatever is on screen rather than letting the effect snap it,
+      // which made a building recolour fully before it started moving.
+      if (periodChanged) {
+        colorFromRef.current.set(colorsRef.current);
+        colorFadingRef.current = true;
       }
       if (directionChanged && target === 1 && !reducedMotion) {
         for (let i = 0; i < layout.length; i++) {
@@ -308,16 +343,47 @@ export function CityBuildings({
       writeInstance(mesh, i, layout[i], heights[i]);
     }
     mesh.instanceMatrix.needsUpdate = true;
+
+    if (colorFadingRef.current) {
+      const colors = colorsRef.current;
+      const from = colorFromRef.current;
+      const hold = holdHeightsRef.current;
+      let stillFading = false;
+
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        const span = item.riseHeight - hold[i];
+        // Tie colour to how far this building has travelled, so the two
+        // move as one gesture instead of recolouring then dropping. A
+        // building whose height is unchanged has an unchanged colour too,
+        // since both derive from the same normalized value.
+        const travelled =
+          Math.abs(span) < 1e-6
+            ? 1
+            : Math.min(1, Math.max(0, (heights[i] - hold[i]) / span));
+
+        if (travelled < 1) stillFading = true;
+
+        const base = i * 3;
+        const target = item.color;
+        colors[base] = from[base] + (target.r - from[base]) * travelled;
+        colors[base + 1] =
+          from[base + 1] + (target.g - from[base + 1]) * travelled;
+        colors[base + 2] =
+          from[base + 2] + (target.b - from[base + 2]) * travelled;
+      }
+
+      writeColors(mesh, colors, layout.length);
+      colorFadingRef.current = stillFading;
+    }
   });
 
-  // Per-instance colors only change when the period does.
+  // Pushes the current colour buffer to a freshly built mesh. The frame
+  // loop owns colour after this; it only writes while a fade is running.
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    for (let i = 0; i < layout.length; i++) {
-      mesh.setColorAt(i, scratchColor.copy(layout[i].color));
-    }
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    writeColors(mesh, colorsRef.current, layout.length);
   }, [layout]);
 
   return (
@@ -342,6 +408,19 @@ export function CityBuildings({
       <meshLambertMaterial />
     </instancedMesh>
   );
+}
+
+function writeColors(
+  mesh: THREE.InstancedMesh,
+  colors: Float32Array,
+  count: number,
+) {
+  for (let i = 0; i < count; i++) {
+    const base = i * 3;
+    scratchColor.setRGB(colors[base], colors[base + 1], colors[base + 2]);
+    mesh.setColorAt(i, scratchColor);
+  }
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }
 
 function writeInstance(
