@@ -113,7 +113,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   cityPolarDeg: 63,
   cityAzimuthDeg: -16,
   zoomPadding: 0.6,
-  hoverTiltDeg: 4,
+  hoverTiltDeg: 2,
   hoverTipRatio: 0,
 
   sceneMaxHeight: 8,
