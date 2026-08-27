@@ -281,8 +281,6 @@ export function CityApp() {
           </p>
         ) : null}
 
-        {showControls ? <PeriodTotal period={realPeriod!} /> : null}
-
         <SearchForm
           key={user ?? "empty"}
           initialValue={user ?? ""}
@@ -291,33 +289,39 @@ export function CityApp() {
         />
 
         {/*
-          Identity and years share one line under the field.
+          Identity and years share one line under the field, and the total
+          reads as a caption on the last line of the page.
+
+          Each row holds its height whether or not it has content, so the
+          field and the city don't jump when a search lands: the controls
+          fade in rather than appearing.
+
+          Content is still mounted conditionally. Before a search there is
+          nothing to pick a year of and nobody whose profile to show, and
+          the identity pill has no avatar to render.
         */}
         <div
           aria-hidden={showControls ? undefined : true}
-          className={`flex min-h-11 w-full min-w-0 items-center justify-center gap-2 transition-opacity duration-300 ease-[var(--ease-in-out-cubic)] ${
+          className={`flex w-full min-w-0 flex-col items-center gap-2 transition-opacity duration-300 ease-[var(--ease-in-out-cubic)] ${
             showControls ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          {/*
-            The row holds its height whether or not it has content, so the
-            field and the city don't jump when a search lands: the
-            controls fade in rather than appearing.
+          <div className="flex min-h-11 w-full min-w-0 items-center justify-center gap-2">
+            {showControls ? (
+              <>
+                <ProfileIdentity profile={data!.profile} />
+                <PeriodTabs
+                  periods={data!.periods}
+                  activeId={realPeriod!.id}
+                  onSelect={handleSelectPeriod}
+                />
+              </>
+            ) : null}
+          </div>
 
-            Content is still mounted conditionally. Before a search there
-            is nothing to pick a year of and nobody whose profile to show,
-            and the identity pill has no avatar to render.
-          */}
-          {showControls ? (
-            <>
-              <ProfileIdentity profile={data!.profile} />
-              <PeriodTabs
-                periods={data!.periods}
-                activeId={realPeriod!.id}
-                onSelect={handleSelectPeriod}
-              />
-            </>
-          ) : null}
+          <div className="flex min-h-5 items-center">
+            {showControls ? <PeriodTotal period={realPeriod!} /> : null}
+          </div>
         </div>
       </footer>
     </main>
