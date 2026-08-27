@@ -10,7 +10,7 @@ see [Assumptions](#assumptions) below.
 - Tailwind CSS v4 (design tokens in [`src/app/globals.css`](src/app/globals.css),
   mirrored as hex constants in [`src/lib/theme/palette.ts`](src/lib/theme/palette.ts)
   for use in Three.js materials)
-- React Three Fiber + Drei + Three.js for the 3D skyline
+- React Three Fiber + Three.js for the 3D skyline
 - Vitest for unit tests (pure logic only — see [Testing](#testing))
 - pnpm
 
@@ -30,6 +30,58 @@ browser.
 ```bash
 pnpm dev
 ```
+
+## How it behaves
+
+There is only ever **one** visualization: the 3D scene. The "2D" state is
+that same scene viewed from almost directly overhead. The camera is
+orthographic in both states, and an orthographic top-down view of flat
+tiles is pixel-identical to a flat grid of squares -- which is what lets a
+single scene serve both, and why the transform reads as the chart lifting
+rather than one view being swapped for another.
+
+The camera sits ~2 degrees off vertical rather than at 0. At exactly
+vertical its up vector parallels its view direction and `lookAt`
+degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
+
+**Changing the view.** A search holds the flat grid briefly and then
+rises on its own, once per username. After that the only things that move
+the camera are the toggle beside the tabs, clicking the scene, and a
+small lean toward the pointer. There is no orbit, zoom or pan: the rig
+owns the camera outright, so it never has to be handed to anything else
+and read back.
+
+**Three distinct motions**, deliberately not sharing constants:
+
+| Gesture | Motion |
+| ------- | ------ |
+| 2D to 3D | Sprung per building, staggered by column, with overshoot |
+| 3D to 2D | Eased, uniform, no spring |
+| Year change | Eased, uniform, no stagger |
+
+A bounce during the transform reads as the city arriving. The same bounce
+on a year change reads as the data being unstable, which is the wrong
+thing for a chart to say.
+
+**Height** is `sqrt(count / maxCount)` mapped onto a floor and the scene
+maximum. Contribution data is heavily skewed -- one busy day sets the
+ceiling -- so a linear scale would crush every ordinary day against the
+floor. The square root lifts the low end enough that they still read as
+buildings. Each period normalizes to its own maximum, so heights are not
+comparable between tabs; the tooltip carries the exact count.
+
+**Colour** comes from the same normalized value, interpolated in OKLCH
+rather than sRGB, which would pass through muddy grey. The 2D heatmap
+keeps GitHub's five discrete buckets for familiarity.
+
+## Tuning panel
+
+In development a **Tune Panel** button sits bottom-right. Every scene
+constant is a live control there, grouped by concern, with per-section
+copy and reset. Copy a section, paste it over the matching block of
+`DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
+to make it the default. It is behind a `NODE_ENV` check, so none of it
+reaches visitors.
 
 ## Pinned dependency
 
@@ -103,11 +155,21 @@ src/
   app/
     api/contributions/route.ts   GET /api/contributions?user=...
     page.tsx, layout.tsx, globals.css
+  components/
+    three/                        Canvas, camera rig, instanced buildings,
+                                  parallax, labels, tuning panel, FPS meter
+    *.tsx                         Search, tabs, view toggle, heatmap, shell
   lib/
-    contributions/                Period/date/week math, height scale, public types
-    github/                       GraphQL query, client, normalization, cache, throttle
+    api/                          Client-side fetch wrapper
+    contributions/                Period/date/week math, height scale,
+                                  scene tiles, public types
+    github/                       GraphQL query, client, normalization,
+                                  cache, throttle, offline fixtures
+    hooks/                        Viewport size, media queries, WebGL support
+    state/                        URL <-> app state
+    theme/                        Colour palette and OKLCH interpolation
+    three/                        Layout, camera, easing, springs, config
     username/                     Input parsing + reserved-name list
-    theme/                        Shared color palette (CSS <-> Three.js)
 ```
 
 ## Assumptions
@@ -122,7 +184,10 @@ src/
   older than that four-year window won't show a tab for it — a
   deliberate MVP trade-off over doing a two-step "discover years, then
   query" round trip.
-  Please push back before we ship this if it feels wrong.
+- Years GitHub reports but whose public calendar is empty keep their tab
+  rather than being dropped, and say so in the scene. GitHub lists years
+  it has *any* record for, including contributions that aren't publicly
+  visible, so an empty tab is information rather than a bug.
 - The current calendar-year tab is year-to-date and intentionally
   overlaps the rolling view.
 - English-only copy, light/warm daylight theme only (no dark mode) for
@@ -135,8 +200,14 @@ src/
   (and survive Next.js dev Fast Refresh) but don't share state across
   separate serverless function instances. Swap in Redis/Vercel KV if the
   deployment target needs cross-instance consistency.
-- No general animation library — 3D motion uses local
-  frame-loop damping (R3F/Drei) rather than e.g. Framer Motion/GSAP.
+- No animation library. Motion is hand-rolled in the R3F frame loop:
+  a fixed-timestep spring integrator for the rise, and a CSS
+  `cubic-bezier` evaluated in JS for everything eased, so scene motion and
+  DOM motion share one curve. Framer Motion is DOM-only and its R3F
+  bridge is deprecated; `@react-spring/three` would be the choice if a
+  library were ever wanted.
+- All buildings are a single instanced mesh, so the whole city is one
+  draw call regardless of period length.
 
 ## Data attribution
 
