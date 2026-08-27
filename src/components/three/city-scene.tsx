@@ -19,6 +19,7 @@ import {
 import {
   degToRad,
   fitZoomForView,
+  radToDeg,
   type CameraView,
 } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
@@ -102,11 +103,47 @@ export function CityScene({
    * trip handed control back to the rig. */
   const cameraOverrideRef = useRef<CameraView | null>(null);
 
-  // Angles changed: go there.
+  /**
+   * The last angles the orbit itself pushed into config.
+   *
+   * Orbiting updates the sliders, and a slider change moves the camera --
+   * so without recognising its own echo, the effect below would queue an
+   * override on every frame of a drag and fight the user's mouse.
+   */
+  const orbitEchoRef = useRef<{ polar: number; azimuth: number } | null>(null);
+
+  const handleOrbit = useCallback((orbited: CameraView) => {
+    const polar = Math.round(radToDeg(orbited.phi));
+    const azimuth = Math.round(radToDeg(orbited.theta));
+
+    setConfig((previous) => {
+      if (
+        previous.cityPolarDeg === polar &&
+        previous.cityAzimuthDeg === azimuth
+      ) {
+        return previous;
+      }
+      orbitEchoRef.current = { polar, azimuth };
+      return { ...previous, cityPolarDeg: polar, cityAzimuthDeg: azimuth };
+    });
+  }, []);
+
+  // Angles changed: go there -- unless the change came from the orbit.
   useEffect(() => {
     cityViewRef.current = { ...configCityView };
+
+    const echo = orbitEchoRef.current;
+    if (
+      echo &&
+      echo.polar === config.cityPolarDeg &&
+      echo.azimuth === config.cityAzimuthDeg
+    ) {
+      orbitEchoRef.current = null;
+      return;
+    }
+
     cameraOverrideRef.current = { ...configCityView };
-  }, [configCityView]);
+  }, [configCityView, config.cityPolarDeg, config.cityAzimuthDeg]);
 
   // Framing changed: keep the current angle, but re-fit.
   useEffect(() => {
@@ -321,6 +358,7 @@ export function CityScene({
               reducedMotion={reducedMotion}
               onProgress={setLabelProgress}
               onSettled={setOrbiting}
+              onOrbit={handleOrbit}
             />
 
             {/* Guided orbit: only once the city has arrived, and never

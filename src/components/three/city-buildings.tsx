@@ -171,7 +171,21 @@ export function CityBuildings({
         ),
       };
     });
-  }, [tiles, weekCount, config]);
+    // Depend on the specific values used, not the whole config object.
+    // Orbiting writes the camera angles back into config several times a
+    // second; on the whole object that would rebuild every building and
+    // reallocate the spring state mid-animation.
+  }, [
+    tiles,
+    weekCount,
+    config.cellGap,
+    config.sceneMaxHeight,
+    config.groundTileHeight,
+    config.heightScale,
+    config.staggerTotalMs,
+    config.staggerCurve,
+    config.colorStaggerMs,
+  ]);
 
   /** Live spring state, one entry per instance. */
   const heightsRef = useRef<Float32Array>(new Float32Array(0));

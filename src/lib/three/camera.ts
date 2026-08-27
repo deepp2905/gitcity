@@ -11,6 +11,10 @@ export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
+export function radToDeg(radians: number): number {
+  return (radians * 180) / Math.PI;
+}
+
 /**
  * Not exactly 0°: at a perfectly vertical view the camera's up vector is
  * parallel to its view direction and lookAt degenerates. 2° keeps the

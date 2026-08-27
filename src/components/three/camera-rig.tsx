@@ -15,6 +15,13 @@ import {
  * radius has no effect on scale. */
 const CAMERA_RADIUS = 220;
 
+/** Orbit reporting cadence. Fast enough to feel live in the tuning
+ * panel, slow enough that React isn't re-rendering every frame. */
+const ORBIT_REPORT_MS = 100;
+
+/** Radians of movement below which an orbit report is not worth sending. */
+const ORBIT_REPORT_EPSILON = 0.004;
+
 
 
 /** The scene is always orthographic, but R3F types the frame camera as
@@ -57,6 +64,9 @@ type CameraRigProps = {
   reducedMotion: boolean;
   onProgress: (progress: number) => void;
   onSettled: (settled: boolean) => void;
+  /** Reports where the user has orbited to, so the tuning panel can
+   * follow the camera as well as drive it. */
+  onOrbit: (view: CameraView) => void;
 };
 
 /**
@@ -90,8 +100,10 @@ export function CameraRig({
   reducedMotion,
   onProgress,
   onSettled,
+  onOrbit,
 }: CameraRigProps) {
   const lastReported = useRef(-1);
+  const lastOrbitReport = useRef({ at: 0, phi: NaN, theta: NaN });
 
   // With reduced motion the view switches immediately, with no camera
   // travel and no rise animation.
@@ -146,11 +158,28 @@ export function CameraRig({
         return;
       }
 
-      cityViewRef.current = cartesianToSpherical(
+      const orbited = cartesianToSpherical(
         camera.position.x,
         camera.position.y,
         camera.position.z,
       );
+      cityViewRef.current = orbited;
+
+      // Throttled, and only when it actually moved: this drives React
+      // state, so reporting every frame would re-render continuously.
+      const last = lastOrbitReport.current;
+      const moved =
+        Math.abs(orbited.phi - last.phi) > ORBIT_REPORT_EPSILON ||
+        Math.abs(orbited.theta - last.theta) > ORBIT_REPORT_EPSILON;
+
+      if (moved && performance.now() - last.at > ORBIT_REPORT_MS) {
+        lastOrbitReport.current = {
+          at: performance.now(),
+          phi: orbited.phi,
+          theta: orbited.theta,
+        };
+        onOrbit(orbited);
+      }
       return;
     }
 
