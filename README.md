@@ -59,6 +59,22 @@ Worth capturing at least one sparse account alongside a dense one: a
 profile with an entirely empty calendar year exercises the `maxCount`
 of 0 path in the height scale, which a busy graph never reaches.
 
+## Verifying a build while `next dev` is running
+
+`next build` and `next dev` share `.next`, so building while the dev
+server is up overwrites its cache and it begins serving stale prerendered
+HTML. That appears as a hydration mismatch: the server sends old markup,
+the client renders new markup.
+
+Build somewhere else instead:
+
+```bash
+NEXT_DIST_DIR=.next-verify pnpm build
+```
+
+If a hydration mismatch does appear, delete `.next` and restart the dev
+server. It is only a cache.
+
 ## Scripts
 
 | Command              | Description                              |
