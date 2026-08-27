@@ -39,10 +39,12 @@ export function GridLabels({
 }: GridLabelsProps) {
   if (width === 0 || height === 0 || weekCount === 0) return null;
 
-  // Fade across the first fifth of the transform (~160ms of an 800ms
-  // tilt), so the flat grid is gone before the angle is legible.
-  const opacity = Math.max(0, 1 - progress * 5);
-  if (opacity === 0) return null;
+  // Chart furniture belongs to the flat grid alone. These are positioned
+  // by the top-down projection, so the moment the camera tilts they are
+  // describing a view that no longer exists -- and a city does not want
+  // axis labels anyway. Shown only once the transform has fully arrived
+  // back at flat, not merely started heading there.
+  const settledFlat = progress <= 0.0001;
 
   const months = buildMonthLabels(tiles);
   const halfCell = (CELL_SIZE / 2) * zoom;
@@ -50,8 +52,13 @@ export function GridLabels({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 text-xs text-ink-muted"
-      style={{ opacity }}
+      // Eased in once flat, but removed the instant anything moves: a
+      // label lingering over a tilting city reads as a rendering artefact.
+      className={`pointer-events-none absolute inset-0 text-xs text-ink-muted transition-opacity ${
+        settledFlat
+          ? "opacity-100 duration-200 ease-out"
+          : "opacity-0 duration-0"
+      }`}
     >
       {months.map((month) => {
         const { x, z } = tilePosition(month.weekIndex, 0, weekCount, cellGap);
