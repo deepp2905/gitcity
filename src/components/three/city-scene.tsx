@@ -410,7 +410,7 @@ export function CityScene({
 
       {/* Outside the backdrop above: its stacking context would trap these
           overlays below the page content. */}
-      <FpsMeter />
+      {config.showFps ? <FpsMeter /> : null}
 
       {process.env.NODE_ENV === "development" ? (
         <TuningPanel config={config} onChange={setConfig} />

@@ -8,6 +8,54 @@ import {
   type SceneConfig,
 } from "@/lib/three/config";
 
+function iconProps(className = "size-3.5") {
+  return {
+    viewBox: "0 0 16 16",
+    "aria-hidden": true,
+    className,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+}
+
+function CopyIcon() {
+  return (
+    <svg {...iconProps()}>
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+      <path d="M10.5 3.5A1.5 1.5 0 0 0 9 2H4a2 2 0 0 0-2 2v5a1.5 1.5 0 0 0 1.5 1.5" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M3 8.5l3.2 3.2L13 4.8" />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg {...iconProps()}>
+      <path d="M2.75 8a5.25 5.25 0 1 0 1.6-3.77" />
+      <path d="M2.4 2.8v3.2h3.2" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg {...iconProps("size-3.5")}>
+      <circle cx="8" cy="8" r="2.1" />
+      <path d="M8 1.6v1.7M8 12.7v1.7M14.4 8h-1.7M3.3 8H1.6M12.5 3.5l-1.2 1.2M4.7 11.3l-1.2 1.2M12.5 12.5l-1.2-1.2M4.7 4.7L3.5 3.5" />
+    </svg>
+  );
+}
+
 type TuningPanelProps = {
   config: SceneConfig;
   onChange: (next: SceneConfig) => void;
@@ -64,15 +112,16 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="pointer-events-auto fixed bottom-3 right-3 z-50 min-h-11 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-3 text-xs font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md hover:bg-canvas-raised"
+        className="pointer-events-auto fixed bottom-3 right-3 z-50 flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-3 text-xs font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md hover:bg-canvas-raised"
       >
-        Tune scene
+        <SettingsIcon />
+        Tune Panel
       </button>
     );
   }
 
   return (
-    <div className="pointer-events-auto fixed bottom-3 right-3 z-50 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-border bg-canvas-raised p-3 shadow-[var(--shadow-raised)]">
+    <div className="pointer-events-auto fixed bottom-3 right-3 z-50 max-h-[80vh] w-72 overflow-y-auto rounded-xl border border-border bg-canvas-raised p-3 pr-2 shadow-[var(--shadow-raised)] [scrollbar-gutter:stable]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Scene tuning
@@ -126,16 +175,24 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                 <button
                   type="button"
                   onClick={() => copyGroup(group)}
-                  className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+                  title={`Copy ${group.title} values`}
+                  aria-label={`Copy ${group.title} values`}
+                  className="grid size-6 place-items-center rounded-md text-ink-muted hover:bg-ink/5"
                 >
-                  {copiedGroup === group.title ? "Copied" : "Copy"}
+                  {copiedGroup === group.title ? (
+                    <CheckIcon />
+                  ) : (
+                    <CopyIcon />
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={() => resetGroup(group)}
-                  className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+                  title={`Reset ${group.title}`}
+                  aria-label={`Reset ${group.title}`}
+                  className="grid size-6 place-items-center rounded-md text-ink-muted hover:bg-ink/5"
                 >
-                  Reset
+                  <ResetIcon />
                 </button>
               </span>
             )}
@@ -156,13 +213,17 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                     const active = config[control.key] === option.value;
                     return (
                       <button
-                        key={option.value}
+                        key={String(option.value)}
                         type="button"
                         role="tab"
                         aria-selected={active}
-                        onClick={() =>
-                          onChange({ ...config, [control.key]: option.value })
-                        }
+                        onClick={() => {
+                          const next = { ...config };
+                          // Key and value come from the same union member,
+                          // but TypeScript can't correlate the two.
+                          Object.assign(next, { [control.key]: option.value });
+                          onChange(next);
+                        }}
                         className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
                           active
                             ? "bg-ink text-white"
@@ -222,6 +283,13 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
       <div className="flex gap-1.5">
         <button
           type="button"
+          onClick={() => onChange({ ...DEFAULT_SCENE_CONFIG })}
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-canvas"
+        >
+          Reset all
+        </button>
+        <button
+          type="button"
           onClick={() => {
             void navigator.clipboard?.writeText(JSON.stringify(config, null, 2));
             setCopiedGroup("__all__");
@@ -230,13 +298,6 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
           className="flex-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
         >
           {copiedGroup === "__all__" ? "Copied all" : "Copy all values"}
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange({ ...DEFAULT_SCENE_CONFIG })}
-          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-canvas"
-        >
-          Reset all
         </button>
       </div>
     </div>
