@@ -87,7 +87,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   flattenDurationMs: 800,
 
   colorStaggerMs: 0,
-  colorFadeMs: 600,
+  colorFadeMs: 280,
   riseStartProgress: 0.24,
 
   transformDurationMs: 800,

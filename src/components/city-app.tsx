@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   ContributionErrorCode,
@@ -19,6 +19,9 @@ import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
 import { ViewToggle } from "./view-toggle";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
+
+/** How long the flat grid is held before it rises on first view. */
+const INTRO_HOLD_MS = 800;
 
 type FetchError = { code: ContributionErrorCode; message: string };
 
@@ -121,6 +124,47 @@ export function CityApp() {
     (nextView: ViewMode) => navigate({ view: nextView }, true),
     [navigate],
   );
+
+  /**
+   * First look: hold the familiar flat grid briefly, then rise into the
+   * city on its own. Seeing the heatmap first is what makes the transform
+   * legible -- landing straight in 3D gives no before to compare against.
+   *
+   * Once per username. A manual flatten afterwards is respected rather
+   * than immediately undone, and a link that already says 3d skips it.
+   */
+  const introDoneRef = useRef<string | null>(null);
+  const latestRef = useRef({ view, navigate });
+
+  useEffect(() => {
+    latestRef.current = { view, navigate };
+  });
+
+  useEffect(() => {
+    if (!user || !data) return;
+    // A failed search leaves the previous city on screen; don't promote
+    // it on behalf of a username it doesn't belong to.
+    if (data.profile.login.toLowerCase() !== user.toLowerCase()) return;
+    if (introDoneRef.current === user) return;
+
+    if (latestRef.current.view === "3d") {
+      introDoneRef.current = user;
+      return;
+    }
+
+    introDoneRef.current = user;
+    const timer = window.setTimeout(() => {
+      // Only if they haven't already gone there themselves.
+      if (latestRef.current.view === "2d") {
+        latestRef.current.navigate({ view: "3d" }, true);
+      }
+    }, INTRO_HOLD_MS);
+
+    return () => window.clearTimeout(timer);
+    // Deliberately not depending on `view` or `navigate`: both change on
+    // an unrelated period switch, which would tear down the pending timer
+    // and the intro would never fire.
+  }, [user, data]);
 
   // Loading and error are derived, never synced in an effect: a request is
   // in flight whenever the settled outcome doesn't answer the key the
