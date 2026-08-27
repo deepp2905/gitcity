@@ -34,6 +34,9 @@ import { TuningPanel } from "./tuning-panel";
 
 type CitySceneProps = {
   period: ContributionPeriod;
+  /** Whose city this is. Part of the rise key, so switching account
+   * counts as new data even when the period label is unchanged. */
+  login: string;
   /** 0 = flat grid, 1 = tilted city. */
   target: number;
   view: ViewMode;
@@ -58,6 +61,7 @@ const TOOLTIP_DISMISS_DELAY_MS = 120;
  */
 export function CityScene({
   period,
+  login,
   target,
   view,
   reducedMotion,
@@ -335,7 +339,9 @@ export function CityScene({
               weekCount={weekCount}
               target={target}
               progressRef={progressRef}
-              riseKey={period.id}
+              // Account as well as period: switching user while staying
+              // on the same tab is still an entirely new dataset.
+              riseKey={`${login}:${period.id}`}
               config={config}
               reducedMotion={reducedMotion}
               onHoverDay={handleHoverDay}

@@ -63,6 +63,7 @@ export function Visualization({
     <>
       <CityScene
         period={period}
+        login={profile.login}
         target={view === "3d" ? 1 : 0}
         reducedMotion={reducedMotion}
         isMobile={isMobile}
