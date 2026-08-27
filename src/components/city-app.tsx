@@ -188,7 +188,7 @@ export function CityApp() {
      * here and re-enabled per control so clicks and hovers reach the
      * scene through the gaps.
      */
-    <main className="pointer-events-none relative z-10 flex min-h-screen w-full flex-col px-6 py-6">
+    <main className="safe-padding pointer-events-none relative z-10 flex min-h-dvh w-full flex-col">
       <header className="chrome-enter pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0">
         {hasCity ? (
           // Compact once there is a city to look at: the pitch has been
@@ -260,7 +260,7 @@ export function CityApp() {
       >
         {data && activePeriod ? (
           <>
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
               <ProfileIdentity profile={data.profile} />
               <PeriodTabs
                 periods={data.periods}

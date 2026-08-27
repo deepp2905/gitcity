@@ -137,3 +137,15 @@ body {
 .tune-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(23, 20, 18, 0.32);
 }
+
+/*
+ * Page padding that clears the notch, the rounded corners and the home
+ * indicator. `max()` keeps the normal padding on devices with no insets,
+ * where every env() resolves to 0.
+ */
+.safe-padding {
+  padding-left: max(1.5rem, env(safe-area-inset-left));
+  padding-right: max(1.5rem, env(safe-area-inset-right));
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}

@@ -23,6 +23,7 @@ import {
 import { pixelRatioCap } from "@/lib/three/webgl";
 import { palette } from "@/lib/theme/palette";
 import { useViewportSize } from "@/lib/hooks/use-viewport-size";
+import { useHasFinePointer } from "@/lib/hooks/use-media-query";
 import { CityBuildings } from "./city-buildings";
 import { CameraRig } from "./camera-rig";
 import { GridLabels } from "./grid-labels";
@@ -46,8 +47,16 @@ type CitySceneProps = {
 
 type Tooltip = { day: ContributionDay; x: number; y: number };
 
-/** Pointer travel beyond this is a drag (orbit), not a click. */
+/**
+ * Pointer travel beyond this is a drag, not a tap. A finger wanders far
+ * more than a mouse over the same intent, so touch gets a wider allowance
+ * or deliberate taps get silently swallowed.
+ */
 const DRAG_THRESHOLD_PX = 6;
+const TOUCH_DRAG_THRESHOLD_PX = 14;
+
+/** Keeps a centred tooltip clear of the viewport edges. */
+const TOOLTIP_EDGE_MARGIN_PX = 90;
 
 /** Grace period before a tooltip is dismissed, so crossing the gap
  * between two buildings doesn't strobe it. */
@@ -70,6 +79,7 @@ export function CityScene({
   // The scene fills the viewport, so read it directly instead of
   // measuring the container.
   const size = useViewportSize();
+  const hasFinePointer = useHasFinePointer();
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
 
   /** Written every frame by the rig, read every frame by the buildings —
@@ -183,6 +193,14 @@ export function CityScene({
   const pointerRef = useRef<Pointer>({ x: 0, y: 0 });
 
   useEffect(() => {
+    // Touch devices have no hovering pointer to answer: a tap would jerk
+    // the city over and leave it there, since nothing follows to bring it
+    // back. Recentre and stay put instead.
+    if (!hasFinePointer) {
+      pointerRef.current = { x: 0, y: 0 };
+      return;
+    }
+
     const handleMove = (event: PointerEvent) => {
       pointerRef.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
@@ -193,7 +211,7 @@ export function CityScene({
     // anywhere on the page, including over the controls.
     window.addEventListener("pointermove", handleMove);
     return () => window.removeEventListener("pointermove", handleMove);
-  }, []);
+  }, [hasFinePointer]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent) => {
     pressRef.current = { x: event.clientX, y: event.clientY };
@@ -209,7 +227,11 @@ export function CityScene({
         event.clientX - press.x,
         event.clientY - press.y,
       );
-      if (travelled > DRAG_THRESHOLD_PX) return;
+      const threshold =
+        event.pointerType === "touch"
+          ? TOUCH_DRAG_THRESHOLD_PX
+          : DRAG_THRESHOLD_PX;
+      if (travelled > threshold) return;
 
       onToggleView(view === "3d" ? "2d" : "3d");
     },
@@ -233,7 +255,7 @@ export function CityScene({
         // pointer-events must be re-enabled explicitly: the page wrapper
         // disables them so the scene shows through the gaps between
         // controls, and pointer-events inherits.
-        className="pointer-events-auto relative h-full w-full cursor-pointer"
+        className="pointer-events-auto relative h-full w-full touch-manipulation cursor-pointer"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
@@ -359,7 +381,15 @@ export function CityScene({
         <div
           role="tooltip"
           className="pointer-events-none fixed z-20 -translate-x-1/2 -translate-y-full rounded-md bg-ink px-2 py-1 text-xs font-medium tabular-nums text-white shadow-md"
-          style={{ left: tooltip.x, top: tooltip.y - 10 }}
+          // Clamped inside the viewport: near an edge the centred
+          // tooltip would otherwise hang off the side of a phone screen.
+          style={{
+            left: Math.min(
+              Math.max(tooltip.x, TOOLTIP_EDGE_MARGIN_PX),
+              Math.max(size.width - TOOLTIP_EDGE_MARGIN_PX, TOOLTIP_EDGE_MARGIN_PX),
+            ),
+            top: tooltip.y - 10,
+          }}
         >
           {formatDayLabel(tooltip.day)}
         </div>

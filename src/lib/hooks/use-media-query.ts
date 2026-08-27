@@ -26,3 +26,14 @@ export function usePrefersReducedMotion(): boolean {
 export function useIsMobile(): boolean {
   return useMediaQuery("(max-width: 640px)");
 }
+
+/**
+ * True for a mouse or trackpad, false for touch.
+ *
+ * Touch devices still fire pointermove -- during a tap, and once as the
+ * finger lifts -- so anything that follows the pointer would lurch and
+ * then stay stuck wherever the finger last was, with no way to return it.
+ */
+export function useHasFinePointer(): boolean {
+  return useMediaQuery("(hover: hover) and (pointer: fine)");
+}
