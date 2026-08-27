@@ -52,12 +52,15 @@ export function GridLabels({
   return (
     <div
       aria-hidden="true"
-      // Eased in once flat, but removed the instant anything moves: a
-      // label lingering over a tilting city reads as a rendering artefact.
+      // Eased in a beat after landing flat, letting the city settle
+      // before the chart furniture arrives. Removed instantly when
+      // anything moves, though -- delay-0 as well as duration-0, or the
+      // delay would apply on the way out too and labels would linger over
+      // a tilting city.
       className={`pointer-events-none absolute inset-0 text-xs text-ink-muted transition-opacity ${
         settledFlat
-          ? "opacity-100 duration-200 ease-out"
-          : "opacity-0 duration-0"
+          ? "opacity-100 delay-200 duration-300 ease-out"
+          : "opacity-0 delay-0 duration-0"
       }`}
     >
       {months.map((month) => {
