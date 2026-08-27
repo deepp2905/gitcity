@@ -24,8 +24,14 @@ type TuningPanelProps = {
 export function TuningPanel({ config, onChange }: TuningPanelProps) {
   const [open, setOpen] = useState(false);
   const [copiedGroup, setCopiedGroup] = useState<string | null>(null);
-  /** Collapsed sections, by title. All start open. */
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  /** Collapsed sections, by title. Only the first starts open, so the
+   * panel opens as a short list of sections rather than a wall of
+   * sliders. */
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      CONTROL_GROUPS.map((group, index) => [group.title, index !== 0]),
+    ),
+  );
 
   function toggleGroup(title: string) {
     setCollapsed((previous) => ({ ...previous, [title]: !previous[title] }));
@@ -111,22 +117,26 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
               </span>
               {group.title}
             </button>
-            <span className="flex gap-0.5">
-              <button
-                type="button"
-                onClick={() => copyGroup(group)}
-                className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
-              >
-                {copiedGroup === group.title ? "Copied" : "Copy"}
-              </button>
-              <button
-                type="button"
-                onClick={() => resetGroup(group)}
-                className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
-              >
-                Reset
-              </button>
-            </span>
+            {/* Only while the section is open: actions for controls you
+                can't see are noise. */}
+            {collapsed[group.title] ? null : (
+              <span className="flex gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => copyGroup(group)}
+                  className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+                >
+                  {copiedGroup === group.title ? "Copied" : "Copy"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => resetGroup(group)}
+                  className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-ink-muted hover:bg-ink/5"
+                >
+                  Reset
+                </button>
+              </span>
+            )}
           </legend>
 
           {collapsed[group.title]
