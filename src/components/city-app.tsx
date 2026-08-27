@@ -133,61 +133,87 @@ export function CityApp() {
   const activePeriod =
     data?.periods.find((p) => p.id === period) ?? data?.periods[0] ?? null;
 
-  return (
-    // The city is a fixed full-viewport backdrop rendered inside this
-    // subtree, so every content block needs its own positive z-index:
-    // within a stacking context a positioned element paints above
-    // non-positioned in-flow content, and the canvas was covering the
-    // header entirely. pointer-events are off here and re-enabled per
-    // control, letting clicks and hovers reach the scene through the gaps.
-    <main className="pointer-events-none relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-1 flex-col justify-between gap-8 px-6 py-8 sm:py-10">
-      <header className="pointer-events-auto relative z-10 flex flex-col items-center gap-6 text-center">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-ink text-balance sm:text-4xl">
-            Build your contribution city
-          </h1>
-          <p className="mx-auto max-w-md text-base text-ink-muted text-pretty">
-            See a GitHub contribution history as a heatmap, then watch it rise
-            into a skyline.
-          </p>
-        </div>
+  const hasCity = Boolean(data && activePeriod);
 
-        <div className="flex w-full justify-center">
-          <SearchForm
-            key={user ?? "empty"}
-            initialValue={user ?? ""}
-            isLoading={isLoading}
-            onSubmit={handleSearch}
-          />
-        </div>
+  return (
+    /*
+     * Three bands: chrome at the top, the city breathing in the middle,
+     * chrome at the bottom. The city is a fixed full-viewport backdrop
+     * rendered inside this subtree, so every content block needs its own
+     * positive z-index -- within a stacking context a positioned element
+     * paints above non-positioned in-flow content. pointer-events are off
+     * here and re-enabled per control so clicks and hovers reach the
+     * scene through the gaps.
+     */
+    <main className="pointer-events-none relative z-10 flex min-h-screen w-full flex-col px-6 py-6">
+      <header className="pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0">
+        {hasCity ? (
+          // Compact once there is a city to look at: the pitch has been
+          // made, and the visualization should own the viewport.
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold tracking-tight text-ink">
+              Contribution City
+            </p>
+            <SearchForm
+              key={user ?? "empty"}
+              initialValue={user ?? ""}
+              isLoading={isLoading}
+              onSubmit={handleSearch}
+              compact
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-6 pt-10 text-center sm:pt-16">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-ink text-balance sm:text-4xl">
+                Build your contribution city
+              </h1>
+              <p className="mx-auto max-w-md text-base text-ink-muted text-pretty">
+                See a GitHub contribution history as a heatmap, then watch it
+                rise into a skyline.
+              </p>
+            </div>
+            <SearchForm
+              key={user ?? "empty"}
+              initialValue={user ?? ""}
+              isLoading={isLoading}
+              onSubmit={handleSearch}
+            />
+          </div>
+        )}
+
+        {error ? (
+          <p
+            role="alert"
+            className="mx-auto mt-3 w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-3 text-center text-sm text-danger"
+          >
+            {error.message}
+          </p>
+        ) : null}
       </header>
 
-      {error ? (
-        <p
-          role="alert"
-          className="pointer-events-auto relative z-10 mx-auto w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-3 text-sm text-danger"
-        >
-          {error.message}
-        </p>
-      ) : null}
-
-      {isLoading && !data ? (
-        <p className="pointer-events-auto relative z-10 text-center text-sm text-ink-muted">
-          Loading contributions…
-        </p>
-      ) : null}
+      {/* The city shows through this band. Nothing is laid out over it. */}
+      <div className="flex flex-1 items-center justify-center">
+        {isLoading && !data ? (
+          <p className="pointer-events-auto relative z-10 text-sm text-ink-muted">
+            Loading contributions…
+          </p>
+        ) : null}
+      </div>
 
       {data && activePeriod ? (
-        <>
-          <Visualization
-            period={activePeriod}
-            profile={data.profile}
-            view={view}
-            webglSupported={webglSupported}
-            onToggleView={handleToggleView}
-          />
+        <Visualization
+          period={activePeriod}
+          profile={data.profile}
+          view={view}
+          webglSupported={webglSupported}
+          onToggleView={handleToggleView}
+        />
+      ) : null}
 
-          <div className="pointer-events-auto relative z-10 flex flex-col items-center gap-3">
+      <footer className="pointer-events-auto relative z-10 mx-auto flex w-full max-w-7xl shrink-0 flex-col items-center gap-2">
+        {data && activePeriod ? (
+          <>
             <div className="flex flex-wrap items-center justify-center gap-2">
               <ProfileIdentity profile={data.profile} />
               <PeriodTabs
@@ -200,12 +226,12 @@ export function CityApp() {
               ) : null}
             </div>
             <PeriodTotal period={activePeriod} />
-          </div>
-        </>
-      ) : null}
+          </>
+        ) : null}
 
-      <footer className="pointer-events-auto relative z-10 pt-4 text-center text-xs text-ink-subtle">
-        Data from GitHub. Not affiliated with GitHub, Inc.
+        <p className="text-xs text-ink-subtle">
+          Data from GitHub. Not affiliated with GitHub, Inc.
+        </p>
       </footer>
     </main>
   );

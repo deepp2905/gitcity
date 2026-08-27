@@ -15,12 +15,15 @@ type SearchFormProps = {
   /** Current username from the URL, used to seed the field on load. */
   initialValue?: string;
   isLoading: boolean;
+  /** Slimmer variant for the top bar once a city is on screen. */
+  compact?: boolean;
   onSubmit: (username: string) => void;
 };
 
 export function SearchForm({
   initialValue = "",
   isLoading,
+  compact = false,
   onSubmit,
 }: SearchFormProps) {
   const inputId = useId();
@@ -44,7 +47,11 @@ export function SearchForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="w-full max-w-md">
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className={compact ? "w-full max-w-xs" : "w-full max-w-md"}
+    >
       {/*
         Visually replaced by the placeholder, but kept in the accessible
         tree: a placeholder alone vanishes as soon as the user types, so
