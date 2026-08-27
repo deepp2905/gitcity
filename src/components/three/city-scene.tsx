@@ -40,6 +40,10 @@ type CitySceneProps = {
   /** 0 = flat grid, 1 = tilted city. */
   target: number;
   view: ViewMode;
+  /** Running the loading wave rather than showing data. */
+  waving: boolean;
+  /** Taps transform the view. False until there is real data. */
+  interactive: boolean;
   reducedMotion: boolean;
   isMobile: boolean;
   onToggleView: (next: ViewMode) => void;
@@ -81,6 +85,8 @@ export function CityScene({
   login,
   target,
   view,
+  waving,
+  interactive,
   reducedMotion,
   isMobile,
   onToggleView,
@@ -257,9 +263,14 @@ export function CityScene({
           : DRAG_THRESHOLD_PX;
       if (travelled > threshold) return;
 
+      // The idle city is a demonstration, not a control. It leans toward
+      // the pointer but does not answer taps, so nothing appears to be
+      // broken when there is no data behind it.
+      if (!interactive) return;
+
       onToggleView(view === "3d" ? "2d" : "3d");
     },
-    [onToggleView, view],
+    [interactive, onToggleView, view],
   );
 
   return (
@@ -279,7 +290,9 @@ export function CityScene({
         // pointer-events must be re-enabled explicitly: the page wrapper
         // disables them so the scene shows through the gaps between
         // controls, and pointer-events inherits.
-        className="pointer-events-auto relative h-full w-full touch-manipulation cursor-pointer"
+        className={`pointer-events-auto relative h-full w-full touch-manipulation ${
+          interactive ? "cursor-pointer" : "cursor-default"
+        }`}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
@@ -341,6 +354,7 @@ export function CityScene({
               // on the same tab is still an entirely new dataset.
                 riseKey={`${login}:${period.id}`}
                 config={config}
+                waving={waving}
                 reducedMotion={reducedMotion}
                 onHoverDay={handleHoverDay}
               />

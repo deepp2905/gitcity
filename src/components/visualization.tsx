@@ -23,6 +23,10 @@ type VisualizationProps = {
   period: ContributionPeriod;
   profile: GithubProfile;
   view: ViewMode;
+  /** 0 = flat, 1 = tilted. Follows the phase, not the URL alone. */
+  target: number;
+  waving: boolean;
+  interactive: boolean;
   webglSupported: boolean;
   onToggleView: (next: ViewMode) => void;
 };
@@ -41,6 +45,9 @@ export function Visualization({
   period,
   profile,
   view,
+  target,
+  waving,
+  interactive,
   webglSupported,
   onToggleView,
 }: VisualizationProps) {
@@ -64,7 +71,9 @@ export function Visualization({
       <CityScene
         period={period}
         login={profile.login}
-        target={view === "3d" ? 1 : 0}
+        target={target}
+        waving={waving}
+        interactive={interactive}
         reducedMotion={reducedMotion}
         isMobile={isMobile}
         onToggleView={onToggleView}

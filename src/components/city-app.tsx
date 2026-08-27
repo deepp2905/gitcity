@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   ContributionErrorCode,
@@ -18,9 +18,25 @@ import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
+import { buildMockPeriod } from "@/lib/contributions/mock";
+import { isInteractive, resolvePhase } from "@/lib/state/phase";
 
-/** How long the flat grid is held before it rises on first view. */
+/** How long real data is held flat before the city rises. */
 const INTRO_HOLD_MS = 800;
+
+/**
+ * Shortest time the loading wave runs. A fixture or cached response can
+ * answer in ~20ms, and without a floor the wave would flash past unseen.
+ */
+const LOADING_MIN_MS = 900;
+
+/** Stand-in identity for the idle city, which belongs to nobody. */
+const MOCK_PROFILE = {
+  login: "mock",
+  name: null,
+  avatarUrl: "",
+  profileUrl: "https://github.com",
+};
 
 type FetchError = { code: ContributionErrorCode; message: string };
 
@@ -125,6 +141,32 @@ export function CityApp() {
   );
 
   /**
+   * Set once the minimum loading time has passed for a given request.
+   * Derived by comparison rather than a boolean reset in an effect, which
+   * would be a synchronous setState during render.
+   */
+  const [minElapsedKey, setMinElapsedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const timer = window.setTimeout(
+      () => setMinElapsedKey(requestKey),
+      LOADING_MIN_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [user, requestKey]);
+
+  const isSettled = outcome?.key === requestKey;
+  const error = isSettled ? outcome.error : null;
+
+  const phase = resolvePhase({
+    user,
+    loadedLogin: data?.profile.login ?? null,
+    minElapsed: minElapsedKey === requestKey,
+    hasError: Boolean(error),
+  });
+
+  /**
    * First look: hold the familiar flat grid briefly, then rise into the
    * city on its own. Seeing the heatmap first is what makes the transform
    * legible -- landing straight in 3D gives no before to compare against.
@@ -140,18 +182,16 @@ export function CityApp() {
   });
 
   useEffect(() => {
-    if (!user || !data) return;
-    // A failed search leaves the previous city on screen; don't promote
-    // it on behalf of a username it doesn't belong to.
-    if (data.profile.login.toLowerCase() !== user.toLowerCase()) return;
+    // Keyed on the phase reaching ready, not on the data arriving: the
+    // wave has its own minimum, and the hold is meant to follow the flat
+    // reveal rather than overlap it.
+    if (phase !== "ready" || !user) return;
     if (introDoneRef.current === user) return;
 
-    if (latestRef.current.view === "3d") {
-      introDoneRef.current = user;
-      return;
-    }
-
     introDoneRef.current = user;
+
+    if (latestRef.current.view === "3d") return;
+
     const timer = window.setTimeout(() => {
       // Only if they haven't already gone there themselves.
       if (latestRef.current.view === "2d") {
@@ -163,114 +203,109 @@ export function CityApp() {
     // Deliberately not depending on `view` or `navigate`: both change on
     // an unrelated period switch, which would tear down the pending timer
     // and the intro would never fire.
-  }, [user, data]);
+  }, [phase, user]);
 
   // Loading and error are derived, never synced in an effect: a request is
   // in flight whenever the settled outcome doesn't answer the key the
   // current URL asks for, and an error only counts while it's still the
   // answer to that same key.
-  const isSettled = outcome?.key === requestKey;
-  const isLoading = user !== null && !isSettled;
-  const error = isSettled ? outcome.error : null;
 
-  const activePeriod =
+  const realPeriod =
     data?.periods.find((p) => p.id === period) ?? data?.periods[0] ?? null;
 
-  const hasCity = Boolean(data && activePeriod);
+  /**
+   * The idle city. Built once from a fixed seed, so it is the same on the
+   * server and the client and doesn't reshuffle between renders.
+   */
+  const mockPeriod = useMemo(() => buildMockPeriod(new Date()), []);
+
+  // One chart, always on screen. Before a search it shows the mock; while
+  // a search runs it keeps showing whatever is there and the wave takes
+  // over its heights; once data lands it shows that.
+  const shownPeriod = phase === "ready" && realPeriod ? realPeriod : mockPeriod;
+  const shownProfile = phase === "ready" && data ? data.profile : MOCK_PROFILE;
+  const showControls = phase === "ready" && data !== null && realPeriod !== null;
+
+  /**
+   * The idle city stays tilted, so the page opens on the thing the
+   * product makes rather than on a chart. A search flattens it, which is
+   * what gives the wave somewhere to run and the data somewhere to land.
+   */
+  const sceneTarget =
+    phase === "idle" ? 1 : phase === "loading" ? 0 : view === "3d" ? 1 : 0;
 
   return (
     /*
-     * Three bands: chrome at the top, the city breathing in the middle,
-     * chrome at the bottom. The city is a fixed full-viewport backdrop
-     * rendered inside this subtree, so every content block needs its own
-     * positive z-index -- within a stacking context a positioned element
-     * paints above non-positioned in-flow content. pointer-events are off
-     * here and re-enabled per control so clicks and hovers reach the
-     * scene through the gaps.
+     * One page, one chart. The city is a fixed full-viewport backdrop
+     * rendered inside this subtree and is on screen in every phase, so
+     * there is no landing view that gets replaced by an app view.
+     *
+     * Everything else is chrome pinned to the edges: a wordmark at the
+     * top, the controls at the bottom. Being inside the same subtree as
+     * the canvas, each block needs its own positive z-index -- within a
+     * stacking context a positioned element paints above non-positioned
+     * in-flow content. pointer-events are off here and re-enabled per
+     * control so taps and hovers reach the city through every gap.
      */
     <main className="safe-padding pointer-events-none relative z-10 flex min-h-dvh w-full flex-col">
-      <header className="chrome-enter pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0">
-        {hasCity ? (
-          // Compact once there is a city to look at: the pitch has been
-          // made, and the visualization should own the viewport.
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-semibold tracking-tight text-ink">
-              gitCity
-            </p>
-            <SearchForm
-              key={user ?? "empty"}
-              initialValue={user ?? ""}
-              isLoading={isLoading}
-              onSubmit={handleSearch}
-              compact
-            />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-6 pt-10 text-center sm:pt-16">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-ink text-balance sm:text-4xl">
-                Build your contribution city
-              </h1>
-              <p className="mx-auto max-w-md text-base text-ink-muted text-pretty">
-                See a GitHub contribution history as a heatmap, then watch it
-                rise into a skyline.
-              </p>
-            </div>
-            <SearchForm
-              key={user ?? "empty"}
-              initialValue={user ?? ""}
-              isLoading={isLoading}
-              onSubmit={handleSearch}
-            />
-          </div>
-        )}
+      <header
+        className="chrome-enter pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0"
+      >
+        <p className="text-sm font-semibold tracking-tight text-ink">gitCity</p>
+      </header>
 
+      {/* The city shows through here. Nothing is laid out over it. */}
+      <div className="flex-1" />
+
+      <Visualization
+        period={shownPeriod}
+        profile={shownProfile}
+        view={view}
+        target={sceneTarget}
+        waving={phase === "loading"}
+        interactive={isInteractive(phase)}
+        webglSupported={webglSupported}
+        onToggleView={handleToggleView}
+      />
+
+      <footer
+        className="chrome-enter pointer-events-auto relative z-10 mx-auto flex w-full max-w-xl shrink-0 flex-col items-center gap-3"
+        style={{ "--enter-delay": "80ms" } as React.CSSProperties}
+      >
         {error ? (
           <p
             role="alert"
-            className="mx-auto mt-3 w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-3 text-center text-sm text-danger"
+            className="w-full rounded-lg border border-danger/30 bg-danger-bg px-4 py-2.5 text-center text-sm text-danger"
           >
             {error.message}
           </p>
         ) : null}
-      </header>
 
-      {/* The city shows through this band. Nothing is laid out over it. */}
-      <div className="flex flex-1 items-center justify-center">
-        {isLoading && !data ? (
-          <p className="pointer-events-auto relative z-10 text-sm text-ink-muted">
-            Loading contributions…
-          </p>
-        ) : null}
-      </div>
-
-      {data && activePeriod ? (
-        <Visualization
-          period={activePeriod}
-          profile={data.profile}
-          view={view}
-          webglSupported={webglSupported}
-          onToggleView={handleToggleView}
-        />
-      ) : null}
-
-      <footer
-        className="chrome-enter pointer-events-auto relative z-10 mx-auto flex w-full max-w-7xl shrink-0 flex-col items-center gap-2"
-        style={{ "--enter-delay": "80ms" } as React.CSSProperties}
-      >
-        {data && activePeriod ? (
-          <>
+        {/*
+          Controls arrive with the data rather than sitting there disabled:
+          before a search there is nothing to pick a year of, and nobody
+          whose profile to show.
+        */}
+        {showControls ? (
+          <div className="flex w-full min-w-0 flex-col items-center gap-2">
             <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
-              <ProfileIdentity profile={data.profile} />
+              <ProfileIdentity profile={data!.profile} />
               <PeriodTabs
-                periods={data.periods}
-                activeId={activePeriod.id}
+                periods={data!.periods}
+                activeId={realPeriod!.id}
                 onSelect={handleSelectPeriod}
               />
             </div>
-            <PeriodTotal period={activePeriod} />
-          </>
+            <PeriodTotal period={realPeriod!} />
+          </div>
         ) : null}
+
+        <SearchForm
+          key={user ?? "empty"}
+          initialValue={user ?? ""}
+          isLoading={phase === "loading"}
+          onSubmit={handleSearch}
+        />
       </footer>
     </main>
   );

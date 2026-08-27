@@ -15,6 +15,7 @@ import {
 } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
 import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
+import { waveAt } from "@/lib/three/wave";
 import {
   MAX_ACCUMULATED_S,
   SPRING_TIMESTEP_S,
@@ -64,6 +65,8 @@ type CityBuildingsProps = {
    */
   riseKey: string;
   config: SceneConfig;
+  /** While true the city runs the loading wave instead of showing data. */
+  waving: boolean;
   reducedMotion: boolean;
   onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
 };
@@ -85,6 +88,7 @@ export function CityBuildings({
   progressRef,
   riseKey,
   config,
+  waving,
   reducedMotion,
   onHoverDay,
 }: CityBuildingsProps) {
@@ -210,6 +214,10 @@ export function CityBuildings({
   const colorFadingRef = useRef(false);
   /** False until the camera has tilted far enough for height to read. */
   const riseStartedRef = useRef(false);
+  /** Seconds the wave has been running, so it advances at a rate rather
+   * than a frame count. */
+  const waveElapsedRef = useRef(0);
+
   /** True while a period change is easing heights to their new targets.
    * Springs are reserved for the 2D/3D transform. */
   const morphingRef = useRef(false);
@@ -314,6 +322,51 @@ export function CityBuildings({
     }
     if (riseStartedRef.current) elapsedRef.current += delta * 1000;
     const elapsed = elapsedRef.current;
+
+    if (waving) {
+      // A search is in flight. Height and colour come from one sine, so
+      // the same wave reads in both states: colour carries it while the
+      // camera is flat, height takes over the moment there is any tilt.
+      waveElapsedRef.current += delta;
+
+      const colors = colorsRef.current;
+      const elapsedSeconds = waveElapsedRef.current;
+
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        const amount = reducedMotion ? 0.5 : waveAt(item.weekIndex, elapsedSeconds);
+
+        heights[i] =
+          item.restHeight + (item.riseHeight - item.restHeight) * amount;
+        velocities[i] = 0;
+        writeInstance(mesh, i, item, heights[i]);
+
+        scratchColor.set(contributionRampColor(amount, true));
+        const base = i * 3;
+        colors[base] = scratchColor.r;
+        colors[base + 1] = scratchColor.g;
+        colors[base + 2] = scratchColor.b;
+      }
+
+      mesh.instanceMatrix.needsUpdate = true;
+      writeColors(mesh, colors, layout.length);
+
+      // The wave overwrote every colour, so whatever the next period is,
+      // it has to fade from here rather than from the old data.
+      colorFromRef.current.set(colors);
+      return;
+    }
+
+    // Leaving the wave: heights and colours are wherever the sine left
+    // them, so the data has something to travel from.
+    if (waveElapsedRef.current > 0) {
+      waveElapsedRef.current = 0;
+      colorFadingRef.current = true;
+      holdHeightsRef.current.set(heights);
+      flattenFromRef.current.set(heights);
+      morphingRef.current = target === 1;
+      elapsedRef.current = 0;
+    }
 
     if (reducedMotion) {
       // Snap to whichever state was asked for. No travel, but still the
