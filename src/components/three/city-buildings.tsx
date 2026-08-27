@@ -43,7 +43,10 @@ type BuildingLayout = {
   z: number;
   restHeight: number;
   riseHeight: number;
+  /** Rise-wave delay, used by the 3D spring release. */
   delayMs: number;
+  /** Recolour-wave delay, used only in the flat state. */
+  colorDelayMs: number;
   color: THREE.Color;
 };
 
@@ -115,6 +118,14 @@ export function CityBuildings({
         config.staggerTotalMs,
         config.staggerCurve,
       );
+      // The flat state recolours on its own, faster schedule: it is a
+      // chart update, not a skyline rising.
+      const colorDelayMs = columnDelayMs(
+        tile.weekIndex,
+        weekCount,
+        config.colorStaggerMs,
+        config.staggerCurve,
+      );
 
       if (!tile.day) {
         const futureHeight = groundHeight * FUTURE_TILE_HEIGHT_SCALE;
@@ -126,6 +137,7 @@ export function CityBuildings({
           restHeight: futureHeight,
           riseHeight: futureHeight,
           delayMs,
+          colorDelayMs,
           color: new THREE.Color(palette.futureTile),
         };
       }
@@ -153,6 +165,7 @@ export function CityBuildings({
         restHeight: groundHeight,
         riseHeight: worldHeight(scaled, config.sceneMaxHeight),
         delayMs,
+        colorDelayMs,
         color: new THREE.Color(
           contributionRampColor(normalized, day.count > 0),
         ),
@@ -323,7 +336,10 @@ export function CityBuildings({
       // update here too. This branch returns early, which previously left
       // a year switch in 2D showing the previous year's colours.
       if (colorFadingRef.current) {
-        const duration = Math.max(1, config.flattenDurationMs);
+        // Its own budget, not the flatten's: flattenDurationMs paces the
+        // height descent from 3D, which is a different gesture and would
+        // make a plain year switch feel sluggish.
+        const duration = Math.max(1, config.colorFadeMs);
         colorFadingRef.current = fadeColors(
           mesh,
           layout,
@@ -333,7 +349,7 @@ export function CityBuildings({
             easeInOutCubic(
               Math.min(
                 1,
-                Math.max(0, (elapsed - layout[i].delayMs) / duration),
+                Math.max(0, (elapsed - layout[i].colorDelayMs) / duration),
               ),
             ),
         );

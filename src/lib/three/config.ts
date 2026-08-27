@@ -34,6 +34,16 @@ export type SceneConfig = {
   staggerCurve: number;
   /** Flattening is eased rather than sprung, over this long. */
   flattenDurationMs: number;
+
+  // --- Colour fade in the flat (2D) state ---
+  /**
+   * Time for the recolour wave to cross the grid when the period changes
+   * while flat. Separate from staggerTotalMs, which paces the 3D rise:
+   * a flat grid is a chart and wants to settle faster than a skyline.
+   */
+  colorStaggerMs: number;
+  /** How long an individual tile takes to reach its new colour. */
+  colorFadeMs: number;
   /**
    * How far the camera must have tilted before the rise starts, 0..1.
    * Straight down under orthographic projection shows no height at all,
@@ -73,6 +83,9 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   staggerTotalMs: 400,
   staggerCurve: 1,
   flattenDurationMs: 800,
+
+  colorStaggerMs: 280,
+  colorFadeMs: 120,
   riseStartProgress: 0.28,
 
   transformDurationMs: 800,
@@ -183,6 +196,29 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 0.8,
         step: 0.01,
         hint: "Tilt reached before rising",
+      },
+    ],
+  },
+  {
+    title: "Colour fade (2D)",
+    controls: [
+      {
+        kind: "slider",
+        key: "colorStaggerMs",
+        label: "Stagger",
+        min: 0,
+        max: 1200,
+        step: 10,
+        hint: "Wave across the grid",
+      },
+      {
+        kind: "slider",
+        key: "colorFadeMs",
+        label: "Fade",
+        min: 0,
+        max: 800,
+        step: 10,
+        hint: "Per tile; 0 snaps",
       },
     ],
   },
