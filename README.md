@@ -73,6 +73,30 @@ comparable between tabs; the tooltip carries the exact count.
 rather than sRGB, which would pass through muddy grey. The 2D heatmap
 keeps GitHub's five discrete buckets for familiarity.
 
+## Mobile
+
+The scene runs on phones and tablets, with a few deliberate differences:
+
+- Pixel ratio is capped and shadows are off below 640px.
+- The hover lean is disabled without a fine pointer. Touch devices fire
+  `pointermove` during a tap and once more as the finger lifts, so the
+  city would lurch over and stay there with nothing following to bring it
+  back.
+- Tapping the scene transforms it, with a wider movement allowance than a
+  mouse gets: a finger wanders further over the same intent.
+- The city is width-constrained in portrait, so it is allowed a much
+  smaller margin than on desktop, where the chrome sits to the sides.
+- Five period tabs are wider than a phone, so the strip scrolls sideways
+  rather than wrapping.
+
+Heights use `dvh` and padding uses `env(safe-area-inset-*)`, so iOS
+Safari's address bar can't crop the page and the chrome clears the notch
+and home indicator.
+
+**Tooltips are effectively desktop-only.** They need a hovering pointer,
+and on touch a tap transforms the view instead. The accessible heatmap
+carries every day's exact date and count in both states regardless.
+
 ## Tuning panel
 
 In development a **Tune Panel** button sits bottom-right. Every scene
