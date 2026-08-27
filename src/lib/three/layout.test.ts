@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CELL_SIZE,
+  buildingsBoundingSphere,
   WEEKDAY_COUNT,
   gridDepth,
   gridWidth,
@@ -81,5 +82,35 @@ describe("worldHeight", () => {
 
   it("honours an overridden maximum", () => {
     expect(worldHeight(1, 12)).toBe(12);
+  });
+});
+
+describe("buildingsBoundingSphere", () => {
+  it("encloses the tallest possible building", () => {
+    const { centerY, radius } = buildingsBoundingSphere(53, GAP, 8);
+    // The top of an overshooting building must sit inside the sphere.
+    expect(centerY + radius).toBeGreaterThan(8);
+  });
+
+  it("encloses the far corner of the grid", () => {
+    const weekCount = 53;
+    const { centerY, radius } = buildingsBoundingSphere(weekCount, GAP, 8);
+    const corner = tilePosition(weekCount - 1, WEEKDAY_COUNT - 1, weekCount, GAP);
+    const distance = Math.hypot(corner.x, 0 - centerY, corner.z);
+    expect(distance).toBeLessThanOrEqual(radius);
+  });
+
+  it("grows with the grid and with height", () => {
+    const small = buildingsBoundingSphere(10, GAP, 8).radius;
+    const wide = buildingsBoundingSphere(53, GAP, 8).radius;
+    const tall = buildingsBoundingSphere(10, GAP, 20).radius;
+    expect(wide).toBeGreaterThan(small);
+    expect(tall).toBeGreaterThan(small);
+  });
+
+  it("stays finite for an empty period", () => {
+    const { radius } = buildingsBoundingSphere(0, GAP, 0);
+    expect(Number.isFinite(radius)).toBe(true);
+    expect(radius).toBeGreaterThan(0);
   });
 });
