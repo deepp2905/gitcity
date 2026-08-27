@@ -13,7 +13,7 @@ export type SceneConfig = {
   stiffness: number;
   /**
    * Damping ratio. 1 is critically damped (no overshoot); below 1
-   * overshoots and settles back. ~0.7 gives a ~5% pop.
+   * overshoots and settles back: ~0.7 gives a ~5% pop, ~0.4 a ~25% one.
    */
   dampingRatio: number;
   /** Time for the rise wave to cross the whole city, left to right. */
@@ -52,10 +52,10 @@ export type SceneConfig = {
 
 export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   stiffness: 190,
-  dampingRatio: 0.7,
-  staggerTotalMs: 420,
+  dampingRatio: 0.4,
+  staggerTotalMs: 400,
   staggerCurve: 1,
-  flattenDurationMs: 520,
+  flattenDurationMs: 800,
 
   transformDurationMs: 800,
   flatPolarDeg: 2,
@@ -63,10 +63,10 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   cityAzimuthDeg: -34,
   zoomPadding: 0.95,
 
-  sceneMaxHeight: 6,
-  groundTileHeight: 0.04,
-  cellGap: 0.23,
-  cornerRadiusRatio: 0.18,
+  sceneMaxHeight: 8,
+  groundTileHeight: 0.012,
+  cellGap: 0.24,
+  cornerRadiusRatio: 0.24,
 
   ambientIntensity: 1.7,
   directionalIntensity: 1.9,
@@ -154,7 +154,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
     title: "Geometry",
     controls: [
       { key: "sceneMaxHeight", label: "Max height", min: 1, max: 20, step: 0.5 },
-      { key: "groundTileHeight", label: "Ground tile", min: 0.005, max: 0.3, step: 0.005 },
+      { key: "groundTileHeight", label: "Ground tile", min: 0.002, max: 0.3, step: 0.001 },
       { key: "cellGap", label: "Cell gap", min: 0, max: 1, step: 0.01 },
       { key: "cornerRadiusRatio", label: "Corner radius", min: 0, max: 0.5, step: 0.01 },
     ],
