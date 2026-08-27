@@ -55,7 +55,13 @@ export type SceneConfig = {
 
   // --- Camera transform ---
   transformDurationMs: number;
-  /** Not 0: at exactly vertical lookAt degenerates. */
+  /**
+   * How far off vertical the flat view sits. This is a stability guard,
+   * not a design control: at exactly 0 the camera's up vector parallels
+   * its view direction and lookAt degenerates into NaNs. A couple of
+   * degrees is enough, and foreshortens by ~0.06% -- which is why moving
+   * this slider looks like it does nothing.
+   */
   flatPolarDeg: number;
   cityPolarDeg: number;
   cityAzimuthDeg: number;
@@ -244,8 +250,15 @@ export const CONTROL_GROUPS: ControlGroup[] = [
     controls: [
       { kind: "slider",
         key: "transformDurationMs", label: "Transform", min: 200, max: 2500, step: 25 },
-      { kind: "slider",
-        key: "flatPolarDeg", label: "Flat angle", min: 0.5, max: 12, step: 0.5 },
+      {
+        kind: "slider",
+        key: "flatPolarDeg",
+        label: "Flat angle",
+        min: 0.5,
+        max: 12,
+        step: 0.5,
+        hint: "Stability guard; visually near-identical",
+      },
       { kind: "slider",
         key: "cityPolarDeg", label: "City angle", min: 15, max: 80, step: 1 },
       { kind: "slider",
