@@ -60,6 +60,13 @@ export function easeInOutCubic(t: number): number {
     : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
 }
 
+/** Fast start, gentle settle. Suits a property simply changing value,
+ * where ease-in-out's slow start reads as lag. */
+export function easeOutCubic(t: number): number {
+  const clamped = Math.min(1, Math.max(0, t));
+  return 1 - Math.pow(1 - clamped, 3);
+}
+
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }

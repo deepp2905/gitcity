@@ -5,6 +5,7 @@ import {
   cartesianToSpherical,
   columnProgress,
   easeInOutCubic,
+  easeOutCubic,
   fitZoomForView,
   lerpView,
   projectFlat,
@@ -239,5 +240,31 @@ describe("columnProgress", () => {
     expect(columnProgress(0.2, 10, 53)).toBeLessThan(
       columnProgress(0.8, 10, 53),
     );
+  });
+});
+
+describe("easeOutCubic", () => {
+  it("pins the endpoints", () => {
+    expect(easeOutCubic(0)).toBe(0);
+    expect(easeOutCubic(1)).toBe(1);
+  });
+
+  it("clamps out-of-range input", () => {
+    expect(easeOutCubic(-1)).toBe(0);
+    expect(easeOutCubic(2)).toBe(1);
+  });
+
+  it("starts fast, unlike ease-in-out", () => {
+    expect(easeOutCubic(0.25)).toBeGreaterThan(0.25);
+    expect(easeOutCubic(0.25)).toBeGreaterThan(easeInOutCubic(0.25));
+  });
+
+  it("is monotonic", () => {
+    let previous = -1;
+    for (let t = 0; t <= 1.0001; t += 0.05) {
+      const value = easeOutCubic(t);
+      expect(value).toBeGreaterThanOrEqual(previous);
+      previous = value;
+    }
   });
 });

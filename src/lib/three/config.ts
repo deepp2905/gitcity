@@ -38,8 +38,10 @@ export type SceneConfig = {
   // --- Colour fade in the flat (2D) state ---
   /**
    * Time for the recolour wave to cross the grid when the period changes
-   * while flat. Separate from staggerTotalMs, which paces the 3D rise:
-   * a flat grid is a chart and wants to settle faster than a skyline.
+   * while flat. Defaults to 0: a flat grid is a chart, and a uniform fade
+   * reads as a single value change where a wave draws attention to the
+   * transition itself. Separate from staggerTotalMs, which paces the 3D
+   * rise, so raising it here does not disturb the skyline.
    */
   colorStaggerMs: number;
   /** How long an individual tile takes to reach its new colour. */
@@ -84,8 +86,8 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   staggerCurve: 1,
   flattenDurationMs: 800,
 
-  colorStaggerMs: 280,
-  colorFadeMs: 120,
+  colorStaggerMs: 0,
+  colorFadeMs: 280,
   riseStartProgress: 0.28,
 
   transformDurationMs: 800,
@@ -209,7 +211,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         min: 0,
         max: 1200,
         step: 10,
-        hint: "Wave across the grid",
+        hint: "0 fades all tiles together",
       },
       {
         kind: "slider",
