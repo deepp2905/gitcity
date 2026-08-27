@@ -50,7 +50,7 @@ export function SearchForm({
     <form
       onSubmit={handleSubmit}
       noValidate
-      className={compact ? "w-full max-w-xs" : "w-full max-w-md"}
+      className={compact ? "w-full min-w-0 max-w-sm" : "w-full max-w-md"}
     >
       {/*
         Visually replaced by the placeholder, but kept in the accessible
@@ -61,6 +61,10 @@ export function SearchForm({
         GitHub username or URL
       </label>
 
+      {/* min-w-0 on the input below: a flex item defaults to
+          min-width:auto and will not shrink past its intrinsic width, so
+          the field pushed the submit button off the side of the form's
+          own max-width. */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           id={inputId}
@@ -77,7 +81,7 @@ export function SearchForm({
           spellCheck={false}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className="min-h-11 flex-1 rounded-lg border border-border bg-canvas-raised px-3.5 text-base text-ink shadow-sm outline-none transition-colors placeholder:text-ink-subtle focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 aria-[invalid]:border-danger"
+          className="min-h-11 w-full min-w-0 flex-1 rounded-lg border border-border bg-canvas-raised px-3.5 text-base text-ink shadow-sm outline-none transition-colors placeholder:text-ink-subtle focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 aria-[invalid]:border-danger"
         />
 
         <button

@@ -55,6 +55,15 @@ type Tooltip = { day: ContributionDay; x: number; y: number };
 const DRAG_THRESHOLD_PX = 6;
 const TOUCH_DRAG_THRESHOLD_PX = 14;
 
+/**
+ * Horizontal room reserved for the weekday labels, which sit in a gutter
+ * to the left of the grid. Counted on both sides because the city is
+ * centred: taking it off one side only would shift the city instead of
+ * making room. Without this the labels are pushed off a phone screen as
+ * soon as the city is allowed to fill the width.
+ */
+const WEEKDAY_GUTTER_PX = 34;
+
 /** Keeps a centred tooltip clear of the viewport edges. */
 const TOOLTIP_EDGE_MARGIN_PX = 90;
 
@@ -125,16 +134,31 @@ export function CityScene({
   const sceneWidth = gridWidth(weekCount, config.cellGap);
   const sceneDepth = gridDepth(config.cellGap);
 
+  /**
+   * The city is width-constrained in portrait -- 53 columns across a
+   * phone -- so the desktop margin, which exists to keep it clear of
+   * chrome that sits left and right on a wide screen, leaves it
+   * postage-stamp sized. On a phone the chrome is above and below
+   * instead, and the width is the scarce dimension.
+   */
+  const effectiveZoomPadding = isMobile
+    ? Math.min(0.95, config.zoomPadding * 1.55)
+    : config.zoomPadding;
+
+  /** Width the city may actually occupy, once the label gutter is set
+   * aside. */
+  const fitWidth = Math.max(1, size.width - WEEKDAY_GUTTER_PX * 2);
+
   // Zoom at the flat view, used to place the DOM label overlay. The rig
   // recomputes the live zoom each frame from the same function.
   const baseZoom = fitZoomForView(
-    size.width,
+    fitWidth,
     size.height,
     sceneWidth,
     sceneDepth,
     0,
     flatView,
-    config.zoomPadding,
+    effectiveZoomPadding,
   );
 
   /**
@@ -330,10 +354,10 @@ export function CityScene({
               gridWidth={sceneWidth}
               gridDepth={sceneDepth}
               maxHeight={config.sceneMaxHeight}
-              canvasWidth={size.width}
+              canvasWidth={fitWidth}
               canvasHeight={size.height}
               durationMs={config.transformDurationMs}
-              zoomPadding={config.zoomPadding}
+              zoomPadding={effectiveZoomPadding}
               reducedMotion={reducedMotion}
               onProgress={setLabelProgress}
             />
