@@ -77,22 +77,24 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Scene tuning
         </h2>
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => onChange({ ...DEFAULT_SCENE_CONFIG })}
-            className="rounded-md px-2 py-1 text-xs font-medium text-ink-muted hover:bg-ink/5"
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close scene tuning"
+          className="grid size-6 place-items-center rounded-md text-ink-muted hover:bg-ink/5"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+            className="size-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
           >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="rounded-md px-2 py-1 text-xs font-medium text-ink-muted hover:bg-ink/5"
-          >
-            Close
-          </button>
-        </div>
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
       </div>
 
       {CONTROL_GROUPS.map((group) => (
@@ -215,17 +217,28 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         </fieldset>
       ))}
 
-      <button
-        type="button"
-        onClick={() => {
-          void navigator.clipboard?.writeText(JSON.stringify(config, null, 2));
-          setCopiedGroup("__all__");
-          window.setTimeout(() => setCopiedGroup(null), 1200);
-        }}
-        className="w-full rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
-      >
-        {copiedGroup === "__all__" ? "Copied all" : "Copy all values"}
-      </button>
+      {/* Both whole-panel actions together, away from the per-section
+          ones so the two scopes don't read as the same control. */}
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            void navigator.clipboard?.writeText(JSON.stringify(config, null, 2));
+            setCopiedGroup("__all__");
+            window.setTimeout(() => setCopiedGroup(null), 1200);
+          }}
+          className="flex-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-canvas"
+        >
+          {copiedGroup === "__all__" ? "Copied all" : "Copy all values"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange({ ...DEFAULT_SCENE_CONFIG })}
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-canvas"
+        >
+          Reset all
+        </button>
+      </div>
     </div>
   );
 }
