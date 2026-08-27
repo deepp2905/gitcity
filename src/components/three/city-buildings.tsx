@@ -375,26 +375,27 @@ export function CityBuildings({
     }
 
     if (morphingRef.current) {
-      // Changing period: ease to the new heights instead of springing.
-      // A bounce here would read as the data being unstable, where in the
-      // 2D/3D transform it reads as the city arriving. The column stagger
-      // is kept, so the change still sweeps across the city.
+      // Changing period: ease to the new heights instead of springing,
+      // and move every building together. A bounce here would read as
+      // the data being unstable, and a wave would draw attention to the
+      // transition rather than to the year that replaced it.
       const duration = Math.max(1, config.yearMorphMs);
-      let stillMorphing = false;
+      const progress = elapsed / duration;
+      // Unstaggered, so the curve is the same for every building and is
+      // evaluated once rather than per instance.
+      const eased = easeInOutCubic(progress);
 
       for (let i = 0; i < layout.length; i++) {
         const item = layout[i];
         const from = holdHeightsRef.current[i];
-        const progress = (elapsed - item.delayMs) / duration;
-        if (progress < 1) stillMorphing = true;
 
-        heights[i] = from + (item.riseHeight - from) * easeInOutCubic(progress);
+        heights[i] = from + (item.riseHeight - from) * eased;
         velocities[i] = 0;
         writeInstance(mesh, i, item, heights[i]);
       }
 
       mesh.instanceMatrix.needsUpdate = true;
-      morphingRef.current = stillMorphing;
+      morphingRef.current = progress < 1;
     } else {
     // Rising: fixed-timestep spring integration. Stepping with the raw
     // frame delta goes unstable when a frame is dropped.

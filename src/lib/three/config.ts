@@ -38,10 +38,11 @@ export type SceneConfig = {
   /** Flattening is eased rather than sprung, over this long. */
   flattenDurationMs: number;
   /**
-   * Changing period retargets heights over this long, eased rather than
-   * sprung. The bounce belongs to the 2D/3D transform, where it reads as
-   * the city arriving; on a year change it reads as instability in the
-   * data itself.
+   * Changing period retargets heights over this long: eased rather than
+   * sprung, and unstaggered. The bounce belongs to the 2D/3D transform,
+   * where it reads as the city arriving; on a year change it reads as
+   * instability in the data itself, and a wave draws attention to the
+   * transition rather than to the year that replaced it.
    */
   yearMorphMs: number;
 
@@ -235,7 +236,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         min: 120,
         max: 1600,
         step: 20,
-        hint: "Eased, never sprung",
+        hint: "Eased and unstaggered",
       },
       {
         kind: "slider",
