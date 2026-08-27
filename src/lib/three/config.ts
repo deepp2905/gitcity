@@ -80,15 +80,15 @@ export type SceneConfig = {
 export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   heightScale: "sqrt",
 
-  stiffness: 190,
+  stiffness: 160,
   dampingRatio: 0.4,
-  staggerTotalMs: 400,
+  staggerTotalMs: 600,
   staggerCurve: 1,
   flattenDurationMs: 800,
 
   colorStaggerMs: 0,
-  colorFadeMs: 280,
-  riseStartProgress: 0.28,
+  colorFadeMs: 600,
+  riseStartProgress: 0.24,
 
   transformDurationMs: 800,
   flatPolarDeg: 2,

@@ -9,6 +9,9 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Verification builds (NEXT_DIST_DIR) land here. ESLint's flat config
+    // does not read .gitignore, so without this it lints the build output.
+    ".next-*/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
