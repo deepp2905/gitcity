@@ -34,6 +34,10 @@
   --color-danger: #b5432a;
   --color-danger-bg: #fbeee9;
 
+  /* Motion. Mirrored in src/lib/three/camera.ts so scene motion and DOM
+     motion share a curve; keep both in step. */
+  --ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+
   /* Elevation */
   --shadow-soft: 0 1px 2px rgba(23, 20, 18, 0.04), 0 4px 12px rgba(23, 20, 18, 0.06);
   --shadow-raised: 0 2px 4px rgba(23, 20, 18, 0.05), 0 12px 24px rgba(23, 20, 18, 0.08);

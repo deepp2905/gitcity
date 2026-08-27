@@ -7,6 +7,8 @@
  * grid of squares, which is what lets one scene serve both states.
  */
 
+import { cubicBezier } from "./easing";
+
 export function degToRad(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
@@ -56,13 +58,17 @@ export function sphericalToCartesian(
   };
 }
 
-/** Strong ease-in-out: slow start, quick middle, gentle settle. */
-export function easeInOutCubic(t: number): number {
-  const clamped = Math.min(1, Math.max(0, t));
-  return clamped < 0.5
-    ? 4 * clamped * clamped * clamped
-    : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
-}
+/**
+ * The project's ease-in-out, matching the CSS token
+ * `--ease-in-out-cubic: cubic-bezier(.645, .045, .355, 1)` in
+ * globals.css. Keep the two in step so motion in the scene and motion in
+ * the DOM share a curve.
+ *
+ * Note this is the Bezier, not the piecewise cubic polynomial that also
+ * goes by "ease in out cubic". They are close but not identical; this is
+ * the one CSS and design tools mean.
+ */
+export const easeInOutCubic = cubicBezier(0.645, 0.045, 0.355, 1);
 
 /** Fast start, gentle settle. Suits a property simply changing value,
  * where ease-in-out's slow start reads as lag. */

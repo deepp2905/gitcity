@@ -42,10 +42,16 @@ describe("sphericalToCartesian", () => {
 });
 
 describe("easeInOutCubic", () => {
-  it("pins the endpoints and the midpoint", () => {
+  it("pins the endpoints", () => {
     expect(easeInOutCubic(0)).toBe(0);
     expect(easeInOutCubic(1)).toBe(1);
-    expect(easeInOutCubic(0.5)).toBeCloseTo(0.5);
+  });
+
+  it("crosses the midpoint slightly high", () => {
+    // cubic-bezier(.645,.045,.355,1) is symmetric in x but not in y: the
+    // first control point sits at .045 while the second sits at 1, so the
+    // curve is a shade past halfway at t=0.5 rather than exactly on it.
+    expect(easeInOutCubic(0.5)).toBeCloseTo(0.516875, 4);
   });
 
   it("clamps out-of-range input", () => {
