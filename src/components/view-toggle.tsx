@@ -22,7 +22,7 @@ export function ViewToggle({ view, onToggle }: ViewToggleProps) {
     <button
       type="button"
       onClick={() => onToggle(isCity ? "2d" : "3d")}
-      className="relative grid min-h-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-4 text-sm font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md transition-colors hover:bg-canvas-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="relative grid min-h-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-4 text-sm font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       {/*
         Both labels are stacked in the same grid cell, so the button is

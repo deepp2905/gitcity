@@ -13,14 +13,14 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
       href={profile.profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex min-h-11 items-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] py-1 pl-1 pr-3.5 shadow-[var(--shadow-soft)] backdrop-blur-md transition-colors hover:bg-canvas-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className="group flex min-h-11 items-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] py-1 pl-1 pr-3.5 shadow-[var(--shadow-soft)] backdrop-blur-md transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <Image
         src={profile.avatarUrl}
         alt=""
         width={32}
         height={32}
-        className="size-8 rounded-full border border-border bg-canvas-raised"
+        className="size-8 rounded-full bg-canvas-raised outline outline-1 -outline-offset-1 outline-black/10"
         unoptimized
       />
       {/* Username only. The display name added a second, variable-width

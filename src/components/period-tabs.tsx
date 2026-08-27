@@ -56,7 +56,7 @@ export function PeriodTabs({ periods, activeId, onSelect }: PeriodTabsProps) {
             aria-selected={isActive}
             tabIndex={isActive ? 0 : -1}
             onClick={() => onSelect(period.id)}
-            className={`min-h-11 rounded-full px-4 text-sm font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+            className={`min-h-11 rounded-full px-4 text-sm font-medium tabular-nums transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
               isActive
                 ? "bg-ink text-white"
                 : "text-ink-muted hover:bg-ink/5 hover:text-ink"

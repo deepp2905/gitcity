@@ -146,7 +146,7 @@ export function CityApp() {
      * scene through the gaps.
      */
     <main className="pointer-events-none relative z-10 flex min-h-screen w-full flex-col px-6 py-6">
-      <header className="pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0">
+      <header className="chrome-enter pointer-events-auto relative z-10 mx-auto w-full max-w-7xl shrink-0">
         {hasCity ? (
           // Compact once there is a city to look at: the pitch has been
           // made, and the visualization should own the viewport.
@@ -211,7 +211,10 @@ export function CityApp() {
         />
       ) : null}
 
-      <footer className="pointer-events-auto relative z-10 mx-auto flex w-full max-w-7xl shrink-0 flex-col items-center gap-2">
+      <footer
+        className="chrome-enter pointer-events-auto relative z-10 mx-auto flex w-full max-w-7xl shrink-0 flex-col items-center gap-2"
+        style={{ "--enter-delay": "80ms" } as React.CSSProperties}
+      >
         {data && activePeriod ? (
           <>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -229,7 +232,10 @@ export function CityApp() {
           </>
         ) : null}
 
-        <p className="text-xs text-ink-subtle">
+        <p
+          className="chrome-enter text-xs text-ink-subtle"
+          style={{ "--enter-delay": "160ms" } as React.CSSProperties}
+        >
           Data from GitHub. Not affiliated with GitHub, Inc.
         </p>
       </footer>
