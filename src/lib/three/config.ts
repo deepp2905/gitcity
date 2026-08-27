@@ -37,6 +37,13 @@ export type SceneConfig = {
   staggerCurve: number;
   /** Flattening is eased rather than sprung, over this long. */
   flattenDurationMs: number;
+  /**
+   * Changing period retargets heights over this long, eased rather than
+   * sprung. The bounce belongs to the 2D/3D transform, where it reads as
+   * the city arriving; on a year change it reads as instability in the
+   * data itself.
+   */
+  yearMorphMs: number;
 
   // --- Colour fade in the flat (2D) state ---
   /**
@@ -103,6 +110,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   staggerTotalMs: 600,
   staggerCurve: 1,
   flattenDurationMs: 600,
+  yearMorphMs: 600,
 
   colorStaggerMs: 0,
   colorFadeMs: 280,
@@ -215,6 +223,15 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         kind: "slider",
         key: "flattenDurationMs",
         label: "Flatten duration",
+        min: 120,
+        max: 1600,
+        step: 20,
+        hint: "Eased, never sprung",
+      },
+      {
+        kind: "slider",
+        key: "yearMorphMs",
+        label: "Year morph",
         min: 120,
         max: 1600,
         step: 20,

@@ -210,6 +210,9 @@ export function CityBuildings({
   const colorFadingRef = useRef(false);
   /** False until the camera has tilted far enough for height to read. */
   const riseStartedRef = useRef(false);
+  /** True while a period change is easing heights to their new targets.
+   * Springs are reserved for the 2D/3D transform. */
+  const morphingRef = useRef(false);
 
   const elapsedRef = useRef(0);
   const accumulatorRef = useRef(0);
@@ -274,6 +277,8 @@ export function CityBuildings({
       // morphs it column by column, starting immediately because the
       // camera is already tilted.
       riseStartedRef.current = !directionChanged;
+      // A period change morphs; only a change of direction springs.
+      morphingRef.current = periodChanged && !directionChanged && target === 1;
 
       const hold = holdHeightsRef.current;
       for (let i = 0; i < layout.length; i++) {
@@ -369,6 +374,28 @@ export function CityBuildings({
       return;
     }
 
+    if (morphingRef.current) {
+      // Changing period: ease to the new heights instead of springing.
+      // A bounce here would read as the data being unstable, where in the
+      // 2D/3D transform it reads as the city arriving. The column stagger
+      // is kept, so the change still sweeps across the city.
+      const duration = Math.max(1, config.yearMorphMs);
+      let stillMorphing = false;
+
+      for (let i = 0; i < layout.length; i++) {
+        const item = layout[i];
+        const from = holdHeightsRef.current[i];
+        const progress = (elapsed - item.delayMs) / duration;
+        if (progress < 1) stillMorphing = true;
+
+        heights[i] = from + (item.riseHeight - from) * easeInOutCubic(progress);
+        velocities[i] = 0;
+        writeInstance(mesh, i, item, heights[i]);
+      }
+
+      mesh.instanceMatrix.needsUpdate = true;
+      morphingRef.current = stillMorphing;
+    } else {
     // Rising: fixed-timestep spring integration. Stepping with the raw
     // frame delta goes unstable when a frame is dropped.
     accumulatorRef.current = Math.min(
@@ -408,6 +435,7 @@ export function CityBuildings({
       writeInstance(mesh, i, layout[i], heights[i]);
     }
     mesh.instanceMatrix.needsUpdate = true;
+    }
 
     if (colorFadingRef.current) {
       const hold = holdHeightsRef.current;
