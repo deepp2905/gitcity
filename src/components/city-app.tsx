@@ -281,24 +281,7 @@ export function CityApp() {
           </p>
         ) : null}
 
-        {/*
-          Controls arrive with the data rather than sitting there disabled:
-          before a search there is nothing to pick a year of, and nobody
-          whose profile to show.
-        */}
-        {showControls ? (
-          <div className="flex w-full min-w-0 flex-col items-center gap-2">
-            <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2">
-              <ProfileIdentity profile={data!.profile} />
-              <PeriodTabs
-                periods={data!.periods}
-                activeId={realPeriod!.id}
-                onSelect={handleSelectPeriod}
-              />
-            </div>
-            <PeriodTotal period={realPeriod!} />
-          </div>
-        ) : null}
+        {showControls ? <PeriodTotal period={realPeriod!} /> : null}
 
         <SearchForm
           key={user ?? "empty"}
@@ -306,6 +289,36 @@ export function CityApp() {
           isLoading={phase === "loading"}
           onSubmit={handleSearch}
         />
+
+        {/*
+          Identity and years share one line under the field.
+        */}
+        <div
+          aria-hidden={showControls ? undefined : true}
+          className={`flex min-h-11 w-full min-w-0 items-center justify-center gap-2 transition-opacity duration-300 ease-[var(--ease-in-out-cubic)] ${
+            showControls ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
+          {/*
+            The row holds its height whether or not it has content, so the
+            field and the city don't jump when a search lands: the
+            controls fade in rather than appearing.
+
+            Content is still mounted conditionally. Before a search there
+            is nothing to pick a year of and nobody whose profile to show,
+            and the identity pill has no avatar to render.
+          */}
+          {showControls ? (
+            <>
+              <ProfileIdentity profile={data!.profile} />
+              <PeriodTabs
+                periods={data!.periods}
+                activeId={realPeriod!.id}
+                onSelect={handleSelectPeriod}
+              />
+            </>
+          ) : null}
+        </div>
       </footer>
     </main>
   );
