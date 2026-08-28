@@ -144,11 +144,17 @@ darkest green and the three greens between them would flicker past.
 
 **And it lands rather than stops.** A free-running wave is at an
 arbitrary phase whenever the data arrives, so a good share of the columns
-would be sitting on the deepest green — darker than almost any real
-day — and the handover left that band to fade *downward*, which read as a
-flash. The wave now outlives the search by `WAVE_SETTLE_MS`, decaying its
-own amplitude to zero, so the grid is cream when the data starts painting
-up into it.
+would be sitting on the deepest green — darker than almost any real day —
+and the handover left that band to fade *downward*, which read as a
+flash. The wave now outlives the search by `WAVE_SETTLE_MS`, and over
+that window each tile crosses from its wave colour straight to its own
+data colour, while the wave itself keeps running: the chart resolves in
+motion rather than freezing and then fading.
+
+Per tile, deliberately. Decaying the wave's amplitude to zero instead was
+smooth, but it took the whole grid to cream on the way, and a chart that
+blanks before it fills reads as a second load rather than the end of the
+first.
 
 **The idle city** is generated, not real. It is seeded so the server and
 the first client render agree — the fixed seed is the server snapshot of

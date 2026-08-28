@@ -375,22 +375,6 @@ export function CityApp() {
         ) : null}
 
         {/*
-          Says what a tap will do, so the one interaction the scene has
-          is discoverable without a button competing with the city.
-          Arrives with the rest of the controls.
-        */}
-        <div className="flex min-h-5 items-center">
-          <p
-            aria-hidden={revealed ? undefined : true}
-            className={`text-xs text-ink-subtle transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
-              revealed ? "opacity-100" : "opacity-0"
-            }`}
-          >
-            {view === "3d" ? "Tap to switch to 2D" : "Tap to switch to 3D"}
-          </p>
-        </div>
-
-        {/*
           One slot, two occupants. The field hands over to the controls
           rather than moving aside for them, so the bottom of the page
           holds a single line throughout and nothing below it shifts.
