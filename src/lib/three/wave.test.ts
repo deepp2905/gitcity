@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { WAVE_WAVELENGTH_COLUMNS, columnJitter, waveAt } from "./wave";
+import {
+  WAVE_SPEED_HZ,
+  WAVE_WAVELENGTH_COLUMNS,
+  columnJitter,
+  waveAt,
+} from "./wave";
 
 describe("columnJitter", () => {
   it("is stable for a given column", () => {
@@ -51,5 +56,40 @@ describe("waveAt", () => {
     const pure = waveAt(5, 0.3, 0);
     const jittered = waveAt(5, 0.3);
     expect(jittered).not.toBe(pure);
+  });
+});
+
+describe("waveAt as a triangle", () => {
+  // The value is quantized into five colour bands, so what matters is
+  // that it spends a fair share of each cycle in every one. A sine
+  // lingers near its extremes and would park ~60% of the time on cream
+  // or the darkest green.
+  it("spends roughly equal time in each fifth of its range", () => {
+    const buckets = [0, 0, 0, 0, 0];
+    const samples = 2000;
+
+    for (let i = 0; i < samples; i++) {
+      // One full cycle, jitter off so this measures the curve alone.
+      const t = (i / samples) / WAVE_SPEED_HZ;
+      const value = waveAt(0, t, 0);
+      buckets[Math.min(4, Math.floor(value * 5))] += 1;
+    }
+
+    for (const count of buckets) {
+      expect(count / samples).toBeGreaterThan(0.15);
+      expect(count / samples).toBeLessThan(0.25);
+    }
+  });
+
+  it("reaches both ends of the range within a cycle", () => {
+    let lowest = 1;
+    let highest = 0;
+    for (let i = 0; i < 500; i++) {
+      const value = waveAt(0, (i / 500) / WAVE_SPEED_HZ, 0);
+      lowest = Math.min(lowest, value);
+      highest = Math.max(highest, value);
+    }
+    expect(lowest).toBeLessThan(0.02);
+    expect(highest).toBeGreaterThan(0.98);
   });
 });

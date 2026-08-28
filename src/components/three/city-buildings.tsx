@@ -25,7 +25,7 @@ import {
   stepSpring,
 } from "@/lib/three/spring";
 import type { SceneConfig } from "@/lib/three/config";
-import { contributionRampColor, palette, waveRampColor } from "@/lib/theme/palette";
+import { contributionRampColor, palette, waveLevelColor } from "@/lib/theme/palette";
 
 /** Reused scratch objects — allocating per frame would churn the GC. */
 const scratchMatrix = new THREE.Matrix4();
@@ -484,7 +484,7 @@ export function CityBuildings({
         velocities[i] = 0;
         writeInstance(mesh, i, item, heights[i]);
 
-        scratchColor.set(waveRampColor(amount));
+        scratchColor.set(waveLevelColor(amount));
         const base = i * 3;
         colors[base] = scratchColor.r;
         colors[base + 1] = scratchColor.g;

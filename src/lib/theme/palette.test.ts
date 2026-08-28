@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contributionRampColor, levelColors } from "./palette";
+import { contributionRampColor, levelColors, waveLevelColor } from "./palette";
 
 const HEX = /^#[0-9a-f]{6}$/;
 
@@ -37,5 +37,31 @@ describe("contributionRampColor", () => {
     for (let i = 0; i <= 20; i++) {
       expect(contributionRampColor(i / 20, true)).not.toBe("#000000");
     }
+  });
+});
+
+describe("waveLevelColor", () => {
+  it("returns only preset levels, never a blend", () => {
+    for (let i = 0; i <= 100; i++) {
+      expect(levelColors).toContain(waveLevelColor(i / 100));
+    }
+  });
+
+  it("starts on the ground colour and ends on the deepest green", () => {
+    expect(waveLevelColor(0)).toBe(levelColors[0]);
+    expect(waveLevelColor(1)).toBe(levelColors[4]);
+  });
+
+  it("gives each level an equal slice of the range", () => {
+    expect(waveLevelColor(0.1)).toBe(levelColors[0]);
+    expect(waveLevelColor(0.3)).toBe(levelColors[1]);
+    expect(waveLevelColor(0.5)).toBe(levelColors[2]);
+    expect(waveLevelColor(0.7)).toBe(levelColors[3]);
+    expect(waveLevelColor(0.9)).toBe(levelColors[4]);
+  });
+
+  it("clamps rather than reading off the end", () => {
+    expect(waveLevelColor(-5)).toBe(levelColors[0]);
+    expect(waveLevelColor(5)).toBe(levelColors[4]);
   });
 });

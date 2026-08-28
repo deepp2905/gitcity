@@ -134,6 +134,14 @@ an `inside` flag, because a pointer that has left the document keeps its
 last coordinates and the swell would otherwise hold its bulge over an
 empty screen forever.
 
+**The loading wave steps through the heatmap's five preset levels**
+rather than interpolating between them. The contribution ramp is
+continuous because it encodes a magnitude; the wave encodes nothing, so
+it speaks the chart's own vocabulary instead. It is a triangle rather
+than a sine for the same reason — a sine lingers near its extremes, so
+with five bands roughly 60% of every cycle would sit on cream or the
+darkest green and the three greens between them would flicker past.
+
 **The loading wave lands rather than stops.** A free-running sine is at
 an arbitrary phase whenever the data arrives, so half the columns would
 be sitting at or near the deepest green — darker than almost any real

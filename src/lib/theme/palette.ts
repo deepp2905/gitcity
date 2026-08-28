@@ -89,15 +89,25 @@ export function contributionRampColor(
 }
 
 /**
- * Ramp for the loading wave, which runs only in the flat state.
+ * Colour for the loading wave, which runs only in the flat state.
  *
- * It starts at the neutral ground colour rather than at the lightest
- * green, so the wave travels the full distance from an empty city to a
- * full one. The contribution ramp deliberately skips that stretch —
- * there, cream means "no contributions" and must not read as a low count.
+ * Steps through the five preset levels rather than interpolating between
+ * them. The contribution ramp is continuous because it encodes a
+ * magnitude — a 3-commit day and a 12-commit day should not share a
+ * swatch. The wave encodes nothing, so it may as well speak the chart's
+ * own vocabulary: the same buckets the heatmap uses, snapping between
+ * them.
+ *
+ * It includes level 0, the neutral ground colour, so the wave travels the
+ * full distance from an empty city to a full one. The contribution ramp
+ * deliberately skips that stretch — there, cream means "no contributions"
+ * and must not read as a low count.
  */
-const waveStart = rgbToOklch(hexToRgb(levelColors[0]));
-
-export function waveRampColor(amount: number): string {
-  return rgbToHex(oklchToRgb(lerpOklch(waveStart, rampEnd, amount)));
+export function waveLevelColor(amount: number): string {
+  const clamped = amount > 0 ? (amount < 1 ? amount : 1) : 0;
+  const index = Math.min(
+    levelColors.length - 1,
+    Math.floor(clamped * levelColors.length),
+  );
+  return levelColors[index];
 }

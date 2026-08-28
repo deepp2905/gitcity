@@ -8,7 +8,15 @@
  * It drives colour only. The wave runs exclusively in the flat state,
  * where an orthographic camera looking straight down renders no height
  * whatsoever, so colour is the only channel that can carry it: each
- * column sweeps between the neutral ground cream and the deepest green.
+ * column steps through the heatmap's own five levels, from the neutral
+ * ground cream up to the deepest green and back.
+ *
+ * A triangle rather than a sine. The value is quantized into five bands,
+ * and a sine does not spend equal time in each — it lingers near its
+ * extremes, so roughly 60% of every cycle would sit on either cream or
+ * the darkest green and the three greens between them would flicker past.
+ * A triangle climbs and descends linearly, so every preset gets an equal
+ * share of the cycle.
  */
 
 /** Columns per full wavelength. Roughly a quarter of a year per crest. */
@@ -56,12 +64,15 @@ export function waveAt(
   elapsedSeconds: number,
   jitterAmount = WAVE_JITTER,
 ): number {
-  const phase =
-    elapsedSeconds * WAVE_SPEED_HZ * Math.PI * 2 -
-    (weekIndex / WAVE_WAVELENGTH_COLUMNS) * Math.PI * 2;
+  // Position within the current cycle, 0..1. Subtracting the column
+  // index is what makes the wave travel: each column runs the same cycle
+  // a little behind its neighbour.
+  const cycles =
+    elapsedSeconds * WAVE_SPEED_HZ - weekIndex / WAVE_WAVELENGTH_COLUMNS;
+  const position = cycles - Math.floor(cycles);
 
-  // sin is -1..1; shift to 0..1 so it maps straight onto height and colour.
-  const base = 0.5 + 0.5 * Math.sin(phase);
+  // Triangle: 0 at the ends of the cycle, 1 in the middle.
+  const base = 1 - Math.abs(1 - 2 * position);
   const jittered = base + columnJitter(weekIndex) * jitterAmount;
 
   return jittered > 0 ? (jittered < 1 ? jittered : 1) : 0;
