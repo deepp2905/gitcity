@@ -89,25 +89,46 @@ export function contributionRampColor(
 }
 
 /**
+ * The steps the loading wave rotates through.
+ *
+ * Sampled from the contribution ramp rather than taken from
+ * `levelColors`. GitHub's five swatches do not sit on a straight line:
+ * they bow outward in chroma, peaking at 0.178 for `#40c463`, where the
+ * ramp runs flat at ~0.112-0.119 from end to end. Stepping through them
+ * put colours on screen 50% more saturated than anything the city itself
+ * can render — and with ambient 1.6 plus directional 2, the extra chroma
+ * is what clips first, so those steps read as neon while the same
+ * lighting leaves the ramp alone.
+ *
+ * Level 0 still leads: the neutral ground colour, so the wave travels the
+ * full distance from an empty city to a full one. The four above it are
+ * the city's own greens.
+ */
+const WAVE_LEVELS = [
+  levelColors[0],
+  contributionRampColor(0, true),
+  contributionRampColor(1 / 3, true),
+  contributionRampColor(2 / 3, true),
+  contributionRampColor(1, true),
+] as const;
+
+/**
  * Colour for the loading wave, which runs only in the flat state.
  *
- * Steps through the five preset levels rather than interpolating between
- * them. The contribution ramp is continuous because it encodes a
- * magnitude — a 3-commit day and a 12-commit day should not share a
- * swatch. The wave encodes nothing, so it may as well speak the chart's
- * own vocabulary: the same buckets the heatmap uses, snapping between
- * them.
- *
- * It includes level 0, the neutral ground colour, so the wave travels the
- * full distance from an empty city to a full one. The contribution ramp
- * deliberately skips that stretch — there, cream means "no contributions"
- * and must not read as a low count.
+ * Snaps between the steps rather than interpolating. The contribution
+ * ramp is continuous because it encodes a magnitude — a 3-commit day and
+ * a 12-commit day should not share a swatch. The wave encodes nothing, so
+ * stepping suits it, and the steps are drawn from the same ramp so the
+ * loading state and the city speak in one palette.
  */
 export function waveLevelColor(amount: number): string {
   const clamped = amount > 0 ? (amount < 1 ? amount : 1) : 0;
   const index = Math.min(
-    levelColors.length - 1,
-    Math.floor(clamped * levelColors.length),
+    WAVE_LEVELS.length - 1,
+    Math.floor(clamped * WAVE_LEVELS.length),
   );
-  return levelColors[index];
+  return WAVE_LEVELS[index];
 }
+
+/** Exposed for tests: the wave must only ever show one of these. */
+export const waveLevels: readonly string[] = WAVE_LEVELS;

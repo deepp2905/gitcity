@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { contributionRampColor, levelColors, waveLevelColor } from "./palette";
+import {
+  contributionRampColor,
+  levelColors,
+  waveLevelColor,
+  waveLevels,
+} from "./palette";
 
 const HEX = /^#[0-9a-f]{6}$/;
 
@@ -41,10 +46,24 @@ describe("contributionRampColor", () => {
 });
 
 describe("waveLevelColor", () => {
-  it("returns only preset levels, never a blend", () => {
+  it("returns only its own steps, never a blend", () => {
     for (let i = 0; i <= 100; i++) {
-      expect(levelColors).toContain(waveLevelColor(i / 100));
+      expect(waveLevels).toContain(waveLevelColor(i / 100));
     }
+  });
+
+  // The wave is the only thing that ever showed GitHub's mid swatches,
+  // and they are half again as saturated as anything the ramp produces,
+  // which is what made the loading state read as neon.
+  it("never shows a colour the city itself cannot", () => {
+    const cityColours = new Set(
+      Array.from({ length: 1001 }, (_, i) => contributionRampColor(i / 1000, true)),
+    );
+    for (const step of waveLevels.slice(1)) {
+      expect(cityColours.has(step)).toBe(true);
+    }
+    expect(waveLevels).not.toContain(levelColors[2]);
+    expect(waveLevels).not.toContain(levelColors[3]);
   });
 
   it("starts on the ground colour and ends on the deepest green", () => {
@@ -52,16 +71,16 @@ describe("waveLevelColor", () => {
     expect(waveLevelColor(1)).toBe(levelColors[4]);
   });
 
-  it("gives each level an equal slice of the range", () => {
-    expect(waveLevelColor(0.1)).toBe(levelColors[0]);
-    expect(waveLevelColor(0.3)).toBe(levelColors[1]);
-    expect(waveLevelColor(0.5)).toBe(levelColors[2]);
-    expect(waveLevelColor(0.7)).toBe(levelColors[3]);
-    expect(waveLevelColor(0.9)).toBe(levelColors[4]);
+  it("gives each step an equal slice of the range", () => {
+    expect(waveLevelColor(0.1)).toBe(waveLevels[0]);
+    expect(waveLevelColor(0.3)).toBe(waveLevels[1]);
+    expect(waveLevelColor(0.5)).toBe(waveLevels[2]);
+    expect(waveLevelColor(0.7)).toBe(waveLevels[3]);
+    expect(waveLevelColor(0.9)).toBe(waveLevels[4]);
   });
 
   it("clamps rather than reading off the end", () => {
-    expect(waveLevelColor(-5)).toBe(levelColors[0]);
-    expect(waveLevelColor(5)).toBe(levelColors[4]);
+    expect(waveLevelColor(-5)).toBe(waveLevels[0]);
+    expect(waveLevelColor(5)).toBe(waveLevels[4]);
   });
 });
