@@ -81,6 +81,11 @@ export function SearchForm({
           Icon only, so the accessible name has to come from aria-label.
           A square button at the field's own height reads as part of the
           same control rather than as a second, competing one.
+
+          It goes quiet while a search runs rather than showing a
+          spinner: the city is already the loading indicator, running the
+          wave across the whole screen, and a second one in the corner
+          says the same thing twice.
         */}
         <button
           type="submit"
@@ -88,7 +93,7 @@ export function SearchForm({
           aria-label={isLoading ? "Loading contributions" : "View contributions"}
           className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-white shadow-[var(--shadow-soft)] transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-ink/85 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
-          {isLoading ? <Spinner /> : <ArrowRight />}
+          <ArrowRight />
         </button>
       </div>
 
@@ -114,24 +119,6 @@ function ArrowRight() {
       strokeLinejoin="round"
     >
       <path d="M4 10h12M11 5l5 5-5 5" />
-    </svg>
-  );
-}
-
-/** Spins via CSS, so it keeps turning without a frame loop. */
-function Spinner() {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      aria-hidden="true"
-      className="size-5 animate-spin"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <circle cx="10" cy="10" r="7" className="opacity-30" />
-      <path d="M17 10a7 7 0 0 0-7-7" />
     </svg>
   );
 }
