@@ -165,10 +165,10 @@ and home indicator.
 
 ## Tuning panel
 
-In development a settings button sits bottom-right, styled as the other
-round controls on the page. Every scene
-constant is a live control there, grouped by concern, with per-section
-copy and reset. Copy a section, paste it over the matching block of
+In development a gear button sits bottom-right, styled as the other round
+controls on the page — and top-right on phones, where the bottom of the
+screen belongs to the field and the controls. Every scene constant is a
+live control there, grouped by concern, with per-section copy and reset. Copy a section, paste it over the matching block of
 `DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
 to make it the default. It is behind a `NODE_ENV` check, so none of it
 reaches visitors.
