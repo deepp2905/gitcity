@@ -376,6 +376,7 @@ export function CityApp() {
               key={user ?? "empty"}
               initialValue={user ?? ""}
               isLoading={phase === "loading"}
+              shouldFocus={phase === "idle"}
               onSubmit={handleSearch}
             />
           </div>

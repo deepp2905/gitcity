@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { parseUsernameInput } from "@/lib/username/parse";
 import type { UsernameParseFailureReason } from "@/lib/username/parse";
+import { useHasFinePointer } from "@/lib/hooks/use-media-query";
 
 const CLIENT_VALIDATION_MESSAGES: Record<UsernameParseFailureReason, string> = {
   empty: "Enter a GitHub username or profile URL.",
@@ -15,18 +16,41 @@ type SearchFormProps = {
   /** Current username from the URL, used to seed the field on load. */
   initialValue?: string;
   isLoading: boolean;
+  /** True only while the field is the visible occupant of its slot. */
+  shouldFocus?: boolean;
   onSubmit: (username: string) => void;
 };
 
 export function SearchForm({
   initialValue = "",
   isLoading,
+  shouldFocus = false,
   onSubmit,
 }: SearchFormProps) {
   const inputId = useId();
   const errorId = useId();
   const [value, setValue] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const hasFinePointer = useHasFinePointer();
+
+  /**
+   * Focus on load, so the page can be typed into without a click.
+   *
+   * Deliberately not on touch. Focusing a field there raises the
+   * keyboard, which would cover most of the city on arrival — and the
+   * city is the thing worth seeing first. `useHasFinePointer` is false
+   * during SSR and on the first client render, so this never fires on a
+   * phone even briefly.
+   *
+   * Guarded on visibility too: the field is still mounted while hidden
+   * behind the controls, and focusing an invisible input would scroll to
+   * it and trap the caret somewhere nobody can see.
+   */
+  useEffect(() => {
+    if (!shouldFocus || !hasFinePointer) return;
+    inputRef.current?.focus();
+  }, [shouldFocus, hasFinePointer]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,6 +84,7 @@ export function SearchForm({
           own max-width. */}
       <div className="flex items-center gap-2">
         <input
+          ref={inputRef}
           id={inputId}
           name="user"
           type="text"

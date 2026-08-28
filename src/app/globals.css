@@ -81,6 +81,22 @@ body {
  */
 
 /*
+ * Tailwind v4's Preflight leaves buttons at the browser default cursor,
+ * where v3 set them to `pointer`. Restore it once here rather than
+ * hanging a `cursor-pointer` class on every button in the app and
+ * remembering to on every future one.
+ *
+ * Disabled buttons are excluded so the components that set their own
+ * `disabled:cursor-*` still read correctly.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/*
  * Chrome entrance. Split into semantic chunks and staggered rather than
  * animating one container, so the page assembles instead of sliding in
  * as a single slab. Motion-safe only.
