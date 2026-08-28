@@ -357,16 +357,11 @@ export function CityApp() {
                   activeId={realPeriod!.id}
                   onSelect={handleSelectPeriod}
                 />
-                {/* Only while the city is standing: the export is a
-                    picture of a 3D city, and from the flat view there is
-                    no city to take a picture of. */}
-                {view === "3d" ? (
-                  <DownloadButton
-                    profile={data!.profile}
-                    period={realPeriod!}
-                    captureRef={captureRef}
-                  />
-                ) : null}
+                <DownloadButton
+                  profile={data!.profile}
+                  period={realPeriod!}
+                  captureRef={captureRef}
+                />
               </>
             ) : null}
           </div>

@@ -19,11 +19,13 @@ type DownloadButtonProps = {
 };
 
 /**
- * Saves the city as a PNG: the scene as rendered, plus an identity pill
- * along the bottom. No labels — see src/lib/export/png.ts.
+ * Saves the city as a PNG: the scene as rendered, plus a wordmark and an
+ * identity pill. No labels — see src/lib/export/png.ts.
  *
- * Only rendered while the city is standing, so there is no path to a
- * "3D city" download that is actually a picture of a flat grid.
+ * It captures whatever state is on screen. Flat gives the chart, tilted
+ * gives the city, and both are worth having — a button that is always
+ * there has to do the obvious thing rather than silently exporting a
+ * view nobody is looking at.
  */
 export function DownloadButton({
   profile,
