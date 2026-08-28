@@ -86,6 +86,15 @@ export type SceneConfig = {
   hoverTiltDeg: number;
   /** Vertical lean as a fraction of the horizontal. */
   hoverTipRatio: number;
+  /**
+   * How much taller a building directly under the pointer grows, as a
+   * fraction of its own height. Dock magnification, for a skyline. 0
+   * disables it.
+   */
+  hoverSwellStrength: number;
+  /** Radius of the swell in grid cells. Bigger lifts more of the city
+   * and reads as a slower, heavier bulge. */
+  hoverSwellRadius: number;
 
   // --- Scene geometry ---
   sceneMaxHeight: number;
@@ -124,6 +133,8 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   zoomPadding: 0.6,
   hoverTiltDeg: 2,
   hoverTipRatio: 0,
+  hoverSwellStrength: 0.9,
+  hoverSwellRadius: 5,
 
   sceneMaxHeight: 8,
   groundTileHeight: 0.04,
@@ -324,6 +335,24 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 1.5,
         step: 0.05,
         hint: "Vertical lean, relative to horizontal",
+      },
+      {
+        kind: "slider",
+        key: "hoverSwellStrength",
+        label: "Hover swell",
+        min: 0,
+        max: 2.5,
+        step: 0.05,
+        hint: "Extra height under the pointer; 0 disables",
+      },
+      {
+        kind: "slider",
+        key: "hoverSwellRadius",
+        label: "Swell radius",
+        min: 1,
+        max: 16,
+        step: 0.5,
+        hint: "Falloff distance, in cells",
       },
     ],
   },

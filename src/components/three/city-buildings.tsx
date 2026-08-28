@@ -38,6 +38,28 @@ const scratchPosition = new THREE.Vector3();
 const scratchQuaternion = new THREE.Quaternion();
 const scratchScale = new THREE.Vector3();
 const scratchColor = new THREE.Color();
+const scratchPointer = new THREE.Vector3();
+const scratchDirection = new THREE.Vector3();
+
+/**
+ * How fast the swell chases the pointer. Low enough that the city feels
+ * heavy: the bulge arrives a moment after the cursor rather than being
+ * welded to it, which is what stops it reading as a cursor decoration.
+ */
+const SWELL_FOLLOW_LAMBDA = 9;
+
+/** How fast the effect fades in and out as it becomes available. */
+const SWELL_FADE_LAMBDA = 6;
+
+/**
+ * R3F's camera type and the installed @types/three describe the same
+ * object but are not assignable to one another, so narrow on three's own
+ * runtime flag from `unknown` rather than casting between them.
+ */
+function asCamera(camera: unknown): THREE.Camera | null {
+  const candidate = camera as THREE.Camera | null;
+  return candidate?.isCamera === true ? candidate : null;
+}
 
 /** Future tiles sit slightly lower than a zero-contribution ground tile,
  * reading as an empty lot rather than a day with no activity. */
@@ -91,6 +113,11 @@ type CityBuildingsProps = {
   config: SceneConfig;
   /** While true the city runs the loading wave instead of showing data. */
   waving: boolean;
+  /**
+   * Pointer over the viewport, each axis normalized to -1..1, shared with
+   * the parallax lean. Null while there is no hovering pointer to answer.
+   */
+  swellPointerRef: RefObject<{ x: number; y: number }> | null;
   reducedMotion: boolean;
   onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
 };
@@ -113,6 +140,7 @@ export function CityBuildings({
   riseKey,
   config,
   waving,
+  swellPointerRef,
   reducedMotion,
   onHoverDay,
 }: CityBuildingsProps) {
@@ -253,6 +281,18 @@ export function CityBuildings({
    * than a frame count. */
   const waveElapsedRef = useRef(0);
 
+  /**
+   * Where the swell currently sits, in the mesh's own coordinates, and
+   * how far it has faded in.
+   *
+   * Damping the *point* rather than each building's height is what keeps
+   * this cheap: one lerp per frame instead of 366 springs, and the shape
+   * of the bulge stays exactly the falloff curve rather than being
+   * smeared by per-instance lag.
+   */
+  const swellPointRef = useRef({ x: 0, z: 0, placed: false });
+  const swellAmountRef = useRef(0);
+
   /** True while a period change is easing heights to their new targets.
    * Springs are reserved for the 2D/3D transform. */
   const morphingRef = useRef(false);
@@ -301,9 +341,24 @@ export function CityBuildings({
     colorFromRef.current = nextColors.slice();
   }, [layout]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const mesh = meshRef.current;
     if (!mesh) return;
+
+    // Where the swell is and how strong, resolved once per frame and
+    // read by the write loop below.
+    const swell = updateSwell(
+      state.camera,
+      mesh,
+      swellPointerRef,
+      swellPointRef.current,
+      swellAmountRef,
+      reducedMotion ? 0 : config.hoverSwellStrength,
+      // Config gives the radius in cells; the falloff works in world
+      // units, so it scales with the gap like everything else does.
+      config.hoverSwellRadius * (CELL_SIZE + config.cellGap),
+      delta,
+    );
 
     // Draw only the instances this period uses. The rest of the buffer
     // stays allocated and untouched, ready for a longer year.
@@ -549,8 +604,23 @@ export function CityBuildings({
       accumulatorRef.current -= SPRING_TIMESTEP_S;
     }
 
+    // The only branch the swell applies to: a city standing still is
+    // the one you can hover over. During a transform, a year morph or the
+    // loading wave the heights are already telling a story, and a second
+    // one on top reads as interference.
+    //
+    // It scales what is written rather than the spring state itself, so
+    // the physics never has to know about it and nothing drifts.
     for (let i = 0; i < layout.length; i++) {
-      writeInstance(mesh, i, layout[i], heights[i]);
+      const item = layout[i];
+      writeInstance(
+        mesh,
+        i,
+        item,
+        swell.amount > 0
+          ? heights[i] * (1 + swell.amount * falloff(item, swell))
+          : heights[i],
+      );
     }
     mesh.instanceMatrix.needsUpdate = true;
     }
@@ -629,6 +699,102 @@ export function CityBuildings({
       <meshLambertMaterial />
     </instancedMesh>
   );
+}
+
+type Swell = {
+  /** Centre, in the mesh's own coordinates. */
+  x: number;
+  z: number;
+  /** Peak extra height as a fraction, already faded. 0 means inactive. */
+  amount: number;
+  /** Falloff distance in world units. */
+  radius: number;
+};
+
+/**
+ * Moves the swell toward the pointer and returns this frame's state.
+ *
+ * The pointer arrives as viewport coordinates, which say nothing about
+ * where the city is: the camera tilts, and the parallax group rotates the
+ * city underneath it. So the pointer is unprojected into a world ray, met
+ * with the ground plane, and converted into the mesh's own space — which
+ * is the space the instances are positioned in, so the comparison is then
+ * a plain distance.
+ */
+function updateSwell(
+  rawCamera: unknown,
+  mesh: THREE.InstancedMesh,
+  pointerRef: RefObject<{ x: number; y: number }> | null,
+  point: { x: number; z: number; placed: boolean },
+  amountRef: { current: number },
+  strength: number,
+  radius: number,
+  delta: number,
+): Swell {
+  const camera = asCamera(rawCamera);
+  const available =
+    strength > 0 && radius > 0 && pointerRef !== null && camera !== null;
+
+  if (available) {
+    // Viewport coords to NDC. The y axis flips: the pointer is measured
+    // downward from the top, clip space upward from the centre.
+    const pointer = pointerRef.current;
+    scratchPointer.set(pointer.x, -pointer.y, -1).unproject(camera);
+    camera.getWorldDirection(scratchDirection);
+
+    // Meet the ground plane. Guard the grazing case, where the camera
+    // looks along the plane and the intersection runs off to infinity.
+    if (Math.abs(scratchDirection.y) > 1e-4) {
+      scratchPointer.addScaledVector(
+        scratchDirection,
+        -scratchPointer.y / scratchDirection.y,
+      );
+      mesh.worldToLocal(scratchPointer);
+
+      if (point.placed) {
+        // Frame-rate independent damping: the same trail at 60 and 120fps.
+        const blend = 1 - Math.exp(-SWELL_FOLLOW_LAMBDA * delta);
+        point.x += (scratchPointer.x - point.x) * blend;
+        point.z += (scratchPointer.z - point.z) * blend;
+      } else {
+        // First placement jumps, or the swell would sweep in from the
+        // origin the first time the pointer moves.
+        point.x = scratchPointer.x;
+        point.z = scratchPointer.z;
+        point.placed = true;
+      }
+    }
+  } else {
+    point.placed = false;
+  }
+
+  // Fade rather than switch, so leaving the idle state sets the city
+  // down instead of dropping it.
+  const target = available && point.placed ? 1 : 0;
+  const fade = 1 - Math.exp(-SWELL_FADE_LAMBDA * delta);
+  amountRef.current += (target - amountRef.current) * fade;
+  if (amountRef.current < 0.002) amountRef.current = 0;
+
+  return {
+    x: point.x,
+    z: point.z,
+    amount: amountRef.current * strength,
+    radius,
+  };
+}
+
+/**
+ * How much of the swell a building gets, 0..1.
+ *
+ * A Gaussian, so the bulge has no edge — a linear or clamped falloff
+ * leaves a visible ring where the effect stops, which reads as a bug
+ * rather than as a curve.
+ */
+function falloff(item: BuildingLayout, swell: Swell): number {
+  const dx = item.x - swell.x;
+  const dz = item.z - swell.z;
+  const normalized = (dx * dx + dz * dz) / (swell.radius * swell.radius);
+  return Math.exp(-normalized);
 }
 
 /**

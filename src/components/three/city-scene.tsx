@@ -568,6 +568,13 @@ export function CityScene({
                 riseKey={`${login}:${period.id}`}
                 config={config}
                 waving={waving}
+                // Only the idle city swells. Once there is real data the
+                // heights are the data, and a bulge that follows the
+                // cursor would be misreporting it — and the pointer is
+                // already busy raising tooltips there.
+                swellPointerRef={
+                  interactive || !hasFinePointer ? null : pointerRef
+                }
                 reducedMotion={reducedMotion}
                 onHoverDay={handleHoverDay}
               />

@@ -80,6 +80,17 @@ comparable between tabs; the tooltip carries the exact count.
 rather than sRGB, which would pass through muddy grey. The 2D heatmap
 keeps GitHub's five discrete buckets for familiarity.
 
+**The idle city swells under the pointer**, dock-style: buildings near
+the cursor grow, with a Gaussian falloff so the bulge has no visible
+edge. Only the idle city — once there is real data the heights *are* the
+data, and a bulge following the cursor would misreport it. The pointer is
+unprojected onto the ground plane and converted into the mesh's own
+space, because the camera tilts and the parallax group rotates the city
+underneath it, so viewport coordinates say nothing about which buildings
+are near. Damping the point rather than each building keeps it to one
+lerp a frame, and the swell scales what is written to the matrix rather
+than the spring state, so the physics never learns about it.
+
 **The idle city** is generated, not real. It is seeded so the server and
 the first client render agree — the fixed seed is the server snapshot of
 a `useSyncExternalStore` — and re-seeded per page load, so the city is a
