@@ -35,14 +35,17 @@ export const WAVE_JITTER = 0.22;
 /**
  * How long the wave takes to subside once the search resolves.
  *
- * It has to land, not stop. A free-running sine is at an arbitrary phase
- * whenever the data happens to arrive, and roughly half the columns are
- * then at or near the deepest green — darker than almost anything in a
- * real contribution year. Cutting straight to the data left that dark
- * band on screen to fade *down*, which read as a flash.
+ * It has to land, not stop. The wave is at an arbitrary phase whenever
+ * the data happens to arrive, and a good share of the columns are sitting
+ * on the deepest green — darker than almost anything in a real
+ * contribution year. Cutting straight to the data left that band on
+ * screen to fade *down*, which read as a flash.
  *
- * Decaying the amplitude to zero first takes the whole grid to cream, so
- * the data paints up from a blank chart instead of down from a false one.
+ * Over this window each tile crosses from its wave colour to its own
+ * data colour. Deliberately per tile and not through a shared value:
+ * decaying the amplitude to zero first was smooth, but it took the entire
+ * grid to cream on the way, and a chart that blanks before it fills reads
+ * as a second load rather than the end of the first.
  */
 export const WAVE_SETTLE_MS = 260;
 

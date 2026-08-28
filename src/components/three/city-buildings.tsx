@@ -458,11 +458,13 @@ export function CityBuildings({
       waveElapsedRef.current += delta;
       waveSettleRef.current = waving ? 0 : waveSettleRef.current + delta * 1000;
 
-      // 1 while the search runs, easing to 0 as it resolves. Multiplying
-      // the amplitude rather than blending toward a colour keeps every
-      // column on the same ramp the whole way down.
-      const amplitude =
-        1 - easeInOutCubic(Math.min(1, waveSettleRef.current / WAVE_SETTLE_MS));
+      // 0 while the search runs, easing to 1 as it resolves. Each tile
+      // crosses from the wave straight to its own colour: no intermediate
+      // state the whole grid shares, so there is no moment where the
+      // chart is uniformly anything.
+      const settle = waving
+        ? 0
+        : easeInOutCubic(Math.min(1, waveSettleRef.current / WAVE_SETTLE_MS));
 
       const colors = colorsRef.current;
       const elapsedSeconds = waveElapsedRef.current;
@@ -476,15 +478,19 @@ export function CityBuildings({
 
       for (let i = 0; i < layout.length; i++) {
         const item = layout[i];
-        const amount =
-          (reducedMotion ? 0.5 : waveAt(item.weekIndex, elapsedSeconds)) *
-          amplitude;
+        const amount = reducedMotion
+          ? 0.5
+          : waveAt(item.weekIndex, elapsedSeconds);
 
         heights[i] = from[i] + (item.restHeight - from[i]) * descent;
         velocities[i] = 0;
         writeInstance(mesh, i, item, heights[i]);
 
+        // The wave keeps running through the settle, so the chart
+        // resolves in motion rather than freezing and then fading.
         scratchColor.set(waveLevelColor(amount));
+        if (settle > 0) scratchColor.lerp(item.color, settle);
+
         const base = i * 3;
         colors[base] = scratchColor.r;
         colors[base + 1] = scratchColor.g;
@@ -500,13 +506,13 @@ export function CityBuildings({
       return;
     }
 
-    // Leaving the wave. The settle has taken every colour to cream, so
-    // the data fades up from a blank chart rather than down from a
-    // brighter one it never had.
+    // Leaving the wave. The settle has already carried every tile to its
+    // own colour, so there is nothing left to fade -- claiming otherwise
+    // would restart an 800ms fade from the answer to the answer.
     if (waveElapsedRef.current > 0) {
       waveElapsedRef.current = 0;
       waveSettleRef.current = 0;
-      colorFadingRef.current = true;
+      colorFadingRef.current = false;
       holdHeightsRef.current.set(heights);
       flattenFromRef.current.set(heights);
       morphingRef.current = target === 1;
