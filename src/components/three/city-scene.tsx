@@ -44,8 +44,14 @@ import { FpsMeter } from "./fps-meter";
 import { ShadowCatcher } from "./shadow-catcher";
 import { TuningPanel } from "./tuning-panel";
 
-/** Pointer over the viewport, each axis normalized to -1..1. */
-export type Pointer = { x: number; y: number };
+/**
+ * Pointer over the viewport, each axis normalized to -1..1.
+ *
+ * `inside` is separate from position because leaving is not a move: the
+ * cursor's last coordinates stay valid, and the swell needs to know to
+ * settle rather than to sit frozen where the pointer was abandoned.
+ */
+export type Pointer = { x: number; y: number; inside: boolean };
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -371,18 +377,18 @@ export function CityScene({
   const pressRef = useRef<{ x: number; y: number } | null>(null);
 
   /**
-   * Pointer position over the viewport, normalized to -1..1 per axis, for
-   * the hover lean. A ref rather than state: this updates on every mouse
-   * move and must not re-render React.
+   * Pointer position over the viewport, normalized to -1..1 per axis,
+   * driving the swell. A ref rather than state: this updates on every
+   * mouse move and must not re-render React.
    */
-  const pointerRef = useRef<Pointer>({ x: 0, y: 0 });
+  const pointerRef = useRef<Pointer>({ x: 0, y: 0, inside: false });
 
   useEffect(() => {
-    // Touch devices have no hovering pointer to answer: a tap would jerk
-    // the city over and leave it there, since nothing follows to bring it
-    // back. Recentre and stay put instead.
+    // Touch devices have no hovering pointer to answer: a tap would leave
+    // a bulge sitting where the finger last was, with nothing following
+    // to take it away again.
     if (!hasFinePointer) {
-      pointerRef.current = { x: 0, y: 0 };
+      pointerRef.current = { x: 0, y: 0, inside: false };
       return;
     }
 
@@ -390,12 +396,30 @@ export function CityScene({
       pointerRef.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
         y: (event.clientY / window.innerHeight) * 2 - 1,
+        inside: true,
       };
     };
-    // On the window, not the canvas: the lean should answer the pointer
+
+    const handleLeave = () => {
+      pointerRef.current = { ...pointerRef.current, inside: false };
+    };
+
+    // On the window, not the canvas: the swell should answer the pointer
     // anywhere on the page, including over the controls.
     window.addEventListener("pointermove", handleMove);
-    return () => window.removeEventListener("pointermove", handleMove);
+    // Three ways to lose the pointer without a further move. Without
+    // these the last known position stays authoritative forever and the
+    // swell holds its bulge over an empty screen.
+    document.addEventListener("pointerleave", handleLeave);
+    document.addEventListener("pointercancel", handleLeave);
+    window.addEventListener("blur", handleLeave);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      document.removeEventListener("pointerleave", handleLeave);
+      document.removeEventListener("pointercancel", handleLeave);
+      window.removeEventListener("blur", handleLeave);
+    };
   }, [hasFinePointer]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent) => {

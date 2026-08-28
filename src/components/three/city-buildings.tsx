@@ -43,8 +43,19 @@ const scratchDirection = new THREE.Vector3();
  */
 const SWELL_FOLLOW_LAMBDA = 9;
 
-/** How fast the effect fades in and out as it becomes available. */
-const SWELL_FADE_LAMBDA = 6;
+/**
+ * How long the swell takes to rise and to settle, in milliseconds.
+ *
+ * A duration with an easing curve, not exponential damping like the
+ * follow above. Damping has no end: it approaches zero asymptotically, so
+ * leaving the city left a bulge decaying for as long as anyone watched,
+ * with no moment of arrival. A timed ease puts the city back down and
+ * stops.
+ *
+ * Shares `easeInOutCubic` with the camera transform and the year morph,
+ * so everything in the scene that settles, settles on one curve.
+ */
+const SWELL_SETTLE_MS = 300;
 
 /**
  * R3F's camera type and the installed @types/three describe the same
@@ -76,6 +87,10 @@ const FUTURE_TILE_HEIGHT_SCALE = 0.45;
  * the mesh survives every switch with its colours intact.
  */
 const INSTANCE_CAPACITY = 384;
+
+/** What the swell needs of the pointer: where it is, and whether it is
+ * still on the page at all. */
+type SwellPointer = { x: number; y: number; inside: boolean };
 
 type BuildingLayout = {
   /** Null for padded future days, which are inert scaffolding. */
@@ -109,10 +124,10 @@ type CityBuildingsProps = {
   /** While true the city runs the loading wave instead of showing data. */
   waving: boolean;
   /**
-   * Pointer over the viewport, each axis normalized to -1..1, shared with
-   * the parallax lean. Null while there is no hovering pointer to answer.
+   * Pointer over the viewport, each axis normalized to -1..1. Null on a
+   * device with no hovering pointer to answer at all.
    */
-  swellPointerRef: RefObject<{ x: number; y: number }> | null;
+  swellPointerRef: RefObject<SwellPointer> | null;
   reducedMotion: boolean;
 };
 
@@ -275,8 +290,7 @@ export function CityBuildings({
   const waveElapsedRef = useRef(0);
 
   /**
-   * Where the swell currently sits, in the mesh's own coordinates, and
-   * how far it has faded in.
+   * Where the swell currently sits, in the mesh's own coordinates.
    *
    * Damping the *point* rather than each building's height is what keeps
    * this cheap: one lerp per frame instead of 366 springs, and the shape
@@ -284,7 +298,8 @@ export function CityBuildings({
    * smeared by per-instance lag.
    */
   const swellPointRef = useRef({ x: 0, z: 0, placed: false });
-  const swellAmountRef = useRef(0);
+  /** Linear 0..1 clock for the rise and settle; eased where it is used. */
+  const swellProgressRef = useRef(0);
 
   /** True while a period change is easing heights to their new targets.
    * Springs are reserved for the 2D/3D transform. */
@@ -354,7 +369,7 @@ export function CityBuildings({
       mesh,
       swellPointerRef,
       swellPointRef.current,
-      swellAmountRef,
+      swellProgressRef,
       reducedMotion ? 0 : config.hoverSwellStrength,
       // Config gives the radius in cells; the falloff works in world
       // units, so it scales with the gap like everything else does.
@@ -702,16 +717,23 @@ type Swell = {
 function updateSwell(
   rawCamera: unknown,
   mesh: THREE.InstancedMesh,
-  pointerRef: RefObject<{ x: number; y: number }> | null,
+  pointerRef: RefObject<SwellPointer> | null,
   point: { x: number; z: number; placed: boolean },
-  amountRef: { current: number },
+  progressRef: { current: number },
   strength: number,
   radius: number,
   delta: number,
 ): Swell {
   const camera = asCamera(rawCamera);
+  // `inside` matters as much as the rest: a pointer that has left the
+  // document keeps its last coordinates, so without it the swell has no
+  // way to tell hovering still from having been abandoned.
   const available =
-    strength > 0 && radius > 0 && pointerRef !== null && camera !== null;
+    strength > 0 &&
+    radius > 0 &&
+    camera !== null &&
+    pointerRef !== null &&
+    pointerRef.current.inside;
 
   if (available) {
     // Viewport coords to NDC. The y axis flips: the pointer is measured
@@ -742,21 +764,30 @@ function updateSwell(
         point.placed = true;
       }
     }
-  } else {
-    point.placed = false;
   }
 
-  // Fade rather than switch, so leaving the idle state sets the city
-  // down instead of dropping it.
+  // A linear clock toward the target, eased on the way out. Advancing
+  // the eased value directly would ease an already-eased position and
+  // the curve would flatten every time the direction changed; this way
+  // reversing mid-settle simply runs the same curve backwards from
+  // wherever it had got to.
   const target = available && point.placed ? 1 : 0;
-  const fade = 1 - Math.exp(-SWELL_FADE_LAMBDA * delta);
-  amountRef.current += (target - amountRef.current) * fade;
-  if (amountRef.current < 0.002) amountRef.current = 0;
+  const step = delta / (SWELL_SETTLE_MS / 1000);
+  const progress = progressRef.current;
+  progressRef.current =
+    target > progress
+      ? Math.min(target, progress + step)
+      : Math.max(target, progress - step);
+
+  // Fully down: only now forget where the pointer was, so a cursor that
+  // comes back mid-settle resumes from the bulge still on screen rather
+  // than teleporting it across the city.
+  if (progressRef.current === 0) point.placed = false;
 
   return {
     x: point.x,
     z: point.z,
-    amount: amountRef.current * strength,
+    amount: easeInOutCubic(progressRef.current) * strength,
     radius,
   };
 }
