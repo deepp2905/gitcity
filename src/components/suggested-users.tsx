@@ -21,7 +21,10 @@ type SuggestedUsersProps = {
 
 export function SuggestedUsers({ onSelect }: SuggestedUsersProps) {
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-1">
+    // pl-2.5 cancels the buttons' own px-2.5 against the field's px-5,
+    // so the first login's text starts on the same vertical as the
+    // placeholder above it rather than 10px inside it.
+    <ul className="flex flex-wrap items-center justify-start gap-1 pl-2.5">
       {SUGGESTED_LOGINS.map((login) => (
         <li key={login}>
           <button

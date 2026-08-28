@@ -424,12 +424,23 @@ export function CityApp() {
                 : "pointer-events-none translate-y-2 opacity-0"
             }`}
           >
-            <SuggestedUsers onSelect={handleSearch} />
+            {/* Same box as the search form above, so the row lines up
+                with the field rather than with the page. */}
+            <div className="w-full max-w-md">
+              <SuggestedUsers onSelect={handleSearch} />
+            </div>
           </div>
 
+          {/*
+            pointer-events-none unconditionally. The total is never
+            interactive, and being absolutely positioned it lies over the
+            suggestions — at opacity 0 it is invisible but still the
+            topmost element, so it was swallowing every tap meant for
+            them.
+          */}
           <div
             aria-hidden={revealed ? undefined : true}
-            className={`absolute inset-x-0 top-0 flex h-8 items-center justify-center transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
+            className={`pointer-events-none absolute inset-x-0 top-0 flex h-8 items-center justify-center transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
               revealed ? "opacity-100" : "opacity-0"
             }`}
           >
