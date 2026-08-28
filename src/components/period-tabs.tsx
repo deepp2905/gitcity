@@ -47,7 +47,11 @@ export function PeriodTabs({ periods, activeId, onSelect }: PeriodTabsProps) {
     // min-w-0 is what makes max-w-full bite: a flex item defaults to
     // min-width:auto and refuses to shrink below its content, so without
     // it the strip just overflows its parent instead of scrolling.
-    <div className="min-w-0 max-w-full overflow-x-auto rounded-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    //
+    // No rounding here. The pill shape belongs to the tablist inside,
+    // and a second rounded clip on the scroller sliced the last tab's
+    // outer corner off whenever the strip was scrolled to its end.
+    <div className="min-w-0 max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div
         role="tablist"
         aria-label="Contribution period"

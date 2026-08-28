@@ -268,8 +268,14 @@ export function CityApp() {
         onToggleView={handleToggleView}
       />
 
+      {/*
+        Wider than the field it contains. The identity pill and five
+        period tabs together need more room than a search box does, and
+        squeezing them into the field's width forced the strip to scroll
+        and clipped the last year off.
+      */}
       <footer
-        className="chrome-enter pointer-events-auto relative z-10 mx-auto flex w-full max-w-xl shrink-0 flex-col items-center gap-3"
+        className="chrome-enter pointer-events-auto relative z-10 mx-auto flex w-full max-w-3xl shrink-0 flex-col items-center gap-3"
         style={{ "--enter-delay": "80ms" } as React.CSSProperties}
       >
         {error ? (
