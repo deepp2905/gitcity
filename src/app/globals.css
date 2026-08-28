@@ -19,11 +19,11 @@
   --color-ink-muted: #6b6459;
   --color-ink-subtle: #948c7e;
 
-  /* Brand / accent (GitHub-inspired green) */
-  --color-accent: #216e39;
-  --color-accent-strong: #196c2e;
-
-  /* Contribution heatmap levels (GitHub-style quartiles) */
+  /*
+   * Contribution levels. The only colour in the product: green belongs to
+   * the data and nothing else, so focus rings, controls and chrome are all
+   * neutral and the eye has one thing to land on.
+   */
   --color-level-0: #ebe8e0;
   --color-level-1: #9be9a8;
   --color-level-2: #40c463;
@@ -55,9 +55,6 @@
   --color-ink: var(--color-ink);
   --color-ink-muted: var(--color-ink-muted);
   --color-ink-subtle: var(--color-ink-subtle);
-
-  --color-accent: var(--color-accent);
-  --color-accent-strong: var(--color-accent-strong);
 
   --color-level-0: var(--color-level-0);
   --color-level-1: var(--color-level-1);

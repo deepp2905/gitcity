@@ -81,6 +81,12 @@ comparable between tabs; the tooltip carries the exact count.
 rather than sRGB, which would pass through muddy grey. The 2D heatmap
 keeps GitHub's five discrete buckets for familiarity.
 
+Green belongs to the data and to nothing else. There is deliberately no
+accent colour in the palette: controls, focus rings, the FPS graph and
+every other mark are neutral, so the only saturated thing on screen is
+the city. Errors keep their own red, because a warning that blends in is
+not a warning.
+
 **The city swells under the pointer**, dock-style: buildings near the
 cursor grow, with a Gaussian falloff so the bulge has no visible edge.
 The exact counts live in the accessible heatmap, so the skyline is free

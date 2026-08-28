@@ -142,7 +142,7 @@ export function PeriodSelect({
                 tabIndex={-1}
                 onClick={() => choose(period.id)}
                 onKeyDown={(event) => handleListKeyDown(event, index)}
-                className={`flex h-9 w-full items-center justify-start rounded-full px-3.5 text-left text-sm font-medium tabular-nums transition-[background-color,color] duration-150 ease-[cubic-bezier(0.2,0,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                className={`flex h-9 w-full items-center justify-start rounded-full px-3.5 text-left text-sm font-medium tabular-nums transition-[background-color,color] duration-150 ease-[cubic-bezier(0.2,0,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   isActive
                     ? "bg-ink text-white"
                     : "text-ink-muted hover:bg-ink/5 hover:text-ink"
@@ -169,7 +169,7 @@ export function PeriodSelect({
             setOpen(true);
           }
         }}
-        className="flex h-11 w-full items-center justify-between gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] pl-4 pr-3 text-sm font-medium tabular-nums text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] pl-4 pr-3 text-sm font-medium tabular-nums text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         {active.label}
         {/* Points the way the menu opens, and flips once it has. */}

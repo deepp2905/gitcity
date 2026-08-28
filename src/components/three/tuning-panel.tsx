@@ -118,7 +118,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         onClick={() => setOpen(true)}
         aria-label="Open scene tuning"
         title="Scene tuning"
-        className="pointer-events-auto fixed bottom-3 right-3 z-50 grid size-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="pointer-events-auto fixed bottom-3 right-3 z-50 grid size-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <SettingsIcon />
       </button>
@@ -271,7 +271,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                       [control.key]: Number(event.target.value),
                     })
                   }
-                  className="mt-1 w-full accent-[var(--color-accent)]"
+                  className="mt-1 w-full accent-[var(--color-ink)]"
                 />
                 {control.hint ? (
                   <span className="text-[10px] text-ink-subtle">

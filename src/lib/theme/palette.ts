@@ -9,7 +9,14 @@ import { hexToRgb, lerpOklch, oklchToRgb, rgbToHex, rgbToOklch } from "./color";
  * change the other.
  */
 
-/** Off-white canvas, near-black ink, GitHub-inspired greens. Light-only theme. */
+/**
+ * Off-white canvas, near-black ink, and greens reserved entirely for the
+ * contribution levels. There is deliberately no accent colour: anything
+ * that is not data — controls, focus rings, chrome — is a neutral, so the
+ * only saturated thing on screen is the city.
+ *
+ * Light-only theme.
+ */
 export const palette = {
   canvas: "#faf8f3",
   canvasRaised: "#ffffff",
@@ -18,9 +25,6 @@ export const palette = {
   ink: "#171412",
   inkMuted: "#6b6459",
   inkSubtle: "#948c7e",
-
-  accent: "#216e39",
-  accentStrong: "#196c2e",
 
   danger: "#b5432a",
   dangerBg: "#fbeee9",

@@ -39,7 +39,11 @@ export function FpsMeter() {
     }
 
     const styles = getComputedStyle(document.documentElement);
-    const barColor = styles.getPropertyValue("--color-accent").trim() || "#216e39";
+    // Neutral, like every other non-data mark on the page. A frame-time
+    // graph is diagnostics, not contributions, and colouring it green
+    // would put the data's one colour on something that isn't data.
+    const barColor =
+      styles.getPropertyValue("--color-ink-muted").trim() || "#6b6459";
     const warnColor = styles.getPropertyValue("--color-danger").trim() || "#b5432a";
 
     function draw() {
