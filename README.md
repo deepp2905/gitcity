@@ -100,14 +100,22 @@ not a warning.
 **The city swells under the pointer**, dock-style: buildings near the
 cursor grow, with a Gaussian falloff so the bulge has no visible edge.
 The exact counts live in the accessible heatmap, so the skyline is free
-to exaggerate under the cursor without anyone losing the numbers. The
-pointer is
-unprojected onto the ground plane and converted into the mesh's own
-space, because the camera tilts and the parallax group rotates the city
-underneath it, so viewport coordinates say nothing about which buildings
-are near. Damping the point rather than each building keeps it to one
-lerp a frame, and the swell scales what is written to the matrix rather
-than the spring state, so the physics never learns about it.
+to exaggerate under the cursor without anyone losing the numbers.
+
+The pointer is unprojected onto the ground plane and converted into the
+mesh's own space, because the camera tilts and viewport coordinates say
+nothing about which buildings are near. Damping the point rather than
+each building keeps it to one lerp a frame, and the swell scales what is
+written to the matrix rather than the spring state, so the physics never
+learns about it.
+
+It rises and settles on `easeInOutCubic` over 300ms — a duration rather
+than exponential damping, which has no end and left the city decaying
+back down for as long as anyone watched. Leaving is tracked separately
+from moving: `pointerleave`, `pointercancel` and window `blur` all clear
+an `inside` flag, because a pointer that has left the document keeps its
+last coordinates and the swell would otherwise hold its bulge over an
+empty screen forever.
 
 **The idle city** is generated, not real. It is seeded so the server and
 the first client render agree — the fixed seed is the server snapshot of
