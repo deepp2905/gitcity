@@ -8,29 +8,35 @@
  */
 
 /**
- * The export has its own frame: 3:5 portrait, rendered at 2x.
+ * The export has its own frame: 4:5 portrait, rendered at 2x.
  *
  * Deliberately not the viewport's shape. The window is whatever shape the
  * window is, and a landscape browser produces a landscape image that
  * reads as a screenshot. A fixed portrait frame makes the download a
- * thing in its own right, and it is the shape that survives being posted.
+ * thing in its own right, and 4:5 is the tallest shape social feeds show
+ * without cropping.
  *
  * Logical size drives the orthographic frustum; multiplied by the pixel
- * ratio it gives the PNG's real pixels.
+ * ratio it gives the PNG's real pixels — 1080x1350.
  */
 export const EXPORT_PIXEL_RATIO = 2;
 export const EXPORT_LOGICAL_WIDTH = 540;
-export const EXPORT_LOGICAL_HEIGHT = 900;
+export const EXPORT_LOGICAL_HEIGHT = 675;
 
 /**
  * Fraction of the frame the city fills.
  *
  * Much more generous than the on-screen `zoomPadding`, which has to clear
  * the labels above and left of the grid and keep the city out from under
- * the controls. The PNG has none of that — only the pill along the
- * bottom, which the city is never tall enough to reach.
+ * the controls. The PNG has none of that: the wordmark and the pill sit
+ * at the very top and bottom, and the city is a wide, shallow ribbon that
+ * never reaches either.
+ *
+ * The city is far wider than it is deep, so in a portrait frame this is
+ * effectively the horizontal fill — `fitZoomForView` takes whichever of
+ * the two axes binds, and it is always width here.
  */
-export const EXPORT_ZOOM_PADDING = 0.86;
+export const EXPORT_ZOOM_PADDING = 0.94;
 
 /** Pill geometry, in CSS pixels before the export scale is applied. */
 const PILL_HEIGHT = 52;
@@ -41,6 +47,17 @@ const PILL_PAD_RIGHT = 22;
 const AVATAR_TEXT_GAP = 10;
 const PILL_BOTTOM_MARGIN = 36;
 const PILL_FONT_SIZE = 16;
+
+/**
+ * The wordmark at the top, at 0.75x the pill's scale.
+ *
+ * Drawn as plain text rather than in a pill of its own, matching the
+ * page header. The hierarchy is deliberate: whose city this is matters
+ * more than what made it, so the identity gets the pill and the product
+ * gets a quiet line above.
+ */
+const LOGO_SCALE = 0.75;
+const LOGO_TEXT = "gitCity";
 
 const PILL_BG = "#ffffff";
 const PILL_BORDER = "rgba(23, 20, 18, 0.08)";
@@ -189,6 +206,27 @@ function drawIdentityPill(
   );
 }
 
+/** Draws the wordmark centred along the top of `ctx`. */
+function drawWordmark(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  scale: number,
+) {
+  ctx.font = `600 ${PILL_FONT_SIZE * LOGO_SCALE * scale}px ${bodyFontFamily()}`;
+  ctx.fillStyle = PILL_TEXT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // Mirrors the pill's own margin, scaled with it, so the two sit the
+  // same distance from their respective edges.
+  const centreY =
+    PILL_BOTTOM_MARGIN * LOGO_SCALE * scale +
+    (PILL_HEIGHT * LOGO_SCALE * scale) / 2;
+
+  ctx.fillText(LOGO_TEXT, canvasWidth / 2, centreY);
+  ctx.textAlign = "start";
+}
+
 /**
  * The city plus its pill, as a new canvas.
  *
@@ -210,6 +248,7 @@ export function composeCityPng(
   if (!ctx) return canvas;
 
   ctx.drawImage(source, 0, 0);
+  drawWordmark(ctx, canvas.width, scale);
   drawIdentityPill(ctx, canvas.width, canvas.height, login, avatar, scale);
 
   return canvas;

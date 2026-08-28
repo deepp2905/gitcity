@@ -7,15 +7,15 @@ import {
 } from "./png";
 
 describe("export frame", () => {
-  it("is 3:5 portrait", () => {
-    expect(EXPORT_LOGICAL_WIDTH / EXPORT_LOGICAL_HEIGHT).toBeCloseTo(3 / 5);
+  it("is 4:5 portrait", () => {
+    expect(EXPORT_LOGICAL_WIDTH / EXPORT_LOGICAL_HEIGHT).toBeCloseTo(4 / 5);
     expect(EXPORT_LOGICAL_HEIGHT).toBeGreaterThan(EXPORT_LOGICAL_WIDTH);
   });
 
   it("renders at 2x, giving whole pixels", () => {
     expect(EXPORT_PIXEL_RATIO).toBe(2);
     expect(EXPORT_LOGICAL_WIDTH * EXPORT_PIXEL_RATIO).toBe(1080);
-    expect(EXPORT_LOGICAL_HEIGHT * EXPORT_PIXEL_RATIO).toBe(1800);
+    expect(EXPORT_LOGICAL_HEIGHT * EXPORT_PIXEL_RATIO).toBe(1350);
   });
 });
 
