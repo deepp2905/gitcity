@@ -223,6 +223,9 @@ export function CityApp() {
   const shownProfile = phase === "ready" && data ? data.profile : MOCK_PROFILE;
   const showControls = phase === "ready" && data !== null && realPeriod !== null;
 
+  /** The scene only answers taps once there is real data in it. */
+  const canToggle = isInteractive(phase);
+
   /**
    * The idle city stays tilted, so the page opens on the thing the
    * product makes rather than on a chart. A search flattens it, which is
@@ -263,7 +266,7 @@ export function CityApp() {
         view={view}
         target={sceneTarget}
         waving={phase === "loading"}
-        interactive={isInteractive(phase)}
+        interactive={canToggle}
         webglSupported={webglSupported}
         onToggleView={handleToggleView}
       />
@@ -286,6 +289,25 @@ export function CityApp() {
             {error.message}
           </p>
         ) : null}
+
+        {/*
+          Says what a tap will do, so the one interaction the scene has
+          is discoverable without a button competing with the city.
+
+          Only while it is true: the idle city ignores taps, so offering
+          them there would be a lie. Reserved height again, so the field
+          doesn't shift when it appears.
+        */}
+        <div className="flex min-h-5 items-center">
+          <p
+            aria-hidden={canToggle ? undefined : true}
+            className={`text-xs text-ink-subtle transition-opacity duration-300 ease-[var(--ease-in-out-cubic)] ${
+              canToggle ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {view === "3d" ? "Tap to switch to 2D" : "Tap to switch to 3D"}
+          </p>
+        </div>
 
         <SearchForm
           key={user ?? "empty"}
