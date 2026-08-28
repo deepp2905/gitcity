@@ -428,7 +428,19 @@ export function CityBuildings({
         }
       }
       // Snapshot for the eased descent, after any reset above.
-      flattenFromRef.current = heights.slice();
+      //
+      // The *rendered* heights, not the stored ones. The swell is applied
+      // at write time and never enters `heights`, so snapshotting those
+      // dropped every raised building back to its true height on the
+      // first frame of the flatten and then eased down from there. The
+      // descent has to begin from what is on screen.
+      const flattenFrom = heights.slice();
+      if (target === 0) {
+        for (let i = 0; i < layout.length; i++) {
+          flattenFrom[i] = swelledHeight(flattenFrom[i], layout[i], swell);
+        }
+      }
+      flattenFromRef.current = flattenFrom;
     }
 
     // Under orthographic projection a straight-down camera shows no
@@ -599,7 +611,10 @@ export function CityBuildings({
 
         heights[i] = from + (item.riseHeight - from) * eased;
         velocities[i] = 0;
-        writeInstance(mesh, i, item, heights[i]);
+        // Swelled here too: the city is standing throughout a year
+        // change, so a bulge under the pointer should survive it rather
+        // than collapse and come back.
+        writeInstance(mesh, i, item, swelledHeight(heights[i], item, swell));
       }
 
       mesh.instanceMatrix.needsUpdate = true;
@@ -655,14 +670,7 @@ export function CityBuildings({
     // the physics never has to know about it and nothing drifts.
     for (let i = 0; i < layout.length; i++) {
       const item = layout[i];
-      writeInstance(
-        mesh,
-        i,
-        item,
-        swell.amount > 0
-          ? heights[i] * (1 + swell.amount * falloff(item, swell))
-          : heights[i],
-      );
+      writeInstance(mesh, i, item, swelledHeight(heights[i], item, swell));
     }
     mesh.instanceMatrix.needsUpdate = true;
     }
@@ -815,6 +823,17 @@ function updateSwell(
     amount: easeInOutCubic(progressRef.current) * strength,
     radius,
   };
+}
+
+/** A building's height as actually rendered, with the hover swell on it. */
+function swelledHeight(
+  height: number,
+  item: BuildingLayout,
+  swell: Swell,
+): number {
+  return swell.amount > 0
+    ? height * (1 + swell.amount * falloff(item, swell))
+    : height;
 }
 
 /**

@@ -126,6 +126,14 @@ each building keeps it to one lerp a frame, and the swell scales what is
 written to the matrix rather than the spring state, so the physics never
 learns about it.
 
+That last part has one consequence worth knowing: the swelled height
+exists only in the matrix, so anything that reads `heights` sees the true
+height. The flatten therefore has to bake the swell into its starting
+snapshot, or a raised building drops to its real height on the first
+frame and eases down from there. The year morph carries the swell for the
+same reason — the city is standing throughout, so a bulge should survive
+it rather than collapse and come back.
+
 It rises and settles on `easeInOutCubic` over 300ms — a duration rather
 than exponential damping, which has no end and left the city decaying
 back down for as long as anyone watched. Leaving is tracked separately
