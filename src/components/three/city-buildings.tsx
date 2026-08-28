@@ -295,7 +295,16 @@ export function CityBuildings({
 
   const elapsedRef = useRef(0);
   const accumulatorRef = useRef(0);
-  const lastTargetRef = useRef(target);
+  /**
+   * Null rather than the initial target, so the very first frame counts
+   * as a change and the city rises on load the way it rises from a
+   * transform: held at the ground, released column by column.
+   *
+   * Seeded with `target` this was a no-op on mount, and the springs
+   * simply pulled all 366 buildings up together the moment they were
+   * created. The wave is the thing worth watching.
+   */
+  const lastTargetRef = useRef<number | null>(null);
   const lastRiseKeyRef = useRef(riseKey);
 
   // Layout effect, not a passive one. A passive effect runs after the
