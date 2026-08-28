@@ -114,7 +114,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   yearMorphMs: 600,
 
   colorStaggerMs: 0,
-  colorFadeMs: 280,
+  colorFadeMs: 800,
   riseStartProgress: 0.24,
 
   transformDurationMs: 600,

@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useRef,
+  type RefObject,
+} from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { ContributionDay } from "@/lib/contributions/types";
@@ -35,6 +42,23 @@ const scratchColor = new THREE.Color();
 /** Future tiles sit slightly lower than a zero-contribution ground tile,
  * reading as an empty lot rather than a day with no activity. */
 const FUTURE_TILE_HEIGHT_SCALE = 0.45;
+
+/**
+ * Instances the mesh is built to hold, independent of how many any one
+ * period needs.
+ *
+ * An InstancedMesh allocates its buffers at construction, so sizing it to
+ * the current period meant every year switch that changed the day count
+ * -- a leap year, or the rolling window against a calendar one -- threw
+ * the mesh away and built a new one. A fresh mesh has no instance colours
+ * and no matrices, so it rendered white and unplaced for the frame or two
+ * before they were written: the flash before the fade.
+ *
+ * Sized past the longest period there can be (a rolling window of 367
+ * days), and `mesh.count` is set per frame to what is actually in use, so
+ * the mesh survives every switch with its colours intact.
+ */
+const INSTANCE_CAPACITY = 384;
 
 type BuildingLayout = {
   /** Null for padded future days, which are inert scaffolding. */
@@ -191,6 +215,17 @@ export function CityBuildings({
     config.colorStaggerMs,
   ]);
 
+  /**
+   * Buffer size for the mesh. Only ever grows, so a period longer than
+   * the constant costs one remount rather than one per switch.
+   *
+   * Adjusted during render rather than in an effect: React re-runs the
+   * component immediately with the new value and discards this pass, so
+   * the mesh is never built at the wrong size even for one frame.
+   */
+  const [capacity, setCapacity] = useState(INSTANCE_CAPACITY);
+  if (layout.length > capacity) setCapacity(layout.length);
+
   /** Live spring state, one entry per instance. */
   const heightsRef = useRef<Float32Array>(new Float32Array(0));
   const velocitiesRef = useRef<Float32Array>(new Float32Array(0));
@@ -230,7 +265,11 @@ export function CityBuildings({
   const lastTargetRef = useRef(target);
   const lastRiseKeyRef = useRef(riseKey);
 
-  useEffect(() => {
+  // Layout effect, not a passive one. A passive effect runs after the
+  // browser has painted, so between a period change and this running
+  // there was a painted frame the loop had skipped -- it bails while the
+  // buffers are the previous period's length.
+  useLayoutEffect(() => {
     const previous = heightsRef.current;
     const next = new Float32Array(layout.length);
     for (let i = 0; i < layout.length; i++) {
@@ -265,6 +304,10 @@ export function CityBuildings({
   useFrame((_, delta) => {
     const mesh = meshRef.current;
     if (!mesh) return;
+
+    // Draw only the instances this period uses. The rest of the buffer
+    // stays allocated and untouched, ready for a longer year.
+    if (mesh.count !== layout.length) mesh.count = layout.length;
 
     const heights = heightsRef.current;
     const velocities = velocitiesRef.current;
@@ -534,9 +577,12 @@ export function CityBuildings({
 
   // Pushes the current colour buffer to a freshly built mesh. The frame
   // loop owns colour after this; it only writes while a fade is running.
-  useEffect(() => {
+  // Before paint, so a mesh that genuinely was rebuilt never shows its
+  // default white.
+  useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
+    mesh.count = layout.length;
     writeColors(mesh, colorsRef.current, layout.length);
   }, [layout]);
 
@@ -562,10 +608,12 @@ export function CityBuildings({
   return (
     <instancedMesh
       ref={meshRef}
-      // InstancedMesh count is fixed at construction, so a changed day
-      // count needs a fresh mesh.
-      key={layout.length}
-      args={[undefined, undefined, Math.max(layout.length, 1)]}
+      // Deliberately not keyed on the day count. A fixed capacity plus a
+      // per-frame `count` keeps one mesh alive across every period, so a
+      // year switch fades from the colours already on screen instead of
+      // from a blank mesh.
+      key={capacity}
+      args={[undefined, undefined, capacity]}
       castShadow
       receiveShadow
       onPointerMove={(event) => {
