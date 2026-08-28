@@ -85,7 +85,8 @@ maximum. Contribution data is heavily skewed -- one busy day sets the
 ceiling -- so a linear scale would crush every ordinary day against the
 floor. The square root lifts the low end enough that they still read as
 buildings. Each period normalizes to its own maximum, so heights are not
-comparable between tabs; the tooltip carries the exact count.
+comparable between periods; the accessible heatmap carries the exact
+counts.
 
 **Colour** comes from the same normalized value, interpolated in OKLCH
 rather than sRGB, which would pass through muddy grey. The 2D heatmap
@@ -109,6 +110,7 @@ weekdays away are comparable. They aren't: weekday is a category, not a
 magnitude. Measuring on one axis also lets the radius be tight (3
 columns) without the effect shrinking to a dot, and matches how the
 loading wave measures the same space.
+
 The exact counts live in the accessible heatmap, so the skyline is free
 to exaggerate under the cursor without anyone losing the numbers.
 
