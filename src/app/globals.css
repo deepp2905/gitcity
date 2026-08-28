@@ -132,6 +132,32 @@ body {
 }
 
 /*
+ * A menu opening upward. Grows from its bottom edge, which is the edge
+ * attached to the button, so it reads as unfolding out of the control
+ * rather than arriving from somewhere else.
+ *
+ * Quick and undelayed, unlike .pop-in: this answers a click, and anything
+ * slower than about 150ms reads as lag on a direct manipulation.
+ */
+@keyframes menu-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .menu-up-enter {
+    animation: menu-up-in 140ms cubic-bezier(0.2, 0, 0, 1) both;
+    transform-origin: bottom center;
+  }
+}
+
+/*
  * Soft scrollbar for the dev tuning panel.
  *
  * Thumb only: the track stays transparent so the scrollbar reads as a

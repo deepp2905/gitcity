@@ -100,8 +100,11 @@ The scene runs on phones and tablets, with a few deliberate differences:
   mouse gets: a finger wanders further over the same intent.
 - The city is width-constrained in portrait, so it is allowed a much
   smaller margin than on desktop, where the chrome sits to the sides.
-- Five period tabs are wider than a phone, so the strip scrolls sideways
-  rather than wrapping.
+- The period picker is a dropdown, not a tab strip: five tabs are wider
+  than a phone, and one button naming the current period is a fraction of
+  that. It opens upward, because the controls are pinned to the bottom of
+  the viewport and there is nothing below them but the edge of the
+  screen.
 
 Heights use `dvh` and padding uses `env(safe-area-inset-*)`, so iOS
 Safari's address bar can't crop the page and the chrome clears the notch
@@ -195,7 +198,8 @@ src/
   components/
     three/                        Canvas, camera rig, instanced buildings,
                                   parallax, labels, tuning panel, FPS meter
-    *.tsx                         Search, tabs, view toggle, heatmap, shell
+    *.tsx                         Search, period select, download,
+                                  heatmap, profile, shell
   lib/
     api/                          Client-side fetch wrapper
     contributions/                Period/date/week math, height scale,

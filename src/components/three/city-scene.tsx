@@ -501,8 +501,9 @@ export function CityScene({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
-        // Decorative, and the toggle button beside the tabs is the
-        // accessible equivalent of clicking here.
+        // Decorative: the scene is a rendering of the heatmap that sits
+        // beside it in the accessible tree, which carries every day's
+        // date and count in both states.
         aria-hidden="true"
       >
         {size.width > 0 ? (

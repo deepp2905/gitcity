@@ -13,7 +13,7 @@ import { DEFAULT_VIEW, type ViewMode } from "@/lib/state/view";
 import { SearchForm } from "./search-form";
 import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
-import { PeriodTabs } from "./period-tabs";
+import { PeriodSelect } from "./period-select";
 import { DownloadButton } from "./download-button";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 import { buildMockPeriod } from "@/lib/contributions/mock";
@@ -352,7 +352,7 @@ export function CityApp() {
             {showControls ? (
               <>
                 <ProfileIdentity profile={data!.profile} />
-                <PeriodTabs
+                <PeriodSelect
                   periods={data!.periods}
                   activeId={realPeriod!.id}
                   onSelect={handleSelectPeriod}
