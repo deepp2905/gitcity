@@ -49,9 +49,9 @@ function ResetIcon() {
 
 function SettingsIcon() {
   return (
-    <svg {...iconProps("size-3.5")}>
-      <circle cx="8" cy="8" r="2.1" />
-      <path d="M8 1.6v1.7M8 12.7v1.7M14.4 8h-1.7M3.3 8H1.6M12.5 3.5l-1.2 1.2M4.7 11.3l-1.2 1.2M12.5 12.5l-1.2-1.2M4.7 4.7L3.5 3.5" />
+    <svg {...iconProps("size-[18px]")}>
+      <circle cx="8" cy="8" r="2.4" />
+      <path d="M8 1.4v1.9M8 12.7v1.9M14.6 8h-1.9M3.3 8H1.4M12.7 3.3l-1.4 1.4M4.7 11.3l-1.4 1.4M12.7 12.7l-1.4-1.4M4.7 4.7L3.3 3.3" />
     </svg>
   );
 }
@@ -109,13 +109,18 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
 
   if (!open) {
     return (
+      // Icon only, and built from the same parts as the download button
+      // beside the search field: 44px circle, translucent surface, hairline
+      // border, no shadow. It is a dev control, but it sits on the same
+      // page as everything else and should not look bolted on.
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="pointer-events-auto fixed bottom-3 right-3 z-50 flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-3 text-xs font-medium text-ink shadow-[var(--shadow-soft)] backdrop-blur-md hover:bg-canvas-raised"
+        aria-label="Open scene tuning"
+        title="Scene tuning"
+        className="pointer-events-auto fixed bottom-3 right-3 z-50 grid size-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         <SettingsIcon />
-        Tune Panel
       </button>
     );
   }

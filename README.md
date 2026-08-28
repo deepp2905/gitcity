@@ -124,7 +124,8 @@ and home indicator.
 
 ## Tuning panel
 
-In development a **Tune Panel** button sits bottom-right. Every scene
+In development a settings button sits bottom-right, styled as the other
+round controls on the page. Every scene
 constant is a live control there, grouped by concern, with per-section
 copy and reset. Copy a section, paste it over the matching block of
 `DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
