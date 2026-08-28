@@ -7,9 +7,30 @@
  * to someone is a picture of a city.
  */
 
-/** Rendered at twice the on-screen resolution, so the PNG survives being
- * looked at on a retina screen or dropped into a slide. */
+/**
+ * The export has its own frame: 3:5 portrait, rendered at 2x.
+ *
+ * Deliberately not the viewport's shape. The window is whatever shape the
+ * window is, and a landscape browser produces a landscape image that
+ * reads as a screenshot. A fixed portrait frame makes the download a
+ * thing in its own right, and it is the shape that survives being posted.
+ *
+ * Logical size drives the orthographic frustum; multiplied by the pixel
+ * ratio it gives the PNG's real pixels.
+ */
 export const EXPORT_PIXEL_RATIO = 2;
+export const EXPORT_LOGICAL_WIDTH = 540;
+export const EXPORT_LOGICAL_HEIGHT = 900;
+
+/**
+ * Fraction of the frame the city fills.
+ *
+ * Much more generous than the on-screen `zoomPadding`, which has to clear
+ * the labels above and left of the grid and keep the city out from under
+ * the controls. The PNG has none of that — only the pill along the
+ * bottom, which the city is never tall enough to reach.
+ */
+export const EXPORT_ZOOM_PADDING = 0.86;
 
 /** Pill geometry, in CSS pixels before the export scale is applied. */
 const PILL_HEIGHT = 52;

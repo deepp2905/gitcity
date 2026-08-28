@@ -9,7 +9,12 @@ import {
   type RefObject,
 } from "react";
 import { Canvas } from "@react-three/fiber";
-import { EXPORT_PIXEL_RATIO } from "@/lib/export/png";
+import {
+  EXPORT_LOGICAL_HEIGHT,
+  EXPORT_LOGICAL_WIDTH,
+  EXPORT_PIXEL_RATIO,
+  EXPORT_ZOOM_PADDING,
+} from "@/lib/export/png";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
 import type { ViewMode } from "@/lib/state/view";
 import { formatDayLabel } from "@/lib/contributions/grid";
@@ -26,6 +31,7 @@ import {
 import {
   degToRad,
   fitZoomForView,
+  lerpView,
   type CameraView,
 } from "@/lib/three/camera";
 import { pixelRatioCap } from "@/lib/three/webgl";
@@ -106,10 +112,38 @@ type CaptureRenderer<Scene, Camera> = {
   render(scene: Scene, camera: Camera): void;
 };
 
+/** The orthographic frustum, which the export reframes and restores. */
+type CaptureCamera = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  zoom: number;
+  updateProjectionMatrix(): void;
+};
+
+/** Same version-skew problem as above, so this narrows on three's own
+ * runtime discriminator rather than on a type. */
+function asOrthographic(camera: unknown): CaptureCamera | null {
+  const candidate = camera as
+    | (CaptureCamera & { isOrthographicCamera?: boolean })
+    | null;
+  return candidate?.isOrthographicCamera ? candidate : null;
+}
+
+type CaptureFraming = {
+  /** Logical size of the export frame; the frustum is in these units. */
+  width: number;
+  height: number;
+  pixelRatio: number;
+  /** Pixels per world unit that fits the city in that frame. */
+  zoom: number;
+};
+
 /**
- * Snapshots the scene at export resolution.
+ * Snapshots the scene into the export's own frame.
  *
- * Three things make this fiddly enough to want explaining:
+ * Four things make this fiddly enough to want explaining:
  *
  * The drawing buffer is cleared after each frame — R3F does not set
  * `preserveDrawingBuffer`, and turning it on would cost a copy on every
@@ -121,28 +155,51 @@ type CaptureRenderer<Scene, Camera> = {
  * pixels are copied into a 2D canvas with `drawImage` rather than handed
  * out as a promise from `toBlob`.
  *
- * Resolution comes from the pixel ratio alone. An orthographic camera's
- * frustum is set from the CSS size, so enlarging only the drawing buffer
- * yields the identical framing with more pixels in it. `setSize` is told
- * not to touch the element's style, and everything is restored before
- * returning, so nothing is ever painted at the export size.
+ * The frame is not the viewport's. An orthographic frustum is just a
+ * rectangle in pixels, so pointing it at the export's logical size and
+ * sizing the buffer to match renders a portrait image from a landscape
+ * window. Only the frustum and zoom change; the camera keeps the position
+ * and rotation the rig gave it this frame, so the PNG is the angle that
+ * is on screen.
+ *
+ * `setSize` is told not to touch the element's style, and everything is
+ * restored in a finally before returning, so the live view is never
+ * painted at the export's size or shape.
  */
 function captureSceneCanvas<Scene, Camera>(
   gl: CaptureRenderer<Scene, Camera>,
   scene: Scene,
   camera: Camera,
-  pixelRatio: number,
+  framing: CaptureFraming,
 ): HTMLCanvasElement | null {
   const source = gl.domElement;
   const cssWidth = source.clientWidth;
   const cssHeight = source.clientHeight;
   if (cssWidth === 0 || cssHeight === 0) return null;
 
+  const ortho = asOrthographic(camera);
+  if (!ortho) return null;
+
   const previousRatio = gl.getPixelRatio();
+  const previous = {
+    left: ortho.left,
+    right: ortho.right,
+    top: ortho.top,
+    bottom: ortho.bottom,
+    zoom: ortho.zoom,
+  };
 
   try {
-    gl.setPixelRatio(pixelRatio);
-    gl.setSize(cssWidth, cssHeight, false);
+    gl.setPixelRatio(framing.pixelRatio);
+    gl.setSize(framing.width, framing.height, false);
+
+    ortho.left = framing.width / -2;
+    ortho.right = framing.width / 2;
+    ortho.top = framing.height / 2;
+    ortho.bottom = framing.height / -2;
+    ortho.zoom = framing.zoom;
+    ortho.updateProjectionMatrix();
+
     gl.render(scene, camera);
 
     const snapshot = document.createElement("canvas");
@@ -151,8 +208,17 @@ function captureSceneCanvas<Scene, Camera>(
     snapshot.getContext("2d")?.drawImage(source, 0, 0);
     return snapshot;
   } finally {
-    // Restored whatever happened above, or the live view would stay at
-    // export resolution until the next resize.
+    // Restored whatever happened above, or the live view would keep the
+    // export's shape until the next resize. The rig rewrites zoom and
+    // the frustum next frame anyway; this is so the frame in between is
+    // right too.
+    ortho.left = previous.left;
+    ortho.right = previous.right;
+    ortho.top = previous.top;
+    ortho.bottom = previous.bottom;
+    ortho.zoom = previous.zoom;
+    ortho.updateProjectionMatrix();
+
     gl.setPixelRatio(previousRatio);
     gl.setSize(cssWidth, cssHeight, false);
     gl.render(scene, camera);
@@ -251,6 +317,60 @@ export function CityScene({
     flatView,
     effectiveZoomPadding,
   );
+
+  /**
+   * The R3F root, stashed on creation. Held rather than closed over, so
+   * the capture below can be rebuilt every render against the current
+   * config without the Canvas being torn down.
+   */
+  const rootRef = useRef<{
+    gl: Parameters<typeof captureSceneCanvas>[0];
+    scene: unknown;
+    camera: unknown;
+  } | null>(null);
+
+  /**
+   * Publishes the snapshot function for the download button.
+   *
+   * No dependency array: the framing depends on the live config, the
+   * week count and how far the transform has got, so it is rebound each
+   * render rather than capturing a stale closure.
+   */
+  useEffect(() => {
+    if (!captureRef) return;
+
+    captureRef.current = () => {
+      const root = rootRef.current;
+      if (!root) return null;
+
+      // The angle currently on screen, so the PNG matches what was
+      // being looked at rather than a canonical pose.
+      const view = lerpView(progressRef.current, configCityView, flatView);
+
+      return captureSceneCanvas(root.gl, root.scene, root.camera, {
+        width: EXPORT_LOGICAL_WIDTH,
+        height: EXPORT_LOGICAL_HEIGHT,
+        pixelRatio: EXPORT_PIXEL_RATIO,
+        // Fitted to the export's frame, not the viewport's: a portrait
+        // frame fits the city by width, and the on-screen zoom would
+        // leave it either cropped or marooned.
+        zoom: fitZoomForView(
+          EXPORT_LOGICAL_WIDTH,
+          EXPORT_LOGICAL_HEIGHT,
+          sceneWidth,
+          sceneDepth,
+          config.sceneMaxHeight * progressRef.current,
+          view,
+          EXPORT_ZOOM_PADDING,
+        ),
+      });
+    };
+
+    const ref = captureRef;
+    return () => {
+      ref.current = null;
+    };
+  });
 
   /**
    * Pending tooltip dismissal.
@@ -402,12 +522,12 @@ export function CityScene({
             dpr={pixelRatioCap(isMobile)}
             orthographic
             camera={{ position: [0, 200, 8], zoom: baseZoom, near: 1, far: 600 }}
-            // The renderer only exists inside the Canvas, so the capture
-            // is bound here and handed out through the ref.
+            // The renderer only exists inside the Canvas. Stash it; the
+            // capture itself is bound in an effect below, so it reads the
+            // current config and framing rather than whatever they were
+            // when the Canvas was created.
             onCreated={({ gl, scene, camera }) => {
-              if (!captureRef) return;
-              captureRef.current = () =>
-                captureSceneCanvas(gl, scene, camera, EXPORT_PIXEL_RATIO);
+              rootRef.current = { gl, scene, camera };
             }}
           >
             <color attach="background" args={[palette.canvas]} />

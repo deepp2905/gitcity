@@ -222,11 +222,15 @@ src/
   overlaps the rolling view.
 - English-only copy, light/warm daylight theme only (no dark mode) for
   the MVP.
-- PNG export is the city and an identity pill, nothing else. The month
-  and weekday labels are a DOM overlay rather than part of the scene, and
-  are deliberately left out: what gets sent to someone is a picture of a
-  city, not a chart. The button appears only in the 3D state, so there is
-  no path to a "3D city" download that is really a flat grid.
+- PNG export is 1080x1800 (3:5 portrait at 2x), and is the city and an
+  identity pill, nothing else. The frame is fixed rather than the
+  viewport's shape, which would make the download read as a screenshot;
+  the orthographic frustum is just a rectangle in pixels, so the export
+  points it at its own size. The month and weekday labels are a DOM
+  overlay rather than part of the scene, and are deliberately left out:
+  what gets sent to someone is a picture of a city, not a chart. The
+  button appears only in the 3D state, so there is no path to a "3D city"
+  download that is really a flat grid.
 - No social card builder, account system, analytics, or saved cities.
 - The in-memory response cache and request throttle
   (`src/lib/github/cache.ts`, `src/lib/github/throttle.ts`) are
