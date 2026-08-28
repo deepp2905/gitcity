@@ -11,6 +11,7 @@ import { fetchContributions } from "@/lib/api/fetch-contributions";
 import { buildUrlQuery, readUrlState } from "@/lib/state/url-state";
 import { DEFAULT_VIEW, type ViewMode } from "@/lib/state/view";
 import { SearchForm } from "./search-form";
+import { SuggestedUsers } from "./suggested-users";
 import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
 import { PeriodSelect } from "./period-select";
@@ -408,10 +409,27 @@ export function CityApp() {
           </div>
         </div>
 
-        <div className="flex min-h-5 items-center">
+        {/*
+          The last line swaps the same way the one above it does: a few
+          accounts to try while idle, the selected period's total once
+          there is one. Two things that never coexist, so they share a
+          line rather than each reserving their own.
+        */}
+        <div className="relative flex min-h-8 w-full items-center justify-center">
+          <div
+            aria-hidden={phase === "idle" ? undefined : true}
+            className={`absolute inset-x-0 top-0 flex justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-in-out-cubic)] ${
+              phase === "idle"
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-2 opacity-0"
+            }`}
+          >
+            <SuggestedUsers onSelect={handleSearch} />
+          </div>
+
           <div
             aria-hidden={revealed ? undefined : true}
-            className={`transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
+            className={`absolute inset-x-0 top-0 flex h-8 items-center justify-center transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
               revealed ? "opacity-100" : "opacity-0"
             }`}
           >

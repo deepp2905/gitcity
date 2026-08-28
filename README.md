@@ -54,6 +54,11 @@ as an afterthought. Both occupants are always mounted and absolutely
 positioned, which is what lets them cross-fade — in flow, the outgoing
 one would collapse the instant it left.
 
+The line under it swaps the same way: four accounts worth looking at
+while idle, the selected period's total once there is one. Two things
+that never coexist, so they share a line rather than each reserving
+their own.
+
 **Changing the view.** A search holds the flat grid briefly and then
 rises on its own, once per username. After that the only things that move
 the camera is clicking the scene. There is no orbit, zoom, pan or lean:
