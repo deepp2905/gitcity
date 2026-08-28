@@ -84,8 +84,12 @@ export type SceneConfig = {
    * disables it.
    */
   hoverSwellStrength: number;
-  /** Radius of the swell in grid cells. Bigger lifts more of the city
-   * and reads as a slower, heavier bulge. */
+  /**
+   * Half-width of the swell in grid columns, measured along the week axis
+   * only. Bigger lifts more of the year at once and reads as a slower,
+   * heavier bulge; too small and the ridge reads as a playhead scrubbing
+   * the chart rather than as the city responding.
+   */
   hoverSwellRadius: number;
 
   // --- Scene geometry ---
@@ -124,7 +128,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   cityAzimuthDeg: -16,
   zoomPadding: 0.6,
   hoverSwellStrength: 0.9,
-  hoverSwellRadius: 5,
+  hoverSwellRadius: 3,
 
   sceneMaxHeight: 8,
   groundTileHeight: 0.04,
@@ -324,7 +328,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         min: 1,
         max: 16,
         step: 0.5,
-        hint: "Falloff distance, in cells",
+        hint: "Falloff distance, in columns",
       },
     ],
   },

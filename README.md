@@ -98,7 +98,17 @@ the city. Errors keep their own red, because a warning that blends in is
 not a warning.
 
 **The city swells under the pointer**, dock-style: buildings near the
-cursor grow, with a Gaussian falloff so the bulge has no visible edge.
+cursor grow, with a Gaussian falloff so the swell has no visible edge.
+
+It is measured along the **column axis only**, so a whole week lifts
+together and the swell is a ridge spanning the grid's depth rather than a
+dome on one tile. The two axes are not the same kind of thing — columns
+are time, rows are weekday — and a radial falloff treats them as
+interchangeable distances, claiming that three weeks away and three
+weekdays away are comparable. They aren't: weekday is a category, not a
+magnitude. Measuring on one axis also lets the radius be tight (3
+columns) without the effect shrinking to a dot, and matches how the
+loading wave measures the same space.
 The exact counts live in the accessible heatmap, so the skyline is free
 to exaggerate under the cursor without anyone losing the numbers.
 

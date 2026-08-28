@@ -297,7 +297,7 @@ export function CityBuildings({
    * of the bulge stays exactly the falloff curve rather than being
    * smeared by per-instance lag.
    */
-  const swellPointRef = useRef({ x: 0, z: 0, placed: false });
+  const swellPointRef = useRef({ x: 0, placed: false });
   /** Linear 0..1 clock for the rise and settle; eased where it is used. */
   const swellProgressRef = useRef(0);
 
@@ -371,7 +371,7 @@ export function CityBuildings({
       swellPointRef.current,
       swellProgressRef,
       reducedMotion ? 0 : config.hoverSwellStrength,
-      // Config gives the radius in cells; the falloff works in world
+      // Config gives the radius in columns; the falloff works in world
       // units, so it scales with the gap like everything else does.
       config.hoverSwellRadius * (CELL_SIZE + config.cellGap),
       delta,
@@ -695,9 +695,12 @@ export function CityBuildings({
 }
 
 type Swell = {
-  /** Centre, in the mesh's own coordinates. */
+  /**
+   * Centre on the column axis, in the mesh's own coordinates. There is no
+   * z: the ridge spans the full depth, so where the pointer sits between
+   * Sunday and Saturday makes no difference.
+   */
   x: number;
-  z: number;
   /** Peak extra height as a fraction, already faded. 0 means inactive. */
   amount: number;
   /** Falloff distance in world units. */
@@ -718,7 +721,7 @@ function updateSwell(
   rawCamera: unknown,
   mesh: THREE.InstancedMesh,
   pointerRef: RefObject<SwellPointer> | null,
-  point: { x: number; z: number; placed: boolean },
+  point: { x: number; placed: boolean },
   progressRef: { current: number },
   strength: number,
   radius: number,
@@ -755,12 +758,10 @@ function updateSwell(
         // Frame-rate independent damping: the same trail at 60 and 120fps.
         const blend = 1 - Math.exp(-SWELL_FOLLOW_LAMBDA * delta);
         point.x += (scratchPointer.x - point.x) * blend;
-        point.z += (scratchPointer.z - point.z) * blend;
       } else {
         // First placement jumps, or the swell would sweep in from the
         // origin the first time the pointer moves.
         point.x = scratchPointer.x;
-        point.z = scratchPointer.z;
         point.placed = true;
       }
     }
@@ -786,7 +787,6 @@ function updateSwell(
 
   return {
     x: point.x,
-    z: point.z,
     amount: easeInOutCubic(progressRef.current) * strength,
     radius,
   };
@@ -795,15 +795,24 @@ function updateSwell(
 /**
  * How much of the swell a building gets, 0..1.
  *
- * A Gaussian, so the bulge has no edge — a linear or clamped falloff
- * leaves a visible ring where the effect stops, which reads as a bug
+ * Measured along the column axis only, so every day in a week is lifted
+ * by the same amount and the swell is a ridge running the depth of the
+ * grid rather than a dome centred on one tile.
+ *
+ * The two axes are not the same kind of thing. Columns are time; rows are
+ * weekday. A radial falloff treats them as interchangeable distances,
+ * which quietly claims that three weeks away and three weekdays away are
+ * comparable quantities — but weekday is a category, not a magnitude. A
+ * ridge says "this stretch of the year", which the data supports. It also
+ * measures space the same way the loading wave does.
+ *
+ * A Gaussian, so the ridge has no edge — a linear or clamped falloff
+ * leaves a visible seam where the effect stops, which reads as a bug
  * rather than as a curve.
  */
 function falloff(item: BuildingLayout, swell: Swell): number {
   const dx = item.x - swell.x;
-  const dz = item.z - swell.z;
-  const normalized = (dx * dx + dz * dz) / (swell.radius * swell.radius);
-  return Math.exp(-normalized);
+  return Math.exp(-(dx * dx) / (swell.radius * swell.radius));
 }
 
 /**
