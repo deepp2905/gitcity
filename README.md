@@ -44,6 +44,16 @@ The camera sits ~2 degrees off vertical rather than at 0. At exactly
 vertical its up vector parallels its view direction and `lookAt`
 degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
 
+**The bottom of the page holds one line throughout.** Idle, it is the
+search field; searching drops it 8px and fades it out; loading shows
+nothing at all; and once the data lands the identity pill, period picker
+and download button fade in over it. They arrive at `INTRO_HOLD_MS` plus
+half of `staggerTotalMs`, which puts them squarely mid-rise: earlier and
+the chrome competes with a city that is still moving, later and it reads
+as an afterthought. Both occupants are always mounted and absolutely
+positioned, which is what lets them cross-fade — in flow, the outgoing
+one would collapse the instant it left.
+
 **Changing the view.** A search holds the flat grid briefly and then
 rises on its own, once per username. After that the only things that move
 the camera is clicking the scene. There is no orbit, zoom, pan or lean:

@@ -23,6 +23,16 @@ import { isInteractive, pickLoadingFloorMs, resolvePhase } from "@/lib/state/pha
 /** How long real data is held flat before the city rises. */
 const INTRO_HOLD_MS = 800;
 
+/**
+ * When the controls arrive, measured from the moment the data is ready.
+ *
+ * The hold, plus half of `staggerTotalMs` — the rise sweeps left to right
+ * over that, so this lands the fade squarely mid-wave. Any earlier and
+ * the chrome competes with the city for attention while it is still
+ * moving; any later and it reads as an afterthought.
+ */
+const CONTROLS_REVEAL_MS = INTRO_HOLD_MS + 300;
+
 
 /** Stand-in identity for the idle city, which belongs to nobody. */
 const MOCK_PROFILE = {
@@ -236,6 +246,24 @@ export function CityApp() {
   /** The scene only answers taps once there is real data in it. */
   const canToggle = isInteractive(phase);
 
+  /**
+   * Whether the controls have arrived, keyed to the request they belong
+   * to so a fresh search takes them away again rather than leaving the
+   * previous city's chrome standing over the new one.
+   */
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (phase !== "ready") return;
+    const timer = window.setTimeout(
+      () => setRevealedKey(requestKey),
+      CONTROLS_REVEAL_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [phase, requestKey]);
+
+  const revealed = revealedKey === requestKey && showControls;
+
   /** Filled in by the scene with a snapshot function for the PNG export. */
   const captureRef = useRef<(() => HTMLCanvasElement | null) | null>(null);
 
@@ -307,51 +335,61 @@ export function CityApp() {
         {/*
           Says what a tap will do, so the one interaction the scene has
           is discoverable without a button competing with the city.
-
-          Only while it is true: the idle city ignores taps, so offering
-          them there would be a lie. Reserved height again, so the field
-          doesn't shift when it appears.
+          Arrives with the rest of the controls.
         */}
         <div className="flex min-h-5 items-center">
           <p
-            aria-hidden={canToggle ? undefined : true}
-            className={`text-xs text-ink-subtle transition-opacity duration-300 ease-[var(--ease-in-out-cubic)] ${
-              canToggle ? "opacity-100" : "opacity-0"
+            aria-hidden={revealed ? undefined : true}
+            className={`text-xs text-ink-subtle transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
+              revealed ? "opacity-100" : "opacity-0"
             }`}
           >
             {view === "3d" ? "Tap to switch to 2D" : "Tap to switch to 3D"}
           </p>
         </div>
 
-        <SearchForm
-          key={user ?? "empty"}
-          initialValue={user ?? ""}
-          isLoading={phase === "loading"}
-          onSubmit={handleSearch}
-        />
-
         {/*
-          Identity and years share one line under the field, and the total
-          reads as a caption on the last line of the page.
+          One slot, two occupants. The field hands over to the controls
+          rather than moving aside for them, so the bottom of the page
+          holds a single line throughout and nothing below it shifts.
 
-          Each row holds its height whether or not it has content, so the
-          field and the city don't jump when a search lands: the controls
-          fade in rather than appearing.
-
-          Content is still mounted conditionally. Before a search there is
-          nothing to pick a year of and nobody whose profile to show, and
-          the identity pill has no avatar to render.
+          Both are absolutely positioned and always mounted, which is what
+          lets them cross-fade: laying them out in flow would make the
+          outgoing one collapse the moment it left.
         */}
-        <div
-          aria-hidden={showControls ? undefined : true}
-          className={`flex w-full min-w-0 flex-col items-center gap-2 transition-opacity duration-300 ease-[var(--ease-in-out-cubic)] ${
-            showControls ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
-        >
-          {/* Wraps rather than overflowing: the identity pill grows with
-              the username and the picker is now a fixed width, so on a
-              narrow phone the three controls can exceed the line. */}
-          <div className="flex min-h-11 w-full min-w-0 flex-wrap items-center justify-center gap-2">
+        <div className="relative flex min-h-11 w-full items-center justify-center">
+          {/*
+            8px, not 16. Paired with a fade, a longer drop reads as the
+            control falling out of the page rather than stepping back from
+            it — and it has to clear before the replacement arrives.
+          */}
+          <div
+            aria-hidden={phase === "idle" ? undefined : true}
+            className={`absolute inset-x-0 top-0 flex justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-in-out-cubic)] ${
+              phase === "idle"
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-2 opacity-0"
+            }`}
+          >
+            <SearchForm
+              key={user ?? "empty"}
+              initialValue={user ?? ""}
+              isLoading={phase === "loading"}
+              onSubmit={handleSearch}
+            />
+          </div>
+
+          {/*
+            Wraps rather than overflowing: the identity pill grows with
+            the username and the picker is a fixed width, so on a narrow
+            phone the three controls can exceed the line.
+          */}
+          <div
+            aria-hidden={revealed ? undefined : true}
+            className={`absolute inset-x-0 top-0 flex min-w-0 flex-wrap items-center justify-center gap-2 transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
+              revealed ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+          >
             {showControls ? (
               <>
                 <ProfileIdentity profile={data!.profile} />
@@ -368,8 +406,15 @@ export function CityApp() {
               </>
             ) : null}
           </div>
+        </div>
 
-          <div className="flex min-h-5 items-center">
+        <div className="flex min-h-5 items-center">
+          <div
+            aria-hidden={revealed ? undefined : true}
+            className={`transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
+              revealed ? "opacity-100" : "opacity-0"
+            }`}
+          >
             {showControls ? <PeriodTotal period={realPeriod!} /> : null}
           </div>
         </div>
