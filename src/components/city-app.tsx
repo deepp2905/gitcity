@@ -275,7 +275,7 @@ export function CityApp() {
         {error ? (
           <p
             role="alert"
-            className="w-full rounded-lg border border-danger/30 bg-danger-bg px-4 py-2.5 text-center text-sm text-danger"
+            className="pop-in w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-2.5 text-center text-sm text-danger"
           >
             {error.message}
           </p>

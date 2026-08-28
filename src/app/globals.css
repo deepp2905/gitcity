@@ -107,6 +107,31 @@ body {
 }
 
 /*
+ * Messages that stand in for a city: the quirky empty-year card and the
+ * search error. They pop rather than slide, because they are appearing on
+ * top of the scene rather than assembling with the page chrome.
+ *
+ * The delay lets the transform or the year morph get underway first, so
+ * the card lands on a settled scene instead of racing it.
+ */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pop-in {
+    animation: pop-in 300ms cubic-bezier(0.2, 0, 0, 1) 300ms both;
+  }
+}
+
+/*
  * Soft scrollbar for the dev tuning panel.
  *
  * Thumb only: the track stays transparent so the scrollbar reads as a

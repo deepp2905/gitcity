@@ -394,7 +394,13 @@ export function CityScene({
 
         {isEmpty ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-            <div className="rounded-xl border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-4 py-3 text-center shadow-[var(--shadow-soft)] backdrop-blur-md">
+            {/* Keyed on the period so switching between two silent years
+                replays the entrance rather than leaving the card sitting
+                there with new words in it. */}
+            <div
+              key={period.id}
+              className="pop-in rounded-xl border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-4 py-3 text-center shadow-[var(--shadow-soft)] backdrop-blur-md"
+            >
               <p className="text-sm font-semibold text-ink">
                 {emptyMessage.headline}
               </p>
