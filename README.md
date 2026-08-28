@@ -107,9 +107,9 @@ dome on one tile. The two axes are not the same kind of thing — columns
 are time, rows are weekday — and a radial falloff treats them as
 interchangeable distances, claiming that three weeks away and three
 weekdays away are comparable. They aren't: weekday is a category, not a
-magnitude. Measuring on one axis also lets the radius be tight (3
-columns) without the effect shrinking to a dot, and matches how the
-loading wave measures the same space.
+magnitude. Measuring on one axis also lets the radius stay meaningful
+without the effect shrinking to a dot, and matches how the loading wave
+measures the same space.
 
 The exact counts live in the accessible heatmap, so the skyline is free
 to exaggerate under the cursor without anyone losing the numbers.
