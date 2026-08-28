@@ -348,7 +348,10 @@ export function CityApp() {
             showControls ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          <div className="flex min-h-11 w-full min-w-0 items-center justify-center gap-2">
+          {/* Wraps rather than overflowing: the identity pill grows with
+              the username and the picker is now a fixed width, so on a
+              narrow phone the three controls can exceed the line. */}
+          <div className="flex min-h-11 w-full min-w-0 flex-wrap items-center justify-center gap-2">
             {showControls ? (
               <>
                 <ProfileIdentity profile={data!.profile} />

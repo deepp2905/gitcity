@@ -110,7 +110,11 @@ export function PeriodSelect({
   }
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    // Fixed width, so the row doesn't reflow when the chosen period goes
+    // from "Last 12 months" to "2024". Wide enough for the longest label
+    // the picker can hold; the trigger and the menu both take it, so the
+    // menu lines up with the button exactly.
+    <div ref={rootRef} className="relative w-40 shrink-0">
       {open ? (
         <div
           ref={listRef}
@@ -121,7 +125,11 @@ export function PeriodSelect({
           // bottom of the viewport. Shadowed, unlike the controls at
           // rest, because it floats over the city and needs to separate
           // from whatever colour happens to be behind it.
-          className="menu-up-enter absolute bottom-full left-1/2 z-20 mb-2 w-max min-w-full -translate-x-1/2 rounded-2xl border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 shadow-[var(--shadow-raised)] backdrop-blur-md"
+          // Radius is concentric: the options are 36px pills, so an 18px
+          // inner radius plus the 4px of padding gives 22px outside. A
+          // smaller outer radius would leave the corner options bulging
+          // into it.
+          className="menu-up-enter absolute bottom-full left-0 z-20 mb-2 w-full rounded-[22px] border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 shadow-[var(--shadow-raised)] backdrop-blur-md"
         >
           {periods.map((period, index) => {
             const isActive = period.id === activeId;
@@ -161,7 +169,7 @@ export function PeriodSelect({
             setOpen(true);
           }
         }}
-        className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] pl-4 pr-3 text-sm font-medium tabular-nums text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="flex h-11 w-full items-center justify-between gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] pl-4 pr-3 text-sm font-medium tabular-nums text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         {active.label}
         {/* Points the way the menu opens, and flips once it has. */}
