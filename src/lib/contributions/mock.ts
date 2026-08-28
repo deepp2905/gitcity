@@ -11,15 +11,16 @@ import {
  * A plausible-looking contribution year, for the idle state before anyone
  * has searched.
  *
- * Deterministic on purpose. A different pattern on the server and the
- * client would be a hydration mismatch, and a pattern that reshuffled on
- * every render would flicker. The seed is fixed, so this is the same city
- * every time.
+ * Seeded, not deterministic. The default seed is fixed so the server and
+ * the first client render agree — a different pattern between the two is
+ * a hydration mismatch — and the caller re-seeds once on mount, so the
+ * idle city is a different one on every visit. See CityApp.
  *
- * It is shaped rather than uniformly random: weekends are quieter,
- * activity comes in runs, and a few days spike. Uniform noise reads as
- * static and gives the eye nothing to hold, which is exactly what a real
- * contribution graph does not look like.
+ * Almost every day is built on: an idle city should read as a city, and
+ * a sparse one reads as an empty lot. The variety comes from height and
+ * colour instead of from gaps, which is why the counts are skewed hard
+ * rather than spread evenly — most days modest, some tall, a few
+ * towers.
  */
 
 /** Small, fast, deterministic PRNG. */
@@ -33,10 +34,28 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-const MOCK_SEED = 0x9e3779b9;
+/** Fixed default, used for the server render and the first client one. */
+export const MOCK_SEED = 0x9e3779b9;
 
 /** Weekends are quieter, mid-week busier. */
-const WEEKDAY_WEIGHT = [0.35, 1, 1.05, 1, 0.95, 0.8, 0.3];
+const WEEKDAY_WEIGHT = [0.55, 1, 1.05, 1, 0.95, 0.85, 0.5];
+
+/** Share of days left empty. Low: the gaps are punctuation, not texture. */
+const QUIET_DAY_CHANCE = 0.07;
+
+/** Chance a day is an outlier, which is what forces the sqrt height
+ * scale to earn its keep. */
+const SPIKE_CHANCE = 0.035;
+
+/**
+ * A seed for a fresh city.
+ *
+ * Client-only by construction: calling this during a server render would
+ * produce markup the client could not reproduce.
+ */
+export function randomMockSeed(): number {
+  return (Math.random() * 0x100000000) >>> 0;
+}
 
 function levelFor(count: number, max: number): ContributionLevel {
   if (count <= 0) return "NONE";
@@ -51,37 +70,64 @@ function levelFor(count: number, max: number): ContributionLevel {
  * Builds the idle period. `now` is a parameter so the result is testable
  * and so callers can pin it rather than depending on the clock.
  */
-export function buildMockPeriod(now: Date): ContributionPeriod {
-  const random = mulberry32(MOCK_SEED);
+export function buildMockPeriod(
+  now: Date,
+  seed: number = MOCK_SEED,
+): ContributionPeriod {
+  const random = mulberry32(seed);
   const from = rollingLast12MonthsFrom(now);
   const dates = enumerateDays(from, now);
 
-  // A slow drift so the year has quiet months and busy ones, rather than
-  // the same density throughout.
-  const driftPhase = random() * Math.PI * 2;
+  // Two drifts at different rates: one slow enough to give the year busy
+  // months and quiet ones, one faster so neighbouring weeks differ. A
+  // single sine makes the skyline read as one smooth swell.
+  const seasonPhase = random() * Math.PI * 2;
+  const wobblePhase = random() * Math.PI * 2;
 
   const raw: number[] = [];
-  let streak = 0;
+  /** Days left of the current burst of heavier-than-usual activity. */
+  let burst = 0;
+  /** How much heavier this particular burst is. */
+  let burstStrength = 1;
 
   for (let i = 0; i < dates.length; i++) {
     const weekday = weekdayOf(dates[i]);
-    const season = 0.55 + 0.45 * Math.sin(driftPhase + (i / dates.length) * Math.PI * 3);
-    const weight = WEEKDAY_WEIGHT[weekday] * season;
+    const progress = i / dates.length;
 
-    // Runs of activity, then runs of nothing: real work arrives in
-    // stretches rather than being sprinkled evenly.
-    if (streak > 0) streak -= 1;
-    else if (random() < 0.18 * weight) streak = 2 + Math.floor(random() * 6);
+    // Both centred near 1 rather than reaching for zero. These multiply
+    // with each other and with the weekday weight, so floors close to
+    // zero compound into a year where the typical day is a single
+    // contribution and the whole city sits on the ground.
+    const season = 0.85 + 0.4 * Math.sin(seasonPhase + progress * Math.PI * 3);
+    const wobble = 1 + 0.2 * Math.sin(wobblePhase + progress * Math.PI * 17);
+    const weight = WEEKDAY_WEIGHT[weekday] * season * wobble;
 
-    const active = streak > 0 || random() < 0.32 * weight;
-    if (!active) {
+    // Bursts raise the volume rather than switching activity on. With
+    // nearly every day occupied, runs have to show up as clusters of
+    // taller buildings or they do not show up at all.
+    if (burst > 0) {
+      burst -= 1;
+    } else if (random() < 0.06) {
+      burst = 3 + Math.floor(random() * 9);
+      burstStrength = 1.6 + random() * 1.8;
+    }
+    const intensity = weight * (burst > 0 ? burstStrength : 1);
+
+    // Quieter days are likelier to be the empty ones, so the gaps land
+    // at weekends and in the slow months rather than at random.
+    if (random() < QUIET_DAY_CHANCE * (1.4 - Math.min(weight, 1))) {
       raw.push(0);
       continue;
     }
 
-    const base = 1 + Math.floor(random() * 7 * weight);
-    // Occasional outlier, which is what forces the sqrt height scale.
-    const spike = random() < 0.02 ? 12 + Math.floor(random() * 30) : 0;
+    // Skewed low with a long tail, but only mildly. A flat random gives
+    // every height equal odds and builds a plateau; squaring it buries
+    // the median so far under the spikes that almost every building
+    // renders at the floor. This lands the typical day around a third of
+    // the way up, which is where the ramp has colours to spend.
+    const base = 1 + Math.floor(Math.pow(random(), 1.5) * 20 * intensity);
+    const spike =
+      random() < SPIKE_CHANCE ? 12 + Math.floor(random() * 24) : 0;
     raw.push(base + spike);
   }
 

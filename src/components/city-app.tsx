@@ -17,6 +17,7 @@ import { PeriodTabs } from "./period-tabs";
 import { DownloadButton } from "./download-button";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 import { buildMockPeriod } from "@/lib/contributions/mock";
+import { useMockSeed } from "@/lib/hooks/use-mock-seed";
 import { isInteractive, pickLoadingFloorMs, resolvePhase } from "@/lib/state/phase";
 
 /** How long real data is held flat before the city rises. */
@@ -207,10 +208,23 @@ export function CityApp() {
     data?.periods.find((p) => p.id === period) ?? data?.periods[0] ?? null;
 
   /**
-   * The idle city. Built once from a fixed seed, so it is the same on the
-   * server and the client and doesn't reshuffle between renders.
+   * The idle city, re-rolled once per visit.
+   *
+   * The fixed seed is only for the first render: the server and the
+   * client must produce identical markup, and the accessible heatmap
+   * renders this period during SSR. Re-seeding in an effect happens
+   * after hydration has already agreed, so it is a state change rather
+   * than a mismatch.
+   *
+   * Nobody sees the seeded one. The 3D scene is a client-only dynamic
+   * import that renders nothing until it loads, and the heatmap this
+   * feeds is visually hidden.
    */
-  const mockPeriod = useMemo(() => buildMockPeriod(new Date()), []);
+  const mockSeed = useMockSeed();
+  const mockPeriod = useMemo(
+    () => buildMockPeriod(new Date(), mockSeed),
+    [mockSeed],
+  );
 
   // One chart, always on screen. Before a search it shows the mock; while
   // a search runs it keeps showing whatever is there and the wave takes

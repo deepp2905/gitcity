@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMockPeriod } from "./mock";
+import { MOCK_SEED, buildMockPeriod, randomMockSeed } from "./mock";
 
 const NOW = new Date("2026-08-27T12:00:00Z");
 
@@ -31,18 +31,45 @@ describe("buildMockPeriod", () => {
     expect(period.totalContributions).toBe(summed);
   });
 
-  it("looks like a contribution graph rather than noise", () => {
-    const period = buildMockPeriod(NOW);
-    const counts = period.days.map((d) => d.count);
-    const active = counts.filter((c) => c > 0);
+  it("fills about 95% of the cells, whatever the seed", () => {
+    // Every seed, not just the default: the client re-rolls on mount, so
+    // an unlucky one must not produce a half-empty city.
+    for (let i = 0; i < 40; i++) {
+      const period = buildMockPeriod(NOW, i * 7919 + 13);
+      const counts = period.days.map((d) => d.count);
+      const filled = counts.filter((c) => c > 0).length / counts.length;
+      expect(filled).toBeGreaterThan(0.9);
+      // Never completely full: the few gaps are what stop it reading as
+      // a printed swatch rather than a year someone lived.
+      expect(filled).toBeLessThan(0.99);
+    }
+  });
+
+  it("is skewed rather than a plateau", () => {
+    const counts = buildMockPeriod(NOW).days.map((d) => d.count);
+    const active = counts.filter((c) => c > 0).sort((a, b) => a - b);
+    const median = active[Math.floor(active.length / 2)];
     const max = Math.max(...counts);
 
-    // Sparse enough to read as a real year, busy enough to be a city.
-    expect(active.length / counts.length).toBeGreaterThan(0.2);
-    expect(active.length / counts.length).toBeLessThan(0.85);
-    // Skewed: a few days well above the rest, which is what the sqrt
-    // height scale exists to handle.
+    // A few days well above the rest, which is what the sqrt height
+    // scale exists to handle.
     expect(max).toBeGreaterThan(10);
+    expect(max).toBeGreaterThan(median * 4);
+  });
+
+  it("gives a different city for a different seed", () => {
+    const a = buildMockPeriod(NOW, MOCK_SEED);
+    const b = buildMockPeriod(NOW, 12345);
+    expect(a.days.map((d) => d.count)).not.toEqual(b.days.map((d) => d.count));
+  });
+
+  it("draws seeds inside the 32-bit range", () => {
+    for (let i = 0; i < 200; i++) {
+      const seed = randomMockSeed();
+      expect(Number.isInteger(seed)).toBe(true);
+      expect(seed).toBeGreaterThanOrEqual(0);
+      expect(seed).toBeLessThan(2 ** 32);
+    }
   });
 
   it("is quieter at weekends than midweek", () => {

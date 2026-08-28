@@ -80,6 +80,13 @@ comparable between tabs; the tooltip carries the exact count.
 rather than sRGB, which would pass through muddy grey. The 2D heatmap
 keeps GitHub's five discrete buckets for familiarity.
 
+**The idle city** is generated, not real. It is seeded so the server and
+the first client render agree — the fixed seed is the server snapshot of
+a `useSyncExternalStore` — and re-seeded per page load, so the city is a
+different one each visit. About 95% of days are built on: an idle city
+should read as a city, so the variety comes from height and colour rather
+than from gaps.
+
 ## Mobile
 
 The scene runs on phones and tablets, with a few deliberate differences:
