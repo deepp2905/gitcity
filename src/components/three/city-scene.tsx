@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
-import type { ViewMode } from "@/lib/state/url-state";
+import type { ViewMode } from "@/lib/state/view";
 import { formatDayLabel } from "@/lib/contributions/grid";
 import {
   buildSceneTiles,

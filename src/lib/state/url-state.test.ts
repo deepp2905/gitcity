@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  buildUrlQuery,
-  parsePeriodParam,
-  parseViewParam,
-  readUrlState,
-} from "./url-state";
+import { buildUrlQuery, parsePeriodParam, readUrlState } from "./url-state";
 
 describe("parsePeriodParam", () => {
   it("defaults to the rolling period when absent", () => {
@@ -23,22 +18,12 @@ describe("parsePeriodParam", () => {
   });
 });
 
-describe("parseViewParam", () => {
-  it("returns 3d only for an exact match", () => {
-    expect(parseViewParam("3d")).toBe("3d");
-    expect(parseViewParam("2d")).toBe("2d");
-    expect(parseViewParam("3D")).toBe("2d");
-    expect(parseViewParam(null)).toBe("2d");
-  });
-});
-
 describe("readUrlState", () => {
-  it("reads all three params", () => {
-    const params = new URLSearchParams("user=octocat&period=year-2024&view=3d");
+  it("reads both params", () => {
+    const params = new URLSearchParams("user=octocat&period=year-2024");
     expect(readUrlState(params)).toEqual({
       user: "octocat",
       period: "year-2024",
-      view: "3d",
     });
   });
 
@@ -46,36 +31,43 @@ describe("readUrlState", () => {
     expect(readUrlState(new URLSearchParams(""))).toEqual({
       user: null,
       period: "last-12-months",
-      view: "2d",
+    });
+  });
+
+  it("ignores a view param left over from an older link", () => {
+    const params = new URLSearchParams("user=octocat&view=3d");
+    expect(readUrlState(params)).toEqual({
+      user: "octocat",
+      period: "last-12-months",
     });
   });
 });
 
 describe("buildUrlQuery", () => {
-  it("omits default period and view", () => {
-    expect(
-      buildUrlQuery({ user: "octocat", period: "last-12-months", view: "2d" }),
-    ).toBe("/?user=octocat");
+  it("omits the default period", () => {
+    expect(buildUrlQuery({ user: "octocat", period: "last-12-months" })).toBe(
+      "/?user=octocat",
+    );
   });
 
-  it("includes non-default period and view", () => {
-    expect(
-      buildUrlQuery({ user: "octocat", period: "year-2024", view: "3d" }),
-    ).toBe("/?user=octocat&period=year-2024&view=3d");
+  it("includes a non-default period", () => {
+    expect(buildUrlQuery({ user: "octocat", period: "year-2024" })).toBe(
+      "/?user=octocat&period=year-2024",
+    );
+  });
+
+  it("never writes a view param", () => {
+    expect(buildUrlQuery({ user: "octocat", period: "year-2024" })).not.toContain(
+      "view",
+    );
   });
 
   it("returns the bare root when there is no user", () => {
-    expect(
-      buildUrlQuery({ user: null, period: "last-12-months", view: "2d" }),
-    ).toBe("/");
+    expect(buildUrlQuery({ user: null, period: "last-12-months" })).toBe("/");
   });
 
   it("round-trips through readUrlState", () => {
-    const state = {
-      user: "octocat",
-      period: "year-2023" as const,
-      view: "3d" as const,
-    };
+    const state = { user: "octocat", period: "year-2023" as const };
     const query = buildUrlQuery(state);
     expect(readUrlState(new URLSearchParams(query.split("?")[1]))).toEqual(state);
   });

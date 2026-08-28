@@ -50,6 +50,13 @@ the camera are clicking the scene and a small lean toward the pointer. There is 
 owns the camera outright, so it never has to be handed to anything else
 and read back.
 
+The 2D/3D state is plain React state, not a URL param. Tapping the scene
+is the primary interaction and fires repeatedly, and routing each toggle
+through `router.replace` to flip one boolean was work for nothing. It
+could not have been linked to either: a loaded city rises on its own, so
+a shared `?view=2d` would never have reproduced the state it named. The
+URL carries `user` and `period`, which are worth sending someone.
+
 **Three distinct motions**, deliberately not sharing constants:
 
 | Gesture | Motion |
@@ -189,7 +196,7 @@ src/
     github/                       GraphQL query, client, normalization,
                                   cache, throttle, offline fixtures
     hooks/                        Viewport size, media queries, WebGL support
-    state/                        URL <-> app state
+    state/                        URL params, view mode, load phase
     theme/                        Colour palette and OKLCH interpolation
     three/                        Layout, camera, easing, springs, config
     username/                     Input parsing + reserved-name list

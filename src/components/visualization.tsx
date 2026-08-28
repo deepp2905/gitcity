@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ContributionPeriod, GithubProfile } from "@/lib/contributions/types";
-import type { ViewMode } from "@/lib/state/url-state";
+import type { ViewMode } from "@/lib/state/view";
 import {
   useIsMobile,
   usePrefersReducedMotion,

@@ -8,11 +8,8 @@ import type {
   PeriodId,
 } from "@/lib/contributions/types";
 import { fetchContributions } from "@/lib/api/fetch-contributions";
-import {
-  buildUrlQuery,
-  readUrlState,
-  type ViewMode,
-} from "@/lib/state/url-state";
+import { buildUrlQuery, readUrlState } from "@/lib/state/url-state";
+import { DEFAULT_VIEW, type ViewMode } from "@/lib/state/view";
 import { SearchForm } from "./search-form";
 import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
@@ -43,9 +40,12 @@ export function CityApp() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const webglSupported = useWebGLSupport();
-  const { user, period, view } = readUrlState(
+  const { user, period } = readUrlState(
     new URLSearchParams(searchParams.toString()),
   );
+
+  /** Standing or flat. Client state, not a URL param — see view.ts. */
+  const [view, setView] = useState<ViewMode>(DEFAULT_VIEW);
 
   /**
    * `data` is deliberately independent of the URL: a failed search leaves
@@ -99,22 +99,26 @@ export function CityApp() {
   }, [user, reloadToken]);
 
   const navigate = useCallback(
-    (next: { user?: string | null; period?: PeriodId; view?: ViewMode }, replace: boolean) => {
+    (next: { user?: string | null; period?: PeriodId }, replace: boolean) => {
       const href = buildUrlQuery({
         user: next.user !== undefined ? next.user : user,
         period: next.period ?? period,
-        view: next.view ?? view,
       });
       if (replace) router.replace(href, { scroll: false });
       else router.push(href, { scroll: false });
     },
-    [router, user, period, view],
+    [router, user, period],
   );
 
-  // A new search is a new history entry; period/view changes replace it so
-  // rapid tab and mode toggling doesn't flood the Back button.
+  // A new search is a new history entry; a period change replaces it so
+  // rapid tab switching doesn't flood the Back button.
   const handleSearch = useCallback(
     (username: string) => {
+      // Every search starts flat, so the data lands on the familiar grid
+      // and then rises. Without this a second search made from a standing
+      // city would skip straight past the reveal.
+      setView(DEFAULT_VIEW);
+
       if (username === user) {
         // Same URL, so no navigation would fire — retry explicitly.
         setReloadToken((token) => token + 1);
@@ -130,10 +134,9 @@ export function CityApp() {
     [navigate],
   );
 
-  const handleToggleView = useCallback(
-    (nextView: ViewMode) => navigate({ view: nextView }, true),
-    [navigate],
-  );
+  const handleToggleView = useCallback((nextView: ViewMode) => {
+    setView(nextView);
+  }, []);
 
   /**
    * Set once the minimum loading time has passed for a given request.
@@ -172,11 +175,6 @@ export function CityApp() {
    * than immediately undone, and a link that already says 3d skips it.
    */
   const introDoneRef = useRef<string | null>(null);
-  const latestRef = useRef({ view, navigate });
-
-  useEffect(() => {
-    latestRef.current = { view, navigate };
-  });
 
   useEffect(() => {
     // Keyed on the phase reaching ready, not on the data arriving: the
@@ -187,19 +185,16 @@ export function CityApp() {
 
     introDoneRef.current = user;
 
-    if (latestRef.current.view === "3d") return;
-
     const timer = window.setTimeout(() => {
-      // Only if they haven't already gone there themselves.
-      if (latestRef.current.view === "2d") {
-        latestRef.current.navigate({ view: "3d" }, true);
-      }
+      // Functional update, so the current view is read at the moment the
+      // timer fires without the effect having to depend on it. A manual
+      // rise during the hold is left alone rather than re-applied.
+      setView((current) => (current === "2d" ? "3d" : current));
     }, INTRO_HOLD_MS);
 
     return () => window.clearTimeout(timer);
-    // Deliberately not depending on `view` or `navigate`: both change on
-    // an unrelated period switch, which would tear down the pending timer
-    // and the intro would never fire.
+    // `view` is deliberately absent: depending on it would tear down the
+    // pending timer the moment anything else moved the camera.
   }, [phase, user]);
 
   // Loading and error are derived, never synced in an effect: a request is
