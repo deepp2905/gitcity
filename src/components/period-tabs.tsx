@@ -56,7 +56,7 @@ export function PeriodTabs({ periods, activeId, onSelect }: PeriodTabsProps) {
         role="tablist"
         aria-label="Contribution period"
         onKeyDown={handleKeyDown}
-        className="flex w-max gap-1 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 shadow-[var(--shadow-soft)] backdrop-blur-md"
+        className="flex h-11 w-max gap-1 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 backdrop-blur-md"
       >
         {periods.map((period) => {
           const isActive = period.id === activeId;
@@ -69,7 +69,7 @@ export function PeriodTabs({ periods, activeId, onSelect }: PeriodTabsProps) {
               aria-selected={isActive}
               tabIndex={isActive ? 0 : -1}
               onClick={() => onSelect(period.id)}
-              className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium tabular-nums transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              className={`h-full shrink-0 rounded-full px-4 text-sm font-medium tabular-nums transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                 isActive
                   ? "bg-ink text-white"
                   : "text-ink-muted hover:bg-ink/5 hover:text-ink"

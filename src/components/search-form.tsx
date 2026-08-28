@@ -74,7 +74,7 @@ export function SearchForm({
           spellCheck={false}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className="min-h-11 w-full min-w-0 flex-1 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-5 text-base text-ink shadow-[var(--shadow-soft)] outline-none backdrop-blur-md transition-colors placeholder:text-ink-subtle focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 aria-[invalid]:border-danger"
+          className="h-11 w-full min-w-0 flex-1 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-5 text-base text-ink outline-none backdrop-blur-md transition-colors placeholder:text-ink-subtle focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/25 aria-[invalid]:border-danger"
         />
 
         {/*
@@ -91,7 +91,7 @@ export function SearchForm({
           type="submit"
           disabled={isLoading}
           aria-label={isLoading ? "Loading contributions" : "View contributions"}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-white shadow-[var(--shadow-soft)] transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-ink/85 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-ink text-white transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-ink/85 active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           <ArrowRight />
         </button>
