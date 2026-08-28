@@ -80,10 +80,11 @@ comparable between tabs; the tooltip carries the exact count.
 rather than sRGB, which would pass through muddy grey. The 2D heatmap
 keeps GitHub's five discrete buckets for familiarity.
 
-**The idle city swells under the pointer**, dock-style: buildings near
-the cursor grow, with a Gaussian falloff so the bulge has no visible
-edge. Only the idle city — once there is real data the heights *are* the
-data, and a bulge following the cursor would misreport it. The pointer is
+**The city swells under the pointer**, dock-style: buildings near the
+cursor grow, with a Gaussian falloff so the bulge has no visible edge.
+The exact counts live in the accessible heatmap, so the skyline is free
+to exaggerate under the cursor without anyone losing the numbers. The
+pointer is
 unprojected onto the ground plane and converted into the mesh's own
 space, because the camera tilts and the parallax group rotates the city
 underneath it, so viewport coordinates say nothing about which buildings
