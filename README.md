@@ -46,9 +46,10 @@ degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
 
 **Changing the view.** A search holds the flat grid briefly and then
 rises on its own, once per username. After that the only things that move
-the camera are clicking the scene and a small lean toward the pointer. There is no orbit, zoom or pan: the rig
-owns the camera outright, so it never has to be handed to anything else
-and read back.
+the camera is clicking the scene. There is no orbit, zoom, pan or lean:
+the rig owns the camera outright, so it never has to be handed to
+anything else and read back, and the only thing that answers the pointer
+is the city itself, swelling underneath it.
 
 The 2D/3D state is plain React state, not a URL param. Tapping the scene
 is the primary interaction and fires repeatedly, and routing each toggle
@@ -104,13 +105,11 @@ than from gaps.
 The scene runs on phones and tablets, with a few deliberate differences:
 
 - Pixel ratio is capped and shadows are off below 640px.
-- The hover lean is disabled without a fine pointer. Touch devices fire
+- The swell is disabled without a fine pointer. Touch devices fire
   `pointermove` during a tap and once more as the finger lifts, so the
-  city would lurch over and stay there with nothing following to bring it
-  back.
+  city would bulge and stay bulged with nothing following to settle it.
 - Tapping the scene transforms it, with a wider movement allowance than a
   mouse gets: a finger wanders further over the same intent.
-- The swell needs a hovering pointer, so it is off without one.
 - The city is width-constrained in portrait, so it is allowed a much
   smaller margin than on desktop, where the chrome sits to the sides.
 - The period picker is a dropdown, not a tab strip: five tabs are wider

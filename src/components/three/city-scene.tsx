@@ -43,7 +43,9 @@ import { GridLabels } from "./grid-labels";
 import { FpsMeter } from "./fps-meter";
 import { ShadowCatcher } from "./shadow-catcher";
 import { TuningPanel } from "./tuning-panel";
-import { ParallaxGroup, type Pointer } from "./parallax-group";
+
+/** Pointer over the viewport, each axis normalized to -1..1. */
+export type Pointer = { x: number; y: number };
 
 type CitySceneProps = {
   period: ContributionPeriod;
@@ -498,14 +500,7 @@ export function CityScene({
               maxOpacity={config.maxShadowOpacity}
             />
 
-            <ParallaxGroup
-              pointerRef={pointerRef}
-              progressRef={progressRef}
-              strengthDeg={config.hoverTiltDeg}
-              tipRatio={config.hoverTipRatio}
-              reducedMotion={reducedMotion}
-            >
-              <CityBuildings
+            <CityBuildings
                 tiles={tiles}
                 weekCount={weekCount}
                 target={target}
@@ -521,7 +516,6 @@ export function CityScene({
                 swellPointerRef={hasFinePointer ? pointerRef : null}
                 reducedMotion={reducedMotion}
               />
-            </ParallaxGroup>
 
             <CameraRig
               target={target}
