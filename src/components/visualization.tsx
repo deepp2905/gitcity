@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { RefObject } from "react";
 import type { ContributionPeriod, GithubProfile } from "@/lib/contributions/types";
 import type { ViewMode } from "@/lib/state/view";
 import {
@@ -29,6 +30,8 @@ type VisualizationProps = {
   interactive: boolean;
   webglSupported: boolean;
   onToggleView: (next: ViewMode) => void;
+  /** Populated by the scene with a snapshot function, for the PNG export. */
+  captureRef?: RefObject<(() => HTMLCanvasElement | null) | null>;
 };
 
 /**
@@ -50,6 +53,7 @@ export function Visualization({
   interactive,
   webglSupported,
   onToggleView,
+  captureRef,
 }: VisualizationProps) {
   const reducedMotion = usePrefersReducedMotion();
   const isMobile = useIsMobile();
@@ -78,6 +82,7 @@ export function Visualization({
         isMobile={isMobile}
         onToggleView={onToggleView}
         view={view}
+        captureRef={captureRef}
       />
 
       {/* Same information, always available to assistive technology. */}

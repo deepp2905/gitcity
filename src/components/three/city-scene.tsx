@@ -1,7 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { Canvas } from "@react-three/fiber";
+import { EXPORT_PIXEL_RATIO } from "@/lib/export/png";
 import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
 import type { ViewMode } from "@/lib/state/view";
 import { formatDayLabel } from "@/lib/contributions/grid";
@@ -47,6 +55,12 @@ type CitySceneProps = {
   reducedMotion: boolean;
   isMobile: boolean;
   onToggleView: (next: ViewMode) => void;
+  /**
+   * Filled in with a function that snapshots the scene, so the download
+   * button — which lives with the page chrome, not in here — can reach
+   * the renderer without this component knowing what it is for.
+   */
+  captureRef?: RefObject<(() => HTMLCanvasElement | null) | null>;
 };
 
 type Tooltip = { day: ContributionDay; x: number; y: number };
@@ -76,6 +90,76 @@ const TOOLTIP_EDGE_MARGIN_PX = 90;
 const TOOLTIP_DISMISS_DELAY_MS = 120;
 
 /**
+ * Minimal shape of what the capture needs from the renderer.
+ *
+ * Structural rather than `THREE.WebGLRenderer`: two copies of
+ * @types/three are installed — 0.182.0 to match the pinned three, and
+ * 0.185.4 pulled in by React Three Fiber — and the two WebGLRenderer
+ * types are not assignable to one another. Scene and camera stay generic
+ * so they pass through untouched from whichever version supplied them.
+ */
+type CaptureRenderer<Scene, Camera> = {
+  domElement: HTMLCanvasElement;
+  getPixelRatio(): number;
+  setPixelRatio(value: number): void;
+  setSize(width: number, height: number, updateStyle?: boolean): void;
+  render(scene: Scene, camera: Camera): void;
+};
+
+/**
+ * Snapshots the scene at export resolution.
+ *
+ * Three things make this fiddly enough to want explaining:
+ *
+ * The drawing buffer is cleared after each frame — R3F does not set
+ * `preserveDrawingBuffer`, and turning it on would cost a copy on every
+ * frame forever to serve a button most people never press. So the scene
+ * is re-rendered here and read in the same tick, before the compositor
+ * gets a chance to clear it.
+ *
+ * The read has to be synchronous for the same reason, which is why the
+ * pixels are copied into a 2D canvas with `drawImage` rather than handed
+ * out as a promise from `toBlob`.
+ *
+ * Resolution comes from the pixel ratio alone. An orthographic camera's
+ * frustum is set from the CSS size, so enlarging only the drawing buffer
+ * yields the identical framing with more pixels in it. `setSize` is told
+ * not to touch the element's style, and everything is restored before
+ * returning, so nothing is ever painted at the export size.
+ */
+function captureSceneCanvas<Scene, Camera>(
+  gl: CaptureRenderer<Scene, Camera>,
+  scene: Scene,
+  camera: Camera,
+  pixelRatio: number,
+): HTMLCanvasElement | null {
+  const source = gl.domElement;
+  const cssWidth = source.clientWidth;
+  const cssHeight = source.clientHeight;
+  if (cssWidth === 0 || cssHeight === 0) return null;
+
+  const previousRatio = gl.getPixelRatio();
+
+  try {
+    gl.setPixelRatio(pixelRatio);
+    gl.setSize(cssWidth, cssHeight, false);
+    gl.render(scene, camera);
+
+    const snapshot = document.createElement("canvas");
+    snapshot.width = source.width;
+    snapshot.height = source.height;
+    snapshot.getContext("2d")?.drawImage(source, 0, 0);
+    return snapshot;
+  } finally {
+    // Restored whatever happened above, or the live view would stay at
+    // export resolution until the next resize.
+    gl.setPixelRatio(previousRatio);
+    gl.setSize(cssWidth, cssHeight, false);
+    gl.render(scene, camera);
+  }
+}
+
+/**
  * One scene for both states. The camera never switches projection — it's
  * orthographic throughout — so the flat view is genuinely the same city
  * seen from directly above, not a separate 2D rendering.
@@ -90,6 +174,7 @@ export function CityScene({
   reducedMotion,
   isMobile,
   onToggleView,
+  captureRef,
 }: CitySceneProps) {
   // The scene fills the viewport, so read it directly instead of
   // measuring the container.
@@ -317,6 +402,13 @@ export function CityScene({
             dpr={pixelRatioCap(isMobile)}
             orthographic
             camera={{ position: [0, 200, 8], zoom: baseZoom, near: 1, far: 600 }}
+            // The renderer only exists inside the Canvas, so the capture
+            // is bound here and handed out through the ref.
+            onCreated={({ gl, scene, camera }) => {
+              if (!captureRef) return;
+              captureRef.current = () =>
+                captureSceneCanvas(gl, scene, camera, EXPORT_PIXEL_RATIO);
+            }}
           >
             <color attach="background" args={[palette.canvas]} />
 

@@ -14,6 +14,7 @@ import { SearchForm } from "./search-form";
 import { PeriodTotal, ProfileIdentity } from "./profile-header";
 import { Visualization } from "./visualization";
 import { PeriodTabs } from "./period-tabs";
+import { DownloadButton } from "./download-button";
 import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 import { buildMockPeriod } from "@/lib/contributions/mock";
 import { isInteractive, pickLoadingFloorMs, resolvePhase } from "@/lib/state/phase";
@@ -221,6 +222,9 @@ export function CityApp() {
   /** The scene only answers taps once there is real data in it. */
   const canToggle = isInteractive(phase);
 
+  /** Filled in by the scene with a snapshot function for the PNG export. */
+  const captureRef = useRef<(() => HTMLCanvasElement | null) | null>(null);
+
   /**
    * The idle city stays tilted, so the page opens on the thing the
    * product makes rather than on a chart. A search flattens it, which is
@@ -264,6 +268,7 @@ export function CityApp() {
         interactive={canToggle}
         webglSupported={webglSupported}
         onToggleView={handleToggleView}
+        captureRef={captureRef}
       />
 
       {/*
@@ -338,6 +343,16 @@ export function CityApp() {
                   activeId={realPeriod!.id}
                   onSelect={handleSelectPeriod}
                 />
+                {/* Only while the city is standing: the export is a
+                    picture of a 3D city, and from the flat view there is
+                    no city to take a picture of. */}
+                {view === "3d" ? (
+                  <DownloadButton
+                    profile={data!.profile}
+                    period={realPeriod!}
+                    captureRef={captureRef}
+                  />
+                ) : null}
               </>
             ) : null}
           </div>
