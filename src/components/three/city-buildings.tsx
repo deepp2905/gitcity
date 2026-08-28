@@ -14,12 +14,7 @@ import type { ContributionDay } from "@/lib/contributions/types";
 import { maxCountOf } from "@/lib/contributions/grid";
 import { normalizeCount, scaleHeight } from "@/lib/contributions/height";
 import type { SceneTile } from "@/lib/contributions/scene-tiles";
-import {
-  CELL_SIZE,
-  buildingsBoundingSphere,
-  tilePosition,
-  worldHeight,
-} from "@/lib/three/layout";
+import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
 import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
 import { waveAt } from "@/lib/three/wave";
@@ -119,7 +114,6 @@ type CityBuildingsProps = {
    */
   swellPointerRef: RefObject<{ x: number; y: number }> | null;
   reducedMotion: boolean;
-  onHoverDay: (day: ContributionDay | null, clientX: number, clientY: number) => void;
 };
 
 /**
@@ -142,7 +136,6 @@ export function CityBuildings({
   waving,
   swellPointerRef,
   reducedMotion,
-  onHoverDay,
 }: CityBuildingsProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
 
@@ -656,24 +649,8 @@ export function CityBuildings({
     writeColors(mesh, colorsRef.current, layout.length);
   }, [layout]);
 
-  // Supply the raycast bounding sphere rather than letting Three derive
-  // it. It computes one lazily on the first raycast and caches it, which
-  // captures whatever height the buildings happened to be at that moment
-  // and makes every later hover miss.
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
-
-    const { centerY, radius } = buildingsBoundingSphere(
-      weekCount,
-      config.cellGap,
-      config.sceneMaxHeight,
-    );
-    mesh.boundingSphere = new THREE.Sphere(
-      new THREE.Vector3(0, centerY, 0),
-      radius,
-    );
-  }, [layout, weekCount, config.cellGap, config.sceneMaxHeight]);
+  // No raycast bounding sphere: nothing hovers the mesh any more. The
+  // scene has no pointer handlers, so R3F never tests it.
 
   return (
     <instancedMesh
@@ -686,14 +663,6 @@ export function CityBuildings({
       args={[undefined, undefined, capacity]}
       castShadow
       receiveShadow
-      onPointerMove={(event) => {
-        event.stopPropagation();
-        const index = event.instanceId;
-        if (index === undefined) return;
-        // Future tiles have no day and deliberately show no tooltip.
-        onHoverDay(layout[index]?.day ?? null, event.clientX, event.clientY);
-      }}
-      onPointerOut={() => onHoverDay(null, 0, 0)}
     >
       <primitive object={geometry} attach="geometry" />
       <meshLambertMaterial />

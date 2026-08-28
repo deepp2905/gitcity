@@ -62,35 +62,3 @@ export function worldHeight(
 ): number {
   return normalizedHeight * maxHeight;
 }
-
-/**
- * A bounding sphere covering every instance, whatever its height.
- *
- * InstancedMesh.raycast() tests its bounding sphere before examining any
- * instance, and computes that sphere lazily on the first raycast, then
- * caches it. Because the instance matrices are rewritten every frame as
- * the buildings animate, that cached sphere is a snapshot of one arbitrary
- * moment — usually the flat state — and every later ray aimed at a raised
- * building misses. Supplying the sphere up front from known bounds avoids
- * both the stale cache and the per-frame cost of recomputing it.
- *
- * `heightHeadroom` allows for the spring overshooting its target.
- */
-export function buildingsBoundingSphere(
-  weekCount: number,
-  gap: number,
-  maxHeight: number,
-  heightHeadroom = 1.5,
-): { centerY: number; radius: number } {
-  const halfWidth = gridWidth(weekCount, gap) / 2;
-  const halfDepth = gridDepth(gap) / 2;
-  const topY = Math.max(maxHeight, 0) * heightHeadroom;
-  const centerY = topY / 2;
-
-  // Corner of the box, plus half a tile because instances are centred on
-  // their grid position and extend half a cell beyond it.
-  return {
-    centerY,
-    radius: Math.hypot(halfWidth + CELL_SIZE, centerY, halfDepth + CELL_SIZE),
-  };
-}

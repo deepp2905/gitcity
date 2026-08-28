@@ -110,6 +110,7 @@ The scene runs on phones and tablets, with a few deliberate differences:
   back.
 - Tapping the scene transforms it, with a wider movement allowance than a
   mouse gets: a finger wanders further over the same intent.
+- The swell needs a hovering pointer, so it is off without one.
 - The city is width-constrained in portrait, so it is allowed a much
   smaller margin than on desktop, where the chrome sits to the sides.
 - The period picker is a dropdown, not a tab strip: five tabs are wider
@@ -121,10 +122,6 @@ The scene runs on phones and tablets, with a few deliberate differences:
 Heights use `dvh` and padding uses `env(safe-area-inset-*)`, so iOS
 Safari's address bar can't crop the page and the chrome clears the notch
 and home indicator.
-
-**Tooltips are effectively desktop-only.** They need a hovering pointer,
-and on touch a tap transforms the view instead. The accessible heatmap
-carries every day's exact date and count in both states regardless.
 
 ## Tuning panel
 

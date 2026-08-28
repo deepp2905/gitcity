@@ -15,9 +15,8 @@ import {
   EXPORT_PIXEL_RATIO,
   EXPORT_ZOOM_PADDING,
 } from "@/lib/export/png";
-import type { ContributionDay, ContributionPeriod } from "@/lib/contributions/types";
+import type { ContributionPeriod } from "@/lib/contributions/types";
 import type { ViewMode } from "@/lib/state/view";
-import { formatDayLabel } from "@/lib/contributions/grid";
 import {
   buildSceneTiles,
   sceneWeekCount,
@@ -69,8 +68,6 @@ type CitySceneProps = {
   captureRef?: RefObject<(() => HTMLCanvasElement | null) | null>;
 };
 
-type Tooltip = { day: ContributionDay; x: number; y: number };
-
 /**
  * Pointer travel beyond this is a drag, not a tap. A finger wanders far
  * more than a mouse over the same intent, so touch gets a wider allowance
@@ -87,13 +84,6 @@ const TOUCH_DRAG_THRESHOLD_PX = 14;
  * soon as the city is allowed to fill the width.
  */
 const WEEKDAY_GUTTER_PX = 34;
-
-/** Keeps a centred tooltip clear of the viewport edges. */
-const TOOLTIP_EDGE_MARGIN_PX = 90;
-
-/** Grace period before a tooltip is dismissed, so crossing the gap
- * between two buildings doesn't strobe it. */
-const TOOLTIP_DISMISS_DELAY_MS = 120;
 
 /**
  * Minimal shape of what the capture needs from the renderer.
@@ -246,7 +236,6 @@ export function CityScene({
   // measuring the container.
   const size = useViewportSize();
   const hasFinePointer = useHasFinePointer();
-  const [tooltip, setTooltip] = useState<Tooltip | null>(null);
 
   /** Written every frame by the rig, read every frame by the buildings —
    * deliberately a ref so the transform never re-renders React. */
@@ -373,47 +362,6 @@ export function CityScene({
   });
 
   /**
-   * Pending tooltip dismissal.
-   *
-   * The mesh reports "out" whenever the ray stops hitting a building,
-   * which happens every time the pointer crosses one of the gaps between
-   * tiles. Clearing immediately made the tooltip strobe as you moved
-   * across the grid, so a dismissal is deferred long enough for the next
-   * building to claim it.
-   */
-  const dismissTimerRef = useRef<number | null>(null);
-
-  const cancelDismiss = useCallback(() => {
-    if (dismissTimerRef.current !== null) {
-      window.clearTimeout(dismissTimerRef.current);
-      dismissTimerRef.current = null;
-    }
-  }, []);
-
-  const handleHoverDay = useCallback(
-    (day: ContributionDay | null, x: number, y: number) => {
-      cancelDismiss();
-      if (day) {
-        setTooltip({ day, x, y });
-        return;
-      }
-      dismissTimerRef.current = window.setTimeout(
-        () => setTooltip(null),
-        TOOLTIP_DISMISS_DELAY_MS,
-      );
-    },
-    [cancelDismiss],
-  );
-
-  /** Leaving the scene entirely dismisses at once, with no grace period. */
-  const handlePointerLeave = useCallback(() => {
-    cancelDismiss();
-    setTooltip(null);
-  }, [cancelDismiss]);
-
-  useEffect(() => cancelDismiss, [cancelDismiss]);
-
-  /**
    * Clicking the scene toggles the view. Movement still disqualifies a
    * press: a drag across the scene is someone selecting or gesturing, not
    * asking to transform, and toggling under them would be a surprise.
@@ -500,7 +448,6 @@ export function CityScene({
         }`}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerLeave}
         // Decorative: the scene is a rendering of the heatmap that sits
         // beside it in the accessible tree, which carries every day's
         // date and count in both states.
@@ -573,7 +520,6 @@ export function CityScene({
                 // would leave a bulge sitting where the finger last was.
                 swellPointerRef={hasFinePointer ? pointerRef : null}
                 reducedMotion={reducedMotion}
-                onHoverDay={handleHoverDay}
               />
             </ParallaxGroup>
 
@@ -638,23 +584,6 @@ export function CityScene({
         <TuningPanel config={config} onChange={setConfig} />
       ) : null}
 
-      {tooltip ? (
-        <div
-          role="tooltip"
-          className="pointer-events-none fixed z-20 -translate-x-1/2 -translate-y-full rounded-md bg-ink px-2 py-1 text-xs font-medium tabular-nums text-white shadow-md"
-          // Clamped inside the viewport: near an edge the centred
-          // tooltip would otherwise hang off the side of a phone screen.
-          style={{
-            left: Math.min(
-              Math.max(tooltip.x, TOOLTIP_EDGE_MARGIN_PX),
-              Math.max(size.width - TOOLTIP_EDGE_MARGIN_PX, TOOLTIP_EDGE_MARGIN_PX),
-            ),
-            top: tooltip.y - 10,
-          }}
-        >
-          {formatDayLabel(tooltip.day)}
-        </div>
-      ) : null}
     </>
   );
 }
