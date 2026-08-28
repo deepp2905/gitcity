@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   ContributionErrorCode,
@@ -8,7 +9,11 @@ import type {
   PeriodId,
 } from "@/lib/contributions/types";
 import { fetchContributions } from "@/lib/api/fetch-contributions";
-import { buildUrlQuery, readUrlState } from "@/lib/state/url-state";
+import {
+  DEFAULT_PERIOD_ID,
+  buildUrlQuery,
+  readUrlState,
+} from "@/lib/state/url-state";
 import { DEFAULT_VIEW, type ViewMode } from "@/lib/state/view";
 import { SearchForm } from "./search-form";
 import { SuggestedUsers } from "./suggested-users";
@@ -142,6 +147,30 @@ export function CityApp() {
     [navigate, user],
   );
 
+  /**
+   * The wordmark goes home: back to the idle mock city and an empty
+   * field.
+   *
+   * Bumping the reload token matters as much as clearing the username.
+   * The intro rise is remembered against the request key, so without a
+   * fresh one, searching the same person again would find them already
+   * introduced and skip the rise, leaving the city flat.
+   */
+  const handleGoHome = useCallback(
+    (event: React.MouseEvent<HTMLAnchorElement>) => {
+      // Let modified clicks open a tab the way any link would.
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+
+      setReloadToken((token) => token + 1);
+      setView(DEFAULT_VIEW);
+      navigate({ user: null, period: DEFAULT_PERIOD_ID }, false);
+    },
+    [navigate],
+  );
+
   const handleSelectPeriod = useCallback(
     (nextPeriod: PeriodId) => navigate({ period: nextPeriod }, true),
     [navigate],
@@ -193,10 +222,14 @@ export function CityApp() {
     // Keyed on the phase reaching ready, not on the data arriving: the
     // wave has its own minimum, and the hold is meant to follow the flat
     // reveal rather than overlap it.
+    //
+    // Remembered against the request key rather than the username, so
+    // going home and searching the same person again is a fresh arrival
+    // and rises again.
     if (phase !== "ready" || !user) return;
-    if (introDoneRef.current === user) return;
+    if (introDoneRef.current === requestKey) return;
 
-    introDoneRef.current = user;
+    introDoneRef.current = requestKey;
 
     const timer = window.setTimeout(() => {
       // Functional update, so the current view is read at the moment the
@@ -208,7 +241,7 @@ export function CityApp() {
     return () => window.clearTimeout(timer);
     // `view` is deliberately absent: depending on it would tear down the
     // pending timer the moment anything else moved the camera.
-  }, [phase, user]);
+  }, [phase, user, requestKey]);
 
   // Loading and error are derived, never synced in an effect: a request is
   // in flight whenever the settled outcome doesn't answer the key the
@@ -293,10 +326,18 @@ export function CityApp() {
       {/* Pointer events stay off: the wordmark isn't interactive, and a
           full-width bar that swallowed them would put a dead strip across
           the top of the city. */}
-      <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0">
-        <p className="text-center text-sm font-semibold tracking-tight text-ink">
+      {/* A real anchor, so middle-click and cmd-click open a tab like
+          any other link; the handler only takes over the plain click.
+          pointer-events stay off on the bar and on for the mark alone, so
+          the rest of the strip doesn't shadow the city. */}
+      <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0 text-center">
+        <Link
+          href="/"
+          onClick={handleGoHome}
+          className="pointer-events-auto inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold tracking-tight text-ink transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-ink/5 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        >
           gitCity
-        </p>
+        </Link>
       </header>
 
       {/* The city shows through here. Nothing is laid out over it. */}

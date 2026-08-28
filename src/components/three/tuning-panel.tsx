@@ -47,11 +47,30 @@ function ResetIcon() {
   );
 }
 
+/**
+ * A gear.
+ *
+ * The previous attempt was a circle with eight evenly spaced radiating
+ * lines, which is a sun — the rays have to be *lobes on the outline* for
+ * it to read as a mechanism, not spokes floating around a hub.
+ *
+ * Its own 24 viewBox because a toothed outline needs the room; the shared
+ * 16 grid puts the teeth on half-pixels and they blur.
+ */
 function SettingsIcon() {
   return (
-    <svg {...iconProps("size-[18px]")}>
-      <circle cx="8" cy="8" r="2.4" />
-      <path d="M8 1.4v1.9M8 12.7v1.9M14.6 8h-1.9M3.3 8H1.4M12.7 3.3l-1.4 1.4M4.7 11.3l-1.4 1.4M12.7 12.7l-1.4-1.4M4.7 4.7L3.3 3.3" />
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className="size-[18px]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
@@ -118,7 +137,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         onClick={() => setOpen(true)}
         aria-label="Open scene tuning"
         title="Scene tuning"
-        className="pointer-events-auto fixed bottom-3 right-3 z-50 grid size-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="pointer-events-auto fixed right-3 top-3 z-50 grid size-11 sm:bottom-3 sm:top-auto place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <SettingsIcon />
       </button>
@@ -126,7 +145,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
   }
 
   return (
-    <div className="pointer-events-auto fixed bottom-3 right-3 z-50 flex max-h-[80vh] w-72 flex-col overflow-hidden rounded-xl border border-border bg-canvas-raised shadow-[var(--shadow-raised)]">
+    <div className="pointer-events-auto fixed right-3 top-3 z-50 flex max-h-[80vh] w-72 flex-col sm:bottom-3 sm:top-auto overflow-hidden rounded-xl border border-border bg-canvas-raised shadow-[var(--shadow-raised)]">
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-3 py-2.5">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Scene tuning
