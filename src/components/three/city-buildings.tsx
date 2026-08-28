@@ -17,7 +17,7 @@ import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
 import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
-import { waveAt } from "@/lib/three/wave";
+import { WAVE_SETTLE_MS, waveAt } from "@/lib/three/wave";
 import {
   MAX_ACCUMULATED_S,
   SPRING_TIMESTEP_S,
@@ -288,6 +288,8 @@ export function CityBuildings({
   /** Seconds the wave has been running, so it advances at a rate rather
    * than a frame count. */
   const waveElapsedRef = useRef(0);
+  /** Milliseconds into the wave's decay, once the search has resolved. */
+  const waveSettleRef = useRef(0);
 
   /**
    * Where the swell currently sits, in the mesh's own coordinates.
@@ -438,7 +440,13 @@ export function CityBuildings({
     if (riseStartedRef.current) elapsedRef.current += delta * 1000;
     const elapsed = elapsedRef.current;
 
-    if (waving) {
+    // The wave outlives the search by WAVE_SETTLE_MS, fading its own
+    // amplitude out. Handing straight over left the grid at whatever
+    // phase the sine had reached, half of it darker than any real day.
+    const settling =
+      !waving && waveElapsedRef.current > 0 && waveSettleRef.current < WAVE_SETTLE_MS;
+
+    if (waving || settling) {
       // A search is in flight. The wave is purely a colour wave: it only
       // ever runs in the flat state, where an orthographic camera looking
       // straight down renders no height at all, so driving height here
@@ -448,6 +456,13 @@ export function CityBuildings({
       // because the search is what flattened the city in the first place
       // and that descent is still readable through the tilt.
       waveElapsedRef.current += delta;
+      waveSettleRef.current = waving ? 0 : waveSettleRef.current + delta * 1000;
+
+      // 1 while the search runs, easing to 0 as it resolves. Multiplying
+      // the amplitude rather than blending toward a colour keeps every
+      // column on the same ramp the whole way down.
+      const amplitude =
+        1 - easeInOutCubic(Math.min(1, waveSettleRef.current / WAVE_SETTLE_MS));
 
       const colors = colorsRef.current;
       const elapsedSeconds = waveElapsedRef.current;
@@ -461,7 +476,9 @@ export function CityBuildings({
 
       for (let i = 0; i < layout.length; i++) {
         const item = layout[i];
-        const amount = reducedMotion ? 0.5 : waveAt(item.weekIndex, elapsedSeconds);
+        const amount =
+          (reducedMotion ? 0.5 : waveAt(item.weekIndex, elapsedSeconds)) *
+          amplitude;
 
         heights[i] = from[i] + (item.restHeight - from[i]) * descent;
         velocities[i] = 0;
@@ -483,10 +500,12 @@ export function CityBuildings({
       return;
     }
 
-    // Leaving the wave: heights and colours are wherever the sine left
-    // them, so the data has something to travel from.
+    // Leaving the wave. The settle has taken every colour to cream, so
+    // the data fades up from a blank chart rather than down from a
+    // brighter one it never had.
     if (waveElapsedRef.current > 0) {
       waveElapsedRef.current = 0;
+      waveSettleRef.current = 0;
       colorFadingRef.current = true;
       holdHeightsRef.current.set(heights);
       flattenFromRef.current.set(heights);

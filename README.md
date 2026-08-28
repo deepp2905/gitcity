@@ -134,6 +134,14 @@ an `inside` flag, because a pointer that has left the document keeps its
 last coordinates and the swell would otherwise hold its bulge over an
 empty screen forever.
 
+**The loading wave lands rather than stops.** A free-running sine is at
+an arbitrary phase whenever the data arrives, so half the columns would
+be sitting at or near the deepest green — darker than almost any real
+day — and the handover left that band to fade *downward*, which read as a
+flash. The wave now outlives the search by `WAVE_SETTLE_MS`, decaying its
+own amplitude to zero, so the grid is cream when the data starts painting
+up into it.
+
 **The idle city** is generated, not real. It is seeded so the server and
 the first client render agree — the fixed seed is the server snapshot of
 a `useSyncExternalStore` — and re-seeded per page load, so the city is a

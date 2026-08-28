@@ -24,6 +24,20 @@ export const WAVE_SPEED_HZ = 0.55;
  */
 export const WAVE_JITTER = 0.22;
 
+/**
+ * How long the wave takes to subside once the search resolves.
+ *
+ * It has to land, not stop. A free-running sine is at an arbitrary phase
+ * whenever the data happens to arrive, and roughly half the columns are
+ * then at or near the deepest green — darker than almost anything in a
+ * real contribution year. Cutting straight to the data left that dark
+ * band on screen to fade *down*, which read as a flash.
+ *
+ * Decaying the amplitude to zero first takes the whole grid to cream, so
+ * the data paints up from a blank chart instead of down from a false one.
+ */
+export const WAVE_SETTLE_MS = 260;
+
 /** Deterministic per-column offset in -1..1, so a column keeps the same
  * character frame to frame rather than shimmering. */
 export function columnJitter(weekIndex: number): number {
