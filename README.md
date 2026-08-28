@@ -142,9 +142,9 @@ than a sine for the same reason — a sine lingers near its extremes, so
 with five bands roughly 60% of every cycle would sit on cream or the
 darkest green and the three greens between them would flicker past.
 
-**The loading wave lands rather than stops.** A free-running sine is at
-an arbitrary phase whenever the data arrives, so half the columns would
-be sitting at or near the deepest green — darker than almost any real
+**And it lands rather than stops.** A free-running wave is at an
+arbitrary phase whenever the data arrives, so a good share of the columns
+would be sitting on the deepest green — darker than almost any real
 day — and the handover left that band to fade *downward*, which read as a
 flash. The wave now outlives the search by `WAVE_SETTLE_MS`, decaying its
 own amplitude to zero, so the grid is cream when the data starts painting
