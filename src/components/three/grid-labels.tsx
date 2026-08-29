@@ -75,18 +75,16 @@ export function GridLabels({
   return (
     <div
       aria-hidden="true"
-      // Eased in a beat after landing flat, letting the city settle
-      // before the chart furniture arrives. Removed instantly when
-      // anything moves, though -- delay-0 as well as duration-0, or the
-      // delay would apply on the way out too and labels would linger over
-      // a tilting city.
+      // Eased in as soon as the camera lands flat. Removed instantly
+      // when anything moves, though -- duration-0 on the way out, or the
+      // labels would linger over a tilting city.
       // 10px on a phone. The grid is width-constrained there, so a month
       // occupies about 24px of screen and 12px type runs the labels into
       // one another.
       className={`pointer-events-none absolute inset-0 text-[10px] leading-none text-ink-muted transition-opacity sm:text-xs ${
         settledFlat
-          ? "opacity-100 delay-100 duration-300 ease-out"
-          : "opacity-0 delay-0 duration-0"
+          ? "opacity-100 duration-300 ease-out"
+          : "opacity-0 duration-0"
       }`}
     >
       {months.map((month) => {
