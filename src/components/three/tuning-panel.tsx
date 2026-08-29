@@ -7,6 +7,7 @@ import {
   type ControlGroup,
   type SceneConfig,
 } from "@/lib/three/config";
+import { Tooltip } from "@/components/tooltip";
 
 function iconProps(className = "size-3.5") {
   return {
@@ -192,7 +193,6 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open scene tuning"
-        title="Scene tuning"
         data-ui
         // `group` so the gear can answer the button's hover rather than
         // its own: the icon is smaller than its target, and a rotation
@@ -201,6 +201,13 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         className="group pointer-events-auto fixed right-3 top-3 z-50 grid size-11 sm:bottom-3 sm:top-auto place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <SettingsIcon />
+        {/* Right-aligned, and below on phones where the button sits at
+            the top: a centred tooltip on a control at the right margin
+            hangs off the screen. */}
+        <Tooltip
+          label="Scene tuning"
+          className="right-0 top-full mt-2 sm:bottom-full sm:top-auto sm:mb-2 sm:mt-0"
+        />
       </button>
     );
   }

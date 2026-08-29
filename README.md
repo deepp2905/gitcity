@@ -109,6 +109,16 @@ lives in `CityApp` alongside the fetch error rather than inside the form.
 A local complaint outranks a lookup error: it describes what is in the
 field now, where the other describes the last thing submitted.
 
+The identity pill, the download button and the tuning gear carry
+tooltips after a 200ms beat. They render *inside* their trigger rather
+than wrapping it, so they cost the layout nothing — the trigger needs
+`group relative`, and a positioned one like the fixed gear already
+provides the containing block. No JavaScript: the pause is
+`group-hover:delay-200` against a base `delay-0`, which delays the way in
+and not the way out, and Tailwind puts `hover` behind
+`@media (hover: hover)` so a tap never raises one. They are `aria-hidden`,
+since every trigger already has an `aria-label` saying the same thing.
+
 **Changing the view.** A search holds the flat grid briefly and then
 rises on its own, once per search. After that the only thing that moves
 the camera is clicking the scene. There is no orbit, zoom, pan or lean:

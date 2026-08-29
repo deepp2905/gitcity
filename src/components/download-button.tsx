@@ -10,6 +10,7 @@ import {
   exportFilename,
   loadCrossOriginImage,
 } from "@/lib/export/png";
+import { Tooltip } from "./tooltip";
 
 type DownloadButtonProps = {
   profile: GithubProfile;
@@ -68,8 +69,7 @@ export function DownloadButton({
       onClick={handleClick}
       disabled={busy}
       aria-label={busy ? "Saving PNG" : "Download as PNG"}
-      title="Download as PNG"
-      className="grid size-11 shrink-0 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-progress disabled:opacity-60 disabled:active:scale-100"
+      className="group relative grid size-11 shrink-0 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-progress disabled:opacity-60 disabled:active:scale-100"
     >
       <svg
         viewBox="0 0 20 20"
@@ -83,6 +83,8 @@ export function DownloadButton({
       >
         <path d="M10 3v9M6.5 8.5 10 12l3.5-3.5M4 15.5h12" />
       </svg>
+
+      <Tooltip label={busy ? "Saving PNG" : "Download as PNG"} />
     </button>
   );
 }

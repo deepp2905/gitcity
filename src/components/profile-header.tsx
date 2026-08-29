@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Tooltip } from "./tooltip";
 import type { ContributionPeriod, GithubProfile } from "@/lib/contributions/types";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
@@ -24,7 +25,7 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
       // username do not fit a narrow row, and the username is the one
       // whose absence costs least — whoever searched already knows whose
       // city they are looking at.
-      className="flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 backdrop-blur-md transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:w-auto sm:justify-start sm:pr-3.5"
+      className="group relative flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 backdrop-blur-md transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:w-auto sm:justify-start sm:pr-3.5"
     >
       <Image
         src={profile.avatarUrl}
@@ -43,6 +44,8 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
       <span className="hidden text-sm font-medium text-ink sm:inline">
         @{profile.login}
       </span>
+
+      <Tooltip label={`@${profile.login} on GitHub`} />
     </a>
   );
 }
