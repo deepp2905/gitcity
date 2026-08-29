@@ -17,7 +17,11 @@ import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
 import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
-import { WAVE_MIN_FOOTPRINT, WAVE_SETTLE_MS, waveAt } from "@/lib/three/wave";
+import {
+  WAVE_MIN_FOOTPRINT,
+  WAVE_SETTLE_MS,
+  waveValueAt,
+} from "@/lib/three/wave";
 import {
   MAX_ACCUMULATED_S,
   SPRING_TIMESTEP_S,
@@ -483,8 +487,10 @@ export function CityBuildings({
         : easeInOutCubic(Math.min(1, waveSettleRef.current / WAVE_SETTLE_MS));
 
       const waveShape = {
+        front: config.waveFront,
         diagonal: config.waveDiagonal,
         sharpFront: config.waveSharpFront,
+        twinkle: config.waveTwinkle,
       };
       const colors = colorsRef.current;
       const elapsedSeconds = waveElapsedRef.current;
@@ -500,7 +506,12 @@ export function CityBuildings({
         const item = layout[i];
         const amount = reducedMotion
           ? 0.5
-          : waveAt(item.weekIndex, item.weekday, elapsedSeconds, waveShape);
+          : waveValueAt(
+              item.weekIndex,
+              item.weekday,
+              elapsedSeconds,
+              waveShape,
+            );
 
         // Footprint follows the raw amount, not the stepped colour: the
         // contrast between snapping colour and smooth breathing is the

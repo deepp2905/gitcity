@@ -3,12 +3,20 @@ import {
   WAVE_SPEED_HZ,
   WAVE_WAVELENGTH_COLUMNS,
   columnJitter,
+  WAVE_TWINKLE_SHARE,
+  twinkleAt,
   waveAt,
+  waveValueAt,
   type WaveShape,
 } from "./wave";
 
 /** The wave as it ships: no treatments on. */
-const PLAIN: WaveShape = { diagonal: false, sharpFront: false };
+const PLAIN: WaveShape = {
+  front: true,
+  diagonal: false,
+  sharpFront: false,
+  twinkle: false,
+};
 
 describe("columnJitter", () => {
   it("is stable for a given column", () => {
@@ -99,8 +107,8 @@ describe("waveAt as a triangle", () => {
 });
 
 describe("wave treatments", () => {
-  const DIAGONAL: WaveShape = { diagonal: true, sharpFront: false };
-  const SHARP: WaveShape = { diagonal: false, sharpFront: true };
+  const DIAGONAL: WaveShape = { ...PLAIN, diagonal: true };
+  const SHARP: WaveShape = { ...PLAIN, sharpFront: true };
 
   it("leaves a column uniform until the diagonal is on", () => {
     // Sunday and Saturday of the same week, jitter off so the only
@@ -134,14 +142,106 @@ describe("wave treatments", () => {
   });
 
   it("stays in range with every treatment on", () => {
-    const all: WaveShape = { diagonal: true, sharpFront: true };
+    const all: WaveShape = {
+      front: true,
+      diagonal: true,
+      sharpFront: true,
+      twinkle: true,
+    };
     for (let column = 0; column < 53; column++) {
       for (let weekday = 0; weekday < 7; weekday++) {
         for (let i = 0; i < 20; i++) {
-          const value = waveAt(column, weekday, i / 7, all);
+          const value = waveValueAt(column, weekday, i / 7, all);
           expect(value).toBeGreaterThanOrEqual(0);
           expect(value).toBeLessThanOrEqual(1);
         }
+      }
+    }
+  });
+});
+
+describe("twinkleAt", () => {
+  const CELLS: [number, number][] = [];
+  for (let column = 0; column < 53; column++) {
+    for (let weekday = 0; weekday < 7; weekday++) CELLS.push([column, weekday]);
+  }
+
+  it("picks roughly the intended share of cells", () => {
+    // A cell is in the set if it ever leaves zero.
+    const members = CELLS.filter(([c, d]) =>
+      Array.from({ length: 40 }, (_, i) => twinkleAt(c, d, i / 8)).some(
+        (v) => v > 0,
+      ),
+    );
+    const share = members.length / CELLS.length;
+    expect(share).toBeGreaterThan(WAVE_TWINKLE_SHARE - 0.08);
+    expect(share).toBeLessThan(WAVE_TWINKLE_SHARE + 0.08);
+  });
+
+  it("keeps the same cells across time, rather than churning", () => {
+    const memberAt = (t: number) =>
+      CELLS.filter(([c, d]) => twinkleAt(c, d, t) > 0).length;
+    // Counts differ frame to frame only because members pass through
+    // zero, so compare set membership over a window instead.
+    const inSet = (t0: number) =>
+      new Set(
+        CELLS.filter(([c, d]) =>
+          Array.from({ length: 30 }, (_, i) => twinkleAt(c, d, t0 + i / 8)).some(
+            (v) => v > 0,
+          ),
+        ).map(([c, d]) => `${c}:${d}`),
+      );
+    expect([...inSet(0)]).toEqual([...inSet(11)]);
+    expect(memberAt(0)).toBeGreaterThan(0);
+  });
+
+  it("does not share a beat across the set", () => {
+    // Two members peaking together across a long window would mean one
+    // rhythm rather than many.
+    const members = CELLS.filter(([c, d]) => twinkleAt(c, d, 0.37) > 0).slice(
+      0,
+      12,
+    );
+    const values = members.map(([c, d]) => twinkleAt(c, d, 0.37));
+    expect(new Set(values.map((v) => v.toFixed(3))).size).toBeGreaterThan(6);
+  });
+
+  it("stays silent for cells outside the set at every time", () => {
+    const outside = CELLS.find(
+      ([c, d]) =>
+        !Array.from({ length: 40 }, (_, i) => twinkleAt(c, d, i / 8)).some(
+          (v) => v > 0,
+        ),
+    );
+    expect(outside).toBeDefined();
+  });
+});
+
+describe("waveValueAt", () => {
+  const FRONT_OFF: WaveShape = { ...PLAIN, front: false };
+
+  it("is silent with the front off and nothing else on", () => {
+    for (let column = 0; column < 53; column++) {
+      expect(waveValueAt(column, 3, 0.6, FRONT_OFF)).toBe(0);
+    }
+  });
+
+  it("runs the pulses alone when the front is off", () => {
+    const twinkleOnly: WaveShape = { ...FRONT_OFF, twinkle: true };
+    const lit = Array.from({ length: 53 }, (_, c) =>
+      waveValueAt(c, 3, 0.6, twinkleOnly),
+    ).filter((v) => v > 0);
+    expect(lit.length).toBeGreaterThan(0);
+    expect(lit.length).toBeLessThan(53);
+  });
+
+  it("never lets a pulse pull a lit cell back down", () => {
+    const both: WaveShape = { ...PLAIN, twinkle: true };
+    for (let column = 0; column < 53; column++) {
+      for (const t of [0.2, 0.9, 1.7]) {
+        expect(waveValueAt(column, 2, t, both)).toBeGreaterThanOrEqual(
+          waveAt(column, 2, t, PLAIN),
+        );
       }
     }
   });

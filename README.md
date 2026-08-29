@@ -268,13 +268,23 @@ long as it takes to judge them, and switched on in any combination:
 
 | Toggle | What it changes |
 | ------ | --------------- |
+| Travelling front | The wave itself. Off leaves the other treatments running against a still grid, which is the only way to judge one alone |
 | Diagonal front | Phase offset per weekday, so the front leans instead of running as vertical bars |
 | Sharp front | Fast leading edge, long tail — direction becomes legible, where a symmetric triangle reads as pulsing in place |
 | Pulse scale | Tiles shrink between crests and swell through them. Footprint, not height: height is invisible from straight above, which is why the wave is colour-driven in the first place |
+| Random pulses | A fixed ~30% of cells pulse their colour on their own phase and period, independent of the front |
 
 Pulse scale follows the raw wave value rather than the stepped colour, so
 snapping colour plays against smooth breathing, and it eases back to a
 full cell through the settle so the data never lands on shrunken tiles.
+
+The treatments combine by taking whichever value is brighter, not by
+summing: a random pulse should flare a cell above the front passing
+through it, never drag a lit one back down. Twinkle membership is fixed
+per cell rather than re-rolled — cells joining and leaving the set would
+read as flicker rather than rhythm — and each member gets its own phase
+*and* its own period, since a shared beat across a third of the grid
+would just be a second, sparser wave.
 
 ## Pinned dependency
 

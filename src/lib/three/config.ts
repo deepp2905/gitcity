@@ -28,6 +28,12 @@ export type SceneConfig = {
    */
   debugHoldLoading: boolean;
   /**
+   * The travelling wave itself. Off leaves whatever other treatments are
+   * on running against a still grid — the only way to judge one of them
+   * on its own.
+   */
+  waveFront: boolean;
+  /**
    * Offsets the wave's phase per weekday, so the front crosses the grid
    * as a diagonal rather than as vertical bars.
    */
@@ -43,6 +49,12 @@ export type SceneConfig = {
    * above, which is the whole reason the wave is colour-driven.
    */
   wavePulseScale: boolean;
+  /**
+   * A fixed third of the cells pulse their colour on their own phase and
+   * period, independent of the front. Scattered activity rather than a
+   * second, sparser wave.
+   */
+  waveTwinkle: boolean;
 
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
@@ -167,9 +179,11 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   maxShadowOpacity: 0.06,
 
   debugHoldLoading: false,
+  waveFront: true,
   waveDiagonal: false,
   waveSharpFront: false,
   wavePulseScale: false,
+  waveTwinkle: false,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
@@ -434,6 +448,13 @@ export const CONTROL_GROUPS: ControlGroup[] = [
       },
       {
         kind: "choice",
+        key: "waveFront",
+        label: "Travelling front",
+        options: YES_NO,
+        hint: "Off to judge the others alone",
+      },
+      {
+        kind: "choice",
         key: "waveDiagonal",
         label: "Diagonal front",
         options: YES_NO,
@@ -452,6 +473,13 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         label: "Pulse scale",
         options: YES_NO,
         hint: "Tiles breathe with the crest",
+      },
+      {
+        kind: "choice",
+        key: "waveTwinkle",
+        label: "Random pulses",
+        options: YES_NO,
+        hint: "A third of cells, each on its own clock",
       },
     ],
   },

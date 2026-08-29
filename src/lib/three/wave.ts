@@ -54,12 +54,85 @@ export const WAVE_FRONT_SHARE = 0.18;
  * a full cell, for the pulse-scale treatment. */
 export const WAVE_MIN_FOOTPRINT = 0.82;
 
-/** Which treatments are switched on. All off is the plain travelling
- * triangle the wave shipped with. */
+/**
+ * Share of cells that pulse on their own schedule, for the twinkle
+ * treatment. Membership is fixed per cell rather than churning: cells
+ * joining and leaving the set would read as flicker rather than rhythm.
+ */
+export const WAVE_TWINKLE_SHARE = 0.3;
+
+/** Seconds for one twinkle, before per-cell variation. */
+export const WAVE_TWINKLE_PERIOD_S = 1.5;
+
+/** How much of that period varies per cell, as a fraction. Without it
+ * every pulse shares a rhythm and the scatter reads as a grid. */
+export const WAVE_TWINKLE_PERIOD_SPREAD = 1.1;
+
+/** Which treatments are switched on. `front` alone is the plain
+ * travelling triangle the wave shipped with. */
 export type WaveShape = {
+  /** The travelling wave itself. Off leaves only whatever else is on. */
+  front: boolean;
   diagonal: boolean;
   sharpFront: boolean;
+  twinkle: boolean;
 };
+
+/** Deterministic 0..1 per cell, so a cell keeps its character between
+ * frames instead of reshuffling. `salt` gives independent draws. */
+function cellHash(weekIndex: number, weekday: number, salt: number): number {
+  const hashed =
+    Math.sin(weekIndex * 12.9898 + weekday * 78.233 + salt * 37.719) *
+    43758.5453;
+  return hashed - Math.floor(hashed);
+}
+
+/**
+ * A cell's own pulse, 0 for cells outside the twinkling set.
+ *
+ * Each member gets its own phase and its own period, so the set has no
+ * shared beat — the point is scattered activity, and a common rhythm
+ * across 30% of the grid would read as a second, sparser wave.
+ */
+export function twinkleAt(
+  weekIndex: number,
+  weekday: number,
+  elapsedSeconds: number,
+): number {
+  if (cellHash(weekIndex, weekday, 1) >= WAVE_TWINKLE_SHARE) return 0;
+
+  const period =
+    WAVE_TWINKLE_PERIOD_S *
+    (1 + cellHash(weekIndex, weekday, 2) * WAVE_TWINKLE_PERIOD_SPREAD);
+  const cycles = elapsedSeconds / period + cellHash(weekIndex, weekday, 3);
+  const position = cycles - Math.floor(cycles);
+
+  // Same triangle as the front, so a pulse and a crest are the same
+  // gesture at different scales.
+  return 1 - Math.abs(1 - 2 * position);
+}
+
+/**
+ * Everything the wave is doing to a cell right now, 0..1.
+ *
+ * The treatments combine by taking whichever is brighter rather than
+ * summing: a pulse should flare a cell above the front passing through
+ * it, never drag one that is already lit back down.
+ */
+export function waveValueAt(
+  weekIndex: number,
+  weekday: number,
+  elapsedSeconds: number,
+  shape: WaveShape,
+): number {
+  const front = shape.front
+    ? waveAt(weekIndex, weekday, elapsedSeconds, shape)
+    : 0;
+  const pulse = shape.twinkle
+    ? twinkleAt(weekIndex, weekday, elapsedSeconds)
+    : 0;
+  return front > pulse ? front : pulse;
+}
 
 /**
  * How long the wave takes to subside once the search resolves.
