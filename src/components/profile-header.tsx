@@ -45,7 +45,9 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
         @{profile.login}
       </span>
 
-      <Tooltip label={`@${profile.login} on GitHub`} />
+      {/* Not the username: the pill already shows it beside the avatar,
+          so repeating it says nothing about what clicking does. */}
+      <Tooltip label="Open on GitHub" />
     </a>
   );
 }
