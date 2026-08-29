@@ -591,10 +591,20 @@ export function CityBuildings({
       waveElapsedRef.current = 0;
       waveSettleRef.current = 0;
       colorFadingRef.current = false;
-      holdHeightsRef.current.set(heights);
-      flattenFromRef.current.set(heights);
-      morphingRef.current = target === 1;
-      elapsedRef.current = 0;
+
+      // Only claim the height bookkeeping if a rise is not already under
+      // way. If the view flipped to 3D while cells were still arriving,
+      // the direction change has already set the hold heights, zeroed the
+      // clock and armed the stagger — and overwriting that here turned
+      // the sprung rise into an eased morph, which is the flash: every
+      // building jumping toward its height with no stagger and no spring
+      // before the real rise took over.
+      if (!staggeredRiseRef.current) {
+        holdHeightsRef.current.set(heights);
+        flattenFromRef.current.set(heights);
+        morphingRef.current = target === 1;
+        elapsedRef.current = 0;
+      }
     }
 
     if (reducedMotion) {

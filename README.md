@@ -219,10 +219,19 @@ pop the same scattered way the pulses do.
 once. Because the last cell starts only at the end of that window, the
 handover runs until it finishes rather than until the first one does.
 
-That total — the spread plus `WAVE_SETTLE_MS`, 960ms as shipped — has to
-stay under `INTRO_HOLD_MS`. The wave branch owns the frame while cells
-are still arriving, so an arrival that outlasts the hold would leave the
-camera tilting over buildings it has not released yet.
+**The rise waits for it.** `INTRO_HOLD_MS` is derived from
+`arrivalDurationMs`, not set beside it: the wave branch owns the frame
+while cells are still landing, so a hold that ran short would tilt the
+camera over buildings it had not released — and two hand-tuned constants
+that must agree is a thing that silently stops agreeing. Change the
+spread and the transform moves with it.
+
+If the view does flip mid-arrival, the handover no longer claims the
+height bookkeeping. The direction change has already set the hold
+heights, zeroed the clock and armed the stagger; overwriting that turned
+the sprung rise into an eased morph, which showed up as every building
+jumping toward its height with no stagger and no bounce, before the real
+rise took over.
 
 **And it lands rather than stops.** A free-running wave is at an
 arbitrary phase whenever the data arrives, so a good share of the columns

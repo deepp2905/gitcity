@@ -70,10 +70,11 @@ export type SceneConfig = {
    * Scattered over this window instead, each cell resolves on its own
    * beat while the rest keep pulsing around it.
    *
-   * CEILING: this plus `WAVE_SETTLE_MS` must stay under `INTRO_HOLD_MS`
-   * in CityApp. The wave branch owns the frame while it is settling, so
-   * an arrival that outlasts the hold leaves the camera tilting over a
-   * chart whose buildings have not been released yet.
+   * This drives the intro hold: CityApp derives how long the flat chart
+   * is held from `arrivalDurationMs` of this value, so the city starts
+   * rising exactly when the last cell has landed. Changing it here moves
+   * the transform with it. Dragging the slider does not — the hold reads
+   * the default, so find a value here and the sequence follows.
    */
   waveArrivalSpreadMs: number;
 
@@ -208,7 +209,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   wavePulseScale: false,
   waveTwinkle: true,
   waveTwinklePercent: 60,
-  waveArrivalSpreadMs: 620,
+  waveArrivalSpreadMs: 600,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
@@ -492,7 +493,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 1200,
         step: 25,
         unit: " ms",
-        hint: "Keep under 1000: see INTRO_HOLD_MS",
+        hint: "Also the delay before the 3D rise",
       },
     ],
   },

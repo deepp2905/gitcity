@@ -32,16 +32,24 @@ import { useWebGLSupport } from "@/lib/hooks/use-webgl-support";
 import { buildMockPeriod } from "@/lib/contributions/mock";
 import { useMockSeed } from "@/lib/hooks/use-mock-seed";
 import { isInteractive, pickLoadingFloorMs, resolvePhase } from "@/lib/state/phase";
+import { DEFAULT_SCENE_CONFIG } from "@/lib/three/config";
+import { arrivalDurationMs } from "@/lib/three/wave";
 
 /**
  * How long real data is held flat before the city rises.
  *
- * Has to outlast the arrival — `WAVE_SETTLE_MS` plus
- * `waveArrivalSpreadMs`, currently 960ms. The wave branch owns the frame
- * while cells are still arriving, so a shorter hold would tilt the camera
- * over buildings that have not been released yet.
+ * Derived from the arrival rather than set beside it. The two have to
+ * agree — the wave branch owns the frame while cells are still landing,
+ * so a hold that ran short would tilt the camera over buildings it had
+ * not released — and two hand-tuned constants that must match is a thing
+ * that silently stops matching.
+ *
+ * Reads the default rather than the live slider: the panel is for
+ * finding a value, and the sequence follows once it is the default.
  */
-const INTRO_HOLD_MS = 1000;
+const INTRO_HOLD_MS = arrivalDurationMs(
+  DEFAULT_SCENE_CONFIG.waveArrivalSpreadMs,
+);
 
 /**
  * When the controls arrive, measured from the moment the data is ready.

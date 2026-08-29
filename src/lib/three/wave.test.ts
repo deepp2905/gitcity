@@ -3,6 +3,8 @@ import {
   WAVE_SPEED_HZ,
   WAVE_WAVELENGTH_COLUMNS,
   columnJitter,
+  WAVE_SETTLE_MS,
+  arrivalDurationMs,
   arrivalOrder,
   twinkleAt,
   waveAt,
@@ -296,5 +298,24 @@ describe("arrivalOrder", () => {
     const first = Array.from({ length: 20 }, (_, c) => arrivalOrder(c, 3));
     const ascending = first.every((v, i) => i === 0 || v >= first[i - 1]);
     expect(ascending).toBe(false);
+  });
+});
+
+describe("arrivalDurationMs", () => {
+  it("outlasts the spread by one cell's crossing", () => {
+    // The last cell only starts at the end of the spread, so the grid is
+    // not finished until its own window closes. The intro hold is this
+    // number, and a hold that ran short would start the rise over cells
+    // still mid-arrival.
+    expect(arrivalDurationMs(600)).toBe(WAVE_SETTLE_MS + 600);
+    expect(arrivalDurationMs(600)).toBeGreaterThan(600);
+  });
+
+  it("still allows a cell to land when nothing is spread", () => {
+    expect(arrivalDurationMs(0)).toBe(WAVE_SETTLE_MS);
+  });
+
+  it("treats a negative spread as none", () => {
+    expect(arrivalDurationMs(-200)).toBe(WAVE_SETTLE_MS);
   });
 });

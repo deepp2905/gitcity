@@ -116,6 +116,18 @@ export function twinkleAt(
 }
 
 /**
+ * How long the whole grid takes to arrive, for a given spread.
+ *
+ * The last cell only begins at the end of the spread, so the total is
+ * the spread plus one cell's own crossing. Exported because the intro
+ * hold in CityApp is this: the city must not start rising until every
+ * cell has landed on its value.
+ */
+export function arrivalDurationMs(spreadMs: number): number {
+  return WAVE_SETTLE_MS + Math.max(0, spreadMs);
+}
+
+/**
  * Where a cell sits in the arrival order, 0..1.
  *
  * Scattered rather than swept: with no front travelling across the grid
