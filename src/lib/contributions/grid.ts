@@ -55,12 +55,20 @@ const MONTH_NAMES = [
 ];
 
 /**
- * Columns a month must occupy before it earns a label. A rolling period
- * usually starts mid-month, leaving a sliver of the previous month in
- * column 0; labelling it would crowd the next month's label off the
- * strip, so slivers are dropped rather than the real month after them.
+ * Columns a month must occupy before it earns a label.
+ *
+ * A rolling period usually starts mid-month, leaving a sliver of the
+ * previous month at the head of the grid. Runs are contiguous, so a run's
+ * column count is exactly the gap to the next label — and two columns is
+ * not enough room. At a typical desktop zoom that is about 27px between
+ * centres, where a centred three-letter month is roughly 24px wide, so
+ * "Aug" and "Sep" ran into each other. Three columns clears it.
+ *
+ * No real month is this narrow: a calendar month spans four or five
+ * columns, so anything shorter is an artifact of where the window was
+ * cut, and dropping it costs nothing.
  */
-const MIN_MONTH_COLUMNS = 2;
+const MIN_MONTH_COLUMNS = 3;
 
 /**
  * One label per month, placed above the first week column that month

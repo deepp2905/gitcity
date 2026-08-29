@@ -201,7 +201,11 @@ The scene runs on phones and tablets, with a few deliberate differences:
   width-constrained on a phone, so a month occupies about 24px of screen
   and 12px type runs the labels into one another; the weekday gutter is a
   fixed 34px, which 12px type filled exactly.
-- The swell is disabled without a fine pointer. Touch devices fire
+- A finger drives the swell the way a cursor does, but only while it is
+  down. There is no hovering touch, so a tap that ended must not leave
+  the bulge where it landed. Touch pointers only emit `pointermove` while
+  in contact, so a drag is already scoped to the gesture; only the lift
+  needs handling. Touch devices fire
   `pointermove` during a tap and once more as the finger lifts, so the
   city would bulge and stay bulged with nothing following to settle it.
 - Tapping the scene transforms it, with a wider movement allowance than a

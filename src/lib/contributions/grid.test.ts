@@ -76,19 +76,26 @@ describe("buildMonthLabels", () => {
   }
 
   it("emits one label per month at its first week column", () => {
+    // Four columns each, as a real calendar month spans -- shorter runs
+    // only occur where the window was cut, and are dropped.
     const days = columns(
       "2025-01-05",
       "2025-01-12",
       "2025-01-19",
+      "2025-01-26",
       "2025-02-02",
       "2025-02-09",
+      "2025-02-16",
+      "2025-02-23",
       "2025-03-02",
       "2025-03-09",
+      "2025-03-16",
+      "2025-03-23",
     );
     expect(buildMonthLabels(days)).toEqual([
       { label: "Jan", weekIndex: 0 },
-      { label: "Feb", weekIndex: 3 },
-      { label: "Mar", weekIndex: 5 },
+      { label: "Feb", weekIndex: 4 },
+      { label: "Mar", weekIndex: 8 },
     ]);
   });
 
@@ -99,12 +106,15 @@ describe("buildMonthLabels", () => {
       "2025-08-31",
       "2025-09-07",
       "2025-09-14",
+      "2025-09-21",
+      "2025-09-28",
       "2025-10-05",
       "2025-10-12",
+      "2025-10-19",
     );
     expect(buildMonthLabels(days)).toEqual([
       { label: "Sep", weekIndex: 1 },
-      { label: "Oct", weekIndex: 3 },
+      { label: "Oct", weekIndex: 5 },
     ]);
   });
 
@@ -112,16 +122,35 @@ describe("buildMonthLabels", () => {
     const days = columns(
       "2025-09-07",
       "2025-09-14",
+      "2025-09-21",
       "2025-10-05",
       "2025-10-12",
+      "2025-10-19",
       "2026-09-06",
       "2026-09-13",
+      "2026-09-20",
     );
     expect(buildMonthLabels(days)).toEqual([
       { label: "Sep", weekIndex: 0 },
-      { label: "Oct", weekIndex: 2 },
-      { label: "Sep", weekIndex: 4 },
+      { label: "Oct", weekIndex: 3 },
+      { label: "Sep", weekIndex: 6 },
     ]);
+  });
+
+  it("drops a two-column sliver, not just a one-column one", () => {
+    // The reported case: a rolling year opening Aug 28 puts Aug in
+    // columns 0 and 1 and Sep at column 2. Two columns is about 27px at
+    // a desktop zoom, and a centred "Aug" is about 24px wide, so the two
+    // labels touched.
+    const days = columns(
+      "2025-08-28",
+      "2025-08-31",
+      "2025-09-07",
+      "2025-09-14",
+      "2025-09-21",
+      "2025-09-28",
+    );
+    expect(buildMonthLabels(days)).toEqual([{ label: "Sep", weekIndex: 2 }]);
   });
 
   it("returns no labels for an empty period", () => {

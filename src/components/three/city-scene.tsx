@@ -36,7 +36,6 @@ import {
 import { pixelRatioCap } from "@/lib/three/webgl";
 import { palette } from "@/lib/theme/palette";
 import { useViewportSize } from "@/lib/hooks/use-viewport-size";
-import { useHasFinePointer } from "@/lib/hooks/use-media-query";
 import { CityBuildings } from "./city-buildings";
 import { CameraRig } from "./camera-rig";
 import { GridLabels } from "./grid-labels";
@@ -243,7 +242,6 @@ export function CityScene({
   // The scene fills the viewport, so read it directly instead of
   // measuring the container.
   const size = useViewportSize();
-  const hasFinePointer = useHasFinePointer();
 
   /** Written every frame by the rig, read every frame by the buildings —
    * deliberately a ref so the transform never re-renders React. */
@@ -384,20 +382,31 @@ export function CityScene({
   const pointerRef = useRef<Pointer>({ x: 0, y: 0, inside: false });
 
   useEffect(() => {
-    // Touch devices have no hovering pointer to answer: a tap would leave
-    // a bulge sitting where the finger last was, with nothing following
-    // to take it away again.
-    if (!hasFinePointer) {
-      pointerRef.current = { x: 0, y: 0, inside: false };
-      return;
-    }
-
-    const handleMove = (event: PointerEvent) => {
+    const track = (event: PointerEvent, inside: boolean) => {
       pointerRef.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
         y: (event.clientY / window.innerHeight) * 2 - 1,
-        inside: true,
+        inside,
       };
+    };
+
+    /**
+     * A finger drives the swell the same way a cursor does, but only
+     * while it is down. There is no hovering touch, so a tap that ended
+     * must not leave the bulge sitting where it landed with nothing
+     * following to take it away.
+     *
+     * Nothing else is needed for a moving finger: touch pointers only
+     * emit `pointermove` while in contact, so those moves are already
+     * scoped to the gesture.
+     */
+    const handleMove = (event: PointerEvent) => track(event, true);
+    const handleDown = (event: PointerEvent) => track(event, true);
+    const handleUp = (event: PointerEvent) => {
+      // A mouse is still hovering after its button comes up; a finger is
+      // gone.
+      if (event.pointerType === "mouse" || event.pointerType === "pen") return;
+      pointerRef.current = { ...pointerRef.current, inside: false };
     };
 
     const handleLeave = () => {
@@ -407,6 +416,8 @@ export function CityScene({
     // On the window, not the canvas: the swell should answer the pointer
     // anywhere on the page, including over the controls.
     window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerdown", handleDown);
+    window.addEventListener("pointerup", handleUp);
     // Three ways to lose the pointer without a further move. Without
     // these the last known position stays authoritative forever and the
     // swell holds its bulge over an empty screen.
@@ -416,11 +427,13 @@ export function CityScene({
 
     return () => {
       window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerdown", handleDown);
+      window.removeEventListener("pointerup", handleUp);
       document.removeEventListener("pointerleave", handleLeave);
       document.removeEventListener("pointercancel", handleLeave);
       window.removeEventListener("blur", handleLeave);
     };
-  }, [hasFinePointer]);
+  }, []);
 
   const handlePointerDown = useCallback((event: React.PointerEvent) => {
     pressRef.current = { x: event.clientX, y: event.clientY };
@@ -534,10 +547,10 @@ export function CityScene({
                 riseKey={`${login}:${period.id}`}
                 config={config}
                 waving={waving}
-                // Every city swells, mock or real. Needs a hovering
-                // pointer: on touch there is nothing to follow, and a tap
-                // would leave a bulge sitting where the finger last was.
-                swellPointerRef={hasFinePointer ? pointerRef : null}
+                // Every city swells, mock or real, under a cursor or a
+                // finger. Touch is scoped to the gesture rather than
+                // excluded -- see the pointer effect above.
+                swellPointerRef={pointerRef}
                 reducedMotion={reducedMotion}
               />
 

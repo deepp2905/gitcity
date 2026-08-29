@@ -62,7 +62,6 @@ const LOGO_TEXT = "gitCity";
 const PILL_BG = "#ffffff";
 const PILL_BORDER = "rgba(23, 20, 18, 0.08)";
 const PILL_TEXT = "#171412";
-const PILL_SHADOW = "rgba(23, 20, 18, 0.10)";
 
 /**
  * Filename for a download.
@@ -162,16 +161,12 @@ function drawIdentityPill(
   const x = (canvasWidth - width) / 2;
   const y = canvasHeight - PILL_BOTTOM_MARGIN * scale - height;
 
-  // Shadow belongs to the fill only, or it would be redrawn under the
-  // border stroke and the avatar as well.
-  ctx.save();
-  ctx.shadowColor = PILL_SHADOW;
-  ctx.shadowBlur = 12 * scale;
-  ctx.shadowOffsetY = 3 * scale;
+  // No shadow. On screen the controls sit over a live scene and need to
+  // separate from it; in the PNG the pill sits on flat cream, where a
+  // shadow is just a smudge with nothing to lift off.
   ctx.fillStyle = PILL_BG;
   roundedRect(ctx, x, y, width, height, height / 2);
   ctx.fill();
-  ctx.restore();
 
   ctx.strokeStyle = PILL_BORDER;
   ctx.lineWidth = 1 * scale;
