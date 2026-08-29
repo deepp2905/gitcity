@@ -197,17 +197,24 @@ render, and with ambient 1.6 plus directional 2 the extra chroma is what
 clips first — so those steps read as neon while the same lighting left
 the city alone.
 
-**The arrival sweeps.** Handing every tile over at the same instant was
-what made the data read as a cut — the animation stopped and the values
-were simply there, with nothing connecting the two. The crossing is
-staggered by column instead, on the same left-to-right schedule the rise
-and the wave both use, so the front visibly leaves real data behind it
-and the pulse looks like what delivered it. `waveSettleStaggerMs` sets
-the spread; 0 restores the all-at-once behaviour.
+**The data pulses in.** Handing every cell over at the same instant made
+the arrival read as a cut — the animation stopped and the values were
+simply there, with nothing connecting the two. Each cell now takes its
+own turn: it flares to full green, and resolves to its real value on the
+way back down, so a pulse is what puts the data on screen rather than
+something the data replaces.
 
-Because the far side is still waving long after the near side has become
-data, the handover has to run until the *last* column finishes rather
-than the first.
+The crossfade is cubed rather than linear, so the value only takes over
+during the fall. On a straight ramp the cell is half data by the time the
+flare peaks, and the flare stops reading as a flare.
+
+Turns are **scattered, not swept**: with no front travelling across the
+grid there is no direction an arrival could follow, so a column-ordered
+wipe would be a gesture out of nowhere. A per-cell draw makes the data
+pop the same scattered way the pulses do.
+`waveArrivalSpreadMs` sets how long the whole grid takes; 0 pops it at
+once. Because the last cell starts only at the end of that window, the
+handover runs until it finishes rather than until the first one does.
 
 **And it lands rather than stops.** A free-running wave is at an
 arbitrary phase whenever the data arrives, so a good share of the columns
@@ -272,6 +279,10 @@ live control there, grouped by concern, with per-section copy and reset. Copy a 
 `DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
 to make it the default. It is behind a `NODE_ENV` check, so none of it
 reaches visitors.
+
+The loading state ships as scattered pulses over 60% of the grid, with
+the travelling front switched off — the front and its two treatments stay
+in the panel to switch back on and compare against.
 
 The **Debug** group holds the FPS monitor and the loading-wave switches.
 "Hold loading state" pins the flat camera and the wave on regardless of

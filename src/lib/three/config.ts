@@ -62,15 +62,15 @@ export type SceneConfig = {
    */
   waveTwinklePercent: number;
   /**
-   * How long the data takes to sweep across the grid as the wave hands
-   * over, in milliseconds.
+   * How long the data takes to arrive across the whole grid, in
+   * milliseconds.
    *
-   * 0 hands every tile over at once, which is what made the arrival read
-   * as a cut: the animation stopped and the data was simply there. Spread
-   * over the columns instead, the front leaves real data behind it and
-   * the pulse looks like what delivered it.
+   * 0 hands every cell over at once, which is what made the arrival read
+   * as a cut: the animation stopped and the data was simply there.
+   * Scattered over this window instead, each cell flares and resolves on
+   * its own beat, so the pulsing is what puts the data on screen.
    */
-  waveSettleStaggerMs: number;
+  waveArrivalSpreadMs: number;
 
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
@@ -195,13 +195,15 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   maxShadowOpacity: 0.06,
 
   debugHoldLoading: false,
-  waveFront: true,
+  // The loading state is scattered pulses, not a travelling front. The
+  // front is still here to switch back on and compare against.
+  waveFront: false,
   waveDiagonal: false,
   waveSharpFront: false,
   wavePulseScale: false,
-  waveTwinkle: false,
-  waveTwinklePercent: 30,
-  waveSettleStaggerMs: 400,
+  waveTwinkle: true,
+  waveTwinklePercent: 60,
+  waveArrivalSpreadMs: 500,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
@@ -479,13 +481,13 @@ export const CONTROL_GROUPS: ControlGroup[] = [
       },
       {
         kind: "slider",
-        key: "waveSettleStaggerMs",
-        label: "Arrival sweep",
+        key: "waveArrivalSpreadMs",
+        label: "Arrival spread",
         min: 0,
-        max: 900,
+        max: 1200,
         step: 25,
         unit: " ms",
-        hint: "0 hands the whole grid over at once",
+        hint: "0 pops the whole grid at once",
       },
     ],
   },

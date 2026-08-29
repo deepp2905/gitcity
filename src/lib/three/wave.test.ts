@@ -3,7 +3,7 @@ import {
   WAVE_SPEED_HZ,
   WAVE_WAVELENGTH_COLUMNS,
   columnJitter,
-  WAVE_TWINKLE_SHARE,
+  arrivalOrder,
   twinkleAt,
   waveAt,
   waveValueAt,
@@ -16,7 +16,7 @@ const PLAIN: WaveShape = {
   diagonal: false,
   sharpFront: false,
   twinkle: false,
-  twinkleShare: WAVE_TWINKLE_SHARE,
+  twinkleShare: 0.3,
 };
 
 describe("columnJitter", () => {
@@ -162,27 +162,29 @@ describe("twinkleAt", () => {
     for (let weekday = 0; weekday < 7; weekday++) CELLS.push([column, weekday]);
   }
 
-  it("picks roughly the intended share of cells", () => {
-    // A cell is in the set if it ever leaves zero.
-    const members = CELLS.filter(([c, d]) =>
-      Array.from({ length: 40 }, (_, i) => twinkleAt(c, d, i / 8)).some(
-        (v) => v > 0,
-      ),
-    );
-    const share = members.length / CELLS.length;
-    expect(share).toBeGreaterThan(WAVE_TWINKLE_SHARE - 0.08);
-    expect(share).toBeLessThan(WAVE_TWINKLE_SHARE + 0.08);
+  it("picks roughly the share it is asked for", () => {
+    for (const asked of [0.3, 0.6]) {
+      // A cell is in the set if it ever leaves zero.
+      const members = CELLS.filter(([c, d]) =>
+        Array.from({ length: 40 }, (_, i) => twinkleAt(c, d, i / 8, asked)).some(
+          (v) => v > 0,
+        ),
+      );
+      const share = members.length / CELLS.length;
+      expect(share).toBeGreaterThan(asked - 0.08);
+      expect(share).toBeLessThan(asked + 0.08);
+    }
   });
 
   it("keeps the same cells across time, rather than churning", () => {
     const memberAt = (t: number) =>
-      CELLS.filter(([c, d]) => twinkleAt(c, d, t) > 0).length;
+      CELLS.filter(([c, d]) => twinkleAt(c, d, t, 0.3) > 0).length;
     // Counts differ frame to frame only because members pass through
     // zero, so compare set membership over a window instead.
     const inSet = (t0: number) =>
       new Set(
         CELLS.filter(([c, d]) =>
-          Array.from({ length: 30 }, (_, i) => twinkleAt(c, d, t0 + i / 8)).some(
+          Array.from({ length: 30 }, (_, i) => twinkleAt(c, d, t0 + i / 8, 0.3)).some(
             (v) => v > 0,
           ),
         ).map(([c, d]) => `${c}:${d}`),
@@ -194,18 +196,18 @@ describe("twinkleAt", () => {
   it("does not share a beat across the set", () => {
     // Two members peaking together across a long window would mean one
     // rhythm rather than many.
-    const members = CELLS.filter(([c, d]) => twinkleAt(c, d, 0.37) > 0).slice(
+    const members = CELLS.filter(([c, d]) => twinkleAt(c, d, 0.37, 0.3) > 0).slice(
       0,
       12,
     );
-    const values = members.map(([c, d]) => twinkleAt(c, d, 0.37));
+    const values = members.map(([c, d]) => twinkleAt(c, d, 0.37, 0.3));
     expect(new Set(values.map((v) => v.toFixed(3))).size).toBeGreaterThan(6);
   });
 
   it("stays silent for cells outside the set at every time", () => {
     const outside = CELLS.find(
       ([c, d]) =>
-        !Array.from({ length: 40 }, (_, i) => twinkleAt(c, d, i / 8)).some(
+        !Array.from({ length: 40 }, (_, i) => twinkleAt(c, d, i / 8, 0.3)).some(
           (v) => v > 0,
         ),
     );
@@ -269,5 +271,30 @@ describe("twinkle share", () => {
     const small = setFor(0.2);
     const large = setFor(0.6);
     for (const cell of small) expect(large.has(cell)).toBe(true);
+  });
+});
+
+describe("arrivalOrder", () => {
+  it("is stable per cell", () => {
+    expect(arrivalOrder(9, 4)).toBe(arrivalOrder(9, 4));
+  });
+
+  it("spreads across the range rather than clustering", () => {
+    const buckets = [0, 0, 0, 0];
+    for (let column = 0; column < 53; column++) {
+      for (let weekday = 0; weekday < 7; weekday++) {
+        buckets[Math.min(3, Math.floor(arrivalOrder(column, weekday) * 4))] += 1;
+      }
+    }
+    // Every quarter of the window gets a real share of the cells, so the
+    // arrival is scattered over it rather than bunched at one moment.
+    for (const count of buckets) expect(count).toBeGreaterThan(371 / 8);
+  });
+
+  it("does not order cells by column, which would read as a sweep", () => {
+    // Neighbouring columns must not arrive in step.
+    const first = Array.from({ length: 20 }, (_, c) => arrivalOrder(c, 3));
+    const ascending = first.every((v, i) => i === 0 || v >= first[i - 1]);
+    expect(ascending).toBe(false);
   });
 });

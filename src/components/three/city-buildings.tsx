@@ -20,6 +20,7 @@ import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
 import {
   WAVE_MIN_FOOTPRINT,
   WAVE_SETTLE_MS,
+  arrivalOrder,
   waveValueAt,
 } from "@/lib/three/wave";
 import {
@@ -198,14 +199,11 @@ export function CityBuildings({
         config.colorStaggerMs,
         config.staggerCurve,
       );
-      // The arrival sweeps the same way the wave travels, so the data
-      // reads as something the front left behind rather than as a cut.
-      const settleDelayMs = columnDelayMs(
-        tile.weekIndex,
-        weekCount,
-        config.waveSettleStaggerMs,
-        config.staggerCurve,
-      );
+      // Scattered, not swept: each cell takes its own turn to flare and
+      // resolve, so the data arrives the way the pulses do.
+      const settleDelayMs =
+        arrivalOrder(tile.weekIndex, tile.weekday) *
+        config.waveArrivalSpreadMs;
 
       if (!tile.day) {
         const futureHeight = groundHeight * FUTURE_TILE_HEIGHT_SCALE;
@@ -269,7 +267,7 @@ export function CityBuildings({
     config.staggerTotalMs,
     config.staggerCurve,
     config.colorStaggerMs,
-    config.waveSettleStaggerMs,
+    config.waveArrivalSpreadMs,
   ]);
 
   /**
@@ -479,7 +477,8 @@ export function CityBuildings({
     // The handover runs until the *last* column has finished, not the
     // first: with a sweep, the far side is still waving long after the
     // near side has become data.
-    const settleTotalMs = WAVE_SETTLE_MS + Math.max(0, config.waveSettleStaggerMs);
+    const settleTotalMs =
+      WAVE_SETTLE_MS + Math.max(0, config.waveArrivalSpreadMs);
     const settling =
       !waving && waveElapsedRef.current > 0 && waveSettleRef.current < settleTotalMs;
 
@@ -530,24 +529,32 @@ export function CityBuildings({
               waveShape,
             );
 
-        const settle =
+        // This cell's turn to arrive, 0..1 across its own window.
+        const arrival =
           settleElapsed < 0
             ? 0
-            : easeInOutCubic(
-                Math.min(
-                  1,
-                  Math.max(0, settleElapsed - item.settleDelayMs) /
-                    WAVE_SETTLE_MS,
-                ),
+            : Math.min(
+                1,
+                Math.max(0, settleElapsed - item.settleDelayMs) /
+                  WAVE_SETTLE_MS,
               );
+
+        // The cell flares to full before it resolves, so the data is
+        // delivered by a pulse rather than crossfaded in behind one.
+        // Peaks at the middle of the window and falls back, and the
+        // crossfade is cubed so the value only takes over on the way
+        // down -- resolve on a straight ramp and the flare is half data
+        // before anyone sees it.
+        const flare = arrival > 0 ? 1 - Math.abs(1 - 2 * arrival) : 0;
+        const lit = flare > amount ? flare : amount;
+        const resolve = arrival * arrival * arrival;
 
         // Footprint follows the raw amount, not the stepped colour: the
         // contrast between snapping colour and smooth breathing is the
         // point. Eased back to a full cell through the settle, so the
         // data never lands on shrunken tiles.
         const footprint = config.wavePulseScale
-          ? 1 -
-            (1 - WAVE_MIN_FOOTPRINT) * (1 - amount) * (1 - settle)
+          ? 1 - (1 - WAVE_MIN_FOOTPRINT) * (1 - lit)
           : 1;
 
         heights[i] = from[i] + (item.restHeight - from[i]) * descent;
@@ -556,8 +563,8 @@ export function CityBuildings({
 
         // The wave keeps running through the settle, so the chart
         // resolves in motion rather than freezing and then fading.
-        scratchColor.set(waveLevelColor(amount));
-        if (settle > 0) scratchColor.lerp(item.color, settle);
+        scratchColor.set(waveLevelColor(lit));
+        if (resolve > 0) scratchColor.lerp(item.color, resolve);
 
         const base = i * 3;
         colors[base] = scratchColor.r;

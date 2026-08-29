@@ -54,14 +54,6 @@ export const WAVE_FRONT_SHARE = 0.18;
  * a full cell, for the pulse-scale treatment. */
 export const WAVE_MIN_FOOTPRINT = 0.82;
 
-/**
- * Default share of cells that pulse on their own schedule, for the
- * twinkle treatment. Membership is fixed per cell rather than churning:
- * cells joining and leaving the set would read as flicker rather than
- * rhythm.
- */
-export const WAVE_TWINKLE_SHARE = 0.3;
-
 /** Seconds for one twinkle, before per-cell variation. */
 export const WAVE_TWINKLE_PERIOD_S = 1.5;
 
@@ -93,6 +85,11 @@ function cellHash(weekIndex: number, weekday: number, salt: number): number {
 /**
  * A cell's own pulse, 0 for cells outside the twinkling set.
  *
+ * Membership is fixed per cell rather than churning: cells joining and
+ * leaving the set would read as flicker rather than rhythm. `share` is
+ * always supplied by the caller, so the product default lives in
+ * SceneConfig and nowhere else.
+ *
  * Each member gets its own phase and its own period, so the set has no
  * shared beat — the point is scattered activity, and a common rhythm
  * across 30% of the grid would read as a second, sparser wave.
@@ -101,7 +98,7 @@ export function twinkleAt(
   weekIndex: number,
   weekday: number,
   elapsedSeconds: number,
-  share: number = WAVE_TWINKLE_SHARE,
+  share: number,
 ): number {
   // Compared against a fixed per-cell draw, so raising the share adds
   // cells to the set rather than reshuffling which ones are in it.
@@ -116,6 +113,18 @@ export function twinkleAt(
   // Same triangle as the front, so a pulse and a crest are the same
   // gesture at different scales.
   return 1 - Math.abs(1 - 2 * position);
+}
+
+/**
+ * Where a cell sits in the arrival order, 0..1.
+ *
+ * Scattered rather than swept: with no front travelling across the grid
+ * there is no direction for an arrival to follow, so a column-ordered
+ * wipe would be a gesture out of nowhere. A per-cell draw makes the data
+ * pop in the same scattered way the pulses do.
+ */
+export function arrivalOrder(weekIndex: number, weekday: number): number {
+  return cellHash(weekIndex, weekday, 5);
 }
 
 /**
