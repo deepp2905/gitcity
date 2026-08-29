@@ -8,6 +8,17 @@ import { projectFlat } from "@/lib/three/camera";
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const VISIBLE_WEEKDAY_ROWS = new Set([1, 3, 5]);
 
+/**
+ * Gaps between a label and the grid, in px.
+ *
+ * Tighter on a phone to match the smaller type. The weekday gap is the
+ * one that matters: the labels sit in a fixed 34px gutter, and at 12px
+ * "Wed" plus the desktop offset filled it exactly, so anything wider
+ * clipped.
+ */
+const MONTH_GAP_PX = { mobile: 13, desktop: 18 };
+const WEEKDAY_GAP_PX = { mobile: 5, desktop: 8 };
+
 type GridLabelsProps = {
   tiles: SceneTile[];
   weekCount: number;
@@ -16,6 +27,7 @@ type GridLabelsProps = {
   zoom: number;
   /** Tile gap in world units, so labels track a retuned grid. */
   cellGap: number;
+  isMobile: boolean;
   /** 0 = flat (labels fully visible), 1 = city (fully faded). */
   progress: number;
 };
@@ -35,6 +47,7 @@ export function GridLabels({
   height,
   zoom,
   cellGap,
+  isMobile,
   progress,
 }: GridLabelsProps) {
   if (width === 0 || height === 0 || weekCount === 0) return null;
@@ -48,6 +61,8 @@ export function GridLabels({
 
   const months = buildMonthLabels(tiles);
   const halfCell = (CELL_SIZE / 2) * zoom;
+  const monthGap = isMobile ? MONTH_GAP_PX.mobile : MONTH_GAP_PX.desktop;
+  const weekdayGap = isMobile ? WEEKDAY_GAP_PX.mobile : WEEKDAY_GAP_PX.desktop;
 
   return (
     <div
@@ -57,7 +72,10 @@ export function GridLabels({
       // anything moves, though -- delay-0 as well as duration-0, or the
       // delay would apply on the way out too and labels would linger over
       // a tilting city.
-      className={`pointer-events-none absolute inset-0 text-xs text-ink-muted transition-opacity ${
+      // 10px on a phone. The grid is width-constrained there, so a month
+      // occupies about 24px of screen and 12px type runs the labels into
+      // one another.
+      className={`pointer-events-none absolute inset-0 text-[10px] leading-none text-ink-muted transition-opacity sm:text-xs ${
         settledFlat
           ? "opacity-100 delay-100 duration-300 ease-out"
           : "opacity-0 delay-0 duration-0"
@@ -70,7 +88,7 @@ export function GridLabels({
           <span
             key={`${month.label}-${month.weekIndex}`}
             className="absolute -translate-x-1/2"
-            style={{ left, top: top - halfCell - 18 }}
+            style={{ left, top: top - halfCell - monthGap }}
           >
             {month.label}
           </span>
@@ -91,7 +109,7 @@ export function GridLabels({
             // every label a full line-box up instead of half.
             className="absolute text-right"
             style={{
-              left: left - halfCell - 8,
+              left: left - halfCell - weekdayGap,
               top,
               transform: "translate(-100%, -50%)",
             }}

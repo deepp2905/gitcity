@@ -184,6 +184,14 @@ than from gaps.
 The scene runs on phones and tablets, with a few deliberate differences:
 
 - Pixel ratio is capped and shadows are off below 640px.
+- The identity pill drops its username and becomes a bare avatar, and the
+  suggested-account row drops its fourth name. Three controls plus a
+  variable-width username do not fit a narrow row, and a second line
+  would push it into the city.
+- Month and weekday labels drop to 10px with tighter offsets. The grid is
+  width-constrained on a phone, so a month occupies about 24px of screen
+  and 12px type runs the labels into one another; the weekday gutter is a
+  fixed 34px, which 12px type filled exactly.
 - The swell is disabled without a fine pointer. Touch devices fire
   `pointermove` during a tap and once more as the finger lifts, so the
   city would bulge and stay bulged with nothing following to settle it.
