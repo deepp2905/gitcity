@@ -87,17 +87,6 @@ while idle, the selected period's total once there is one. Two things
 that never coexist, so they share a line rather than each reserving
 their own.
 
-**The wave waits for the flatten.** Searching from a standing city starts
-the transform and the search at the same moment, and a wave that began
-straight away ran under a camera still on its way down — two motions at
-once, neither legible. It holds until `waveStartProgress` of the
-transform remains (0.1, so 90% of the flatten is done). Expressed as
-transform progress rather than a timer, so it tracks
-`transformDurationMs` on its own and is already satisfied when the search
-starts from the flat view. The mirror of `riseStartProgress`, which holds
-the rise until the camera has tilted far enough for height to mean
-anything.
-
 Month and weekday labels never appear over the loading wave. The camera
 is flat throughout a search, so they would otherwise sit there dating a
 chart that is showing an animation rather than anyone's year; they arrive

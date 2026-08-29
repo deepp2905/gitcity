@@ -474,15 +474,6 @@ export function CityBuildings({
     // The wave outlives the search by WAVE_SETTLE_MS, fading its own
     // amplitude out. Handing straight over left the grid at whatever
     // phase the sine had reached, half of it darker than any real day.
-    // Held until the camera is nearly flat. A search from a standing
-    // city starts the flatten and the search together, and a wave that
-    // began straight away ran under a camera still on its way down --
-    // two motions at once, neither of them legible. Expressed as
-    // transform progress rather than a timer, so it tracks
-    // `transformDurationMs` on its own and is already satisfied when the
-    // search starts from the flat view.
-    const waveRunning = waving && progressRef.current <= config.waveStartProgress;
-
     // The handover runs until the *last* column has finished, not the
     // first: with a sweep, the far side is still waving long after the
     // near side has become data.
@@ -491,12 +482,7 @@ export function CityBuildings({
     const settling =
       !waving && waveElapsedRef.current > 0 && waveSettleRef.current < settleTotalMs;
 
-    if (waveRunning || settling) {
-      // Picking up an in-flight flatten: the eased descent has been
-      // running without the wave, so continue from where it reached
-      // rather than from the heights the transform started at.
-      if (waveElapsedRef.current === 0) flattenFromRef.current.set(heights);
-
+    if (waving || settling) {
       // A search is in flight. The wave is purely a colour wave: it only
       // ever runs in the flat state, where an orthographic camera looking
       // straight down renders no height at all, so driving height here
@@ -506,16 +492,14 @@ export function CityBuildings({
       // because the search is what flattened the city in the first place
       // and that descent is still readable through the tilt.
       waveElapsedRef.current += delta;
-      waveSettleRef.current = waveRunning
-        ? 0
-        : waveSettleRef.current + delta * 1000;
+      waveSettleRef.current = waving ? 0 : waveSettleRef.current + delta * 1000;
 
       // Each tile crosses from the wave straight to its own colour, on
       // its column's own schedule. Two things follow from that: no
       // intermediate state the whole grid shares, so the chart is never
       // uniformly anything, and the crossing sweeps rather than
       // happening everywhere at once.
-      const settleElapsed = waveRunning ? -1 : waveSettleRef.current;
+      const settleElapsed = waving ? -1 : waveSettleRef.current;
 
       const waveShape = {
         front: config.waveFront,

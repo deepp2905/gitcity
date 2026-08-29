@@ -121,18 +121,6 @@ export type SceneConfig = {
    * so a wave that runs while the camera is still overhead is invisible.
    */
   riseStartProgress: number;
-  /**
-   * How flat the camera must be before the loading wave starts, as the
-   * transform progress remaining. 0.1 means the wave waits out 90% of
-   * the flatten.
-   *
-   * Searching from a standing city starts a flatten and a search at the
-   * same moment; without this the wave began under a camera still on its
-   * way down, so two things moved at once and neither read clearly. The
-   * mirror of `riseStartProgress`, which holds the rise until the camera
-   * has tilted far enough for height to mean anything.
-   */
-  waveStartProgress: number;
 
   // --- Camera transform ---
   transformDurationMs: number;
@@ -191,7 +179,6 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   colorStaggerMs: 0,
   colorFadeMs: 800,
   riseStartProgress: 0.24,
-  waveStartProgress: 0.1,
 
   transformDurationMs: 600,
   flatPolarDeg: 2,
@@ -354,15 +341,6 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 0.8,
         step: 0.01,
         hint: "Tilt reached before rising",
-      },
-      {
-        kind: "slider",
-        key: "waveStartProgress",
-        label: "Wave start",
-        min: 0,
-        max: 0.8,
-        step: 0.01,
-        hint: "Flatten left before the wave",
       },
     ],
   },
