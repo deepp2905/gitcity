@@ -432,13 +432,17 @@ export function CityApp() {
           screen to itself, and it returns with the rest of the chrome.
           Opacity rather than display, so the header keeps its height and
           nothing below it moves. */}
-      <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0 text-center">
+      {/* Left on phones, centred from sm up. With the back arrow in, the
+          mark is a control rather than a title, and a control belongs on
+          an edge where a thumb can reach it — the top-left corner is also
+          where "back" is expected. */}
+      <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0 text-left sm:text-center">
         <Link
           href="/"
           onClick={handleGoHome}
           aria-hidden={showWordmark ? undefined : true}
           tabIndex={showWordmark ? undefined : -1}
-          className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold tracking-tight text-ink transition-[background-color,opacity,translate,scale] duration-300 ease-[var(--ease-in-out-cubic)] hover:bg-ink/5 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+          className={`-ml-3 inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold tracking-tight text-ink sm:ml-0 transition-[background-color,opacity,translate,scale] duration-300 ease-[var(--ease-in-out-cubic)] hover:bg-ink/5 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
             showWordmark
               ? "pointer-events-auto translate-y-0 opacity-100"
               : "pointer-events-none -translate-y-2 opacity-0"
