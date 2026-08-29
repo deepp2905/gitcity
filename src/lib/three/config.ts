@@ -20,6 +20,30 @@ export type SceneConfig = {
   /** Frame-rate readout in the corner of the viewport. */
   showFps: boolean;
 
+  // --- Debug: comparing loading-wave treatments ---
+  /**
+   * Pins the scene in the loading state — flat camera, wave running —
+   * regardless of what the app is actually doing, so the treatments below
+   * can be watched for as long as it takes to judge them.
+   */
+  debugHoldLoading: boolean;
+  /**
+   * Offsets the wave's phase per weekday, so the front crosses the grid
+   * as a diagonal rather than as vertical bars.
+   */
+  waveDiagonal: boolean;
+  /**
+   * Replaces the symmetric triangle with a sharp leading edge and a long
+   * tail, so the wave reads as travelling rather than pulsing.
+   */
+  waveSharpFront: boolean;
+  /**
+   * Adds a second channel: tiles shrink between crests and swell through
+   * them. Footprint, not height — height is invisible from straight
+   * above, which is the whole reason the wave is colour-driven.
+   */
+  wavePulseScale: boolean;
+
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
   stiffness: number;
@@ -141,11 +165,21 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   lightY: 48,
   lightZ: 86,
   maxShadowOpacity: 0.06,
+
+  debugHoldLoading: false,
+  waveDiagonal: false,
+  waveSharpFront: false,
+  wavePulseScale: false,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
 type NumericKey = {
   [K in keyof SceneConfig]: SceneConfig[K] extends number ? K : never;
+}[keyof SceneConfig];
+
+/** Keys whose value is a boolean, and so drivable by a yes/no pair. */
+type BooleanKey = {
+  [K in keyof SceneConfig]: SceneConfig[K] extends boolean ? K : never;
 }[keyof SceneConfig];
 
 export type SliderSpec = {
@@ -170,12 +204,21 @@ export type ChoiceSpec =
       hint?: string;
     }
   | {
+      // One variant for every boolean, rather than one per key: the
+      // options are the same two either way, and a union member per
+      // toggle turns adding a debug switch into an edit in three places.
       kind: "choice";
-      key: "showFps";
+      key: BooleanKey;
       label: string;
       options: readonly { value: boolean; label: string }[];
       hint?: string;
     };
+
+/** The only options a boolean control ever has. */
+export const YES_NO = [
+  { value: false, label: "No" },
+  { value: true, label: "Yes" },
+] as const;
 
 export type ControlSpec = SliderSpec | ChoiceSpec;
 
@@ -374,6 +417,42 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         key: "lightZ", label: "Light Z", min: -100, max: 100, step: 1 },
       { kind: "slider",
         key: "maxShadowOpacity", label: "Shadow", min: 0, max: 0.6, step: 0.01 },
+    ],
+  },
+  {
+    // Last, and dev-only like the rest of the panel. These exist to
+    // compare loading-wave treatments side by side: hold the state open,
+    // then switch each one on and off against the others.
+    title: "Debug: loading wave",
+    controls: [
+      {
+        kind: "choice",
+        key: "debugHoldLoading",
+        label: "Hold loading state",
+        options: YES_NO,
+        hint: "Pins the flat camera and the wave on",
+      },
+      {
+        kind: "choice",
+        key: "waveDiagonal",
+        label: "Diagonal front",
+        options: YES_NO,
+        hint: "Phase offset per weekday",
+      },
+      {
+        kind: "choice",
+        key: "waveSharpFront",
+        label: "Sharp front",
+        options: YES_NO,
+        hint: "Fast leading edge, long tail",
+      },
+      {
+        kind: "choice",
+        key: "wavePulseScale",
+        label: "Pulse scale",
+        options: YES_NO,
+        hint: "Tiles breathe with the crest",
+      },
     ],
   },
 ];

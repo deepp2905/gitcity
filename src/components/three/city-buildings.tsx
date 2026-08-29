@@ -17,7 +17,7 @@ import type { SceneTile } from "@/lib/contributions/scene-tiles";
 import { CELL_SIZE, tilePosition, worldHeight } from "@/lib/three/layout";
 import { createBuildingGeometry } from "@/lib/three/building-geometry";
 import { easeInOutCubic, easeOutCubic } from "@/lib/three/camera";
-import { WAVE_SETTLE_MS, waveAt } from "@/lib/three/wave";
+import { WAVE_MIN_FOOTPRINT, WAVE_SETTLE_MS, waveAt } from "@/lib/three/wave";
 import {
   MAX_ACCUMULATED_S,
   SPRING_TIMESTEP_S,
@@ -96,6 +96,8 @@ type BuildingLayout = {
   /** Null for padded future days, which are inert scaffolding. */
   day: ContributionDay | null;
   weekIndex: number;
+  /** 0 = Sunday. Only the wave's diagonal treatment reads it. */
+  weekday: number;
   x: number;
   z: number;
   restHeight: number;
@@ -196,6 +198,7 @@ export function CityBuildings({
         return {
           day: null,
           weekIndex: tile.weekIndex,
+          weekday: tile.weekday,
           x,
           z,
           restHeight: futureHeight,
@@ -224,6 +227,7 @@ export function CityBuildings({
       return {
         day,
         weekIndex: tile.weekIndex,
+        weekday: tile.weekday,
         x,
         z,
         restHeight: groundHeight,
@@ -478,6 +482,10 @@ export function CityBuildings({
         ? 0
         : easeInOutCubic(Math.min(1, waveSettleRef.current / WAVE_SETTLE_MS));
 
+      const waveShape = {
+        diagonal: config.waveDiagonal,
+        sharpFront: config.waveSharpFront,
+      };
       const colors = colorsRef.current;
       const elapsedSeconds = waveElapsedRef.current;
       const descent = easeInOutCubic(
@@ -492,11 +500,20 @@ export function CityBuildings({
         const item = layout[i];
         const amount = reducedMotion
           ? 0.5
-          : waveAt(item.weekIndex, elapsedSeconds);
+          : waveAt(item.weekIndex, item.weekday, elapsedSeconds, waveShape);
+
+        // Footprint follows the raw amount, not the stepped colour: the
+        // contrast between snapping colour and smooth breathing is the
+        // point. Eased back to a full cell through the settle, so the
+        // data never lands on shrunken tiles.
+        const footprint = config.wavePulseScale
+          ? 1 -
+            (1 - WAVE_MIN_FOOTPRINT) * (1 - amount) * (1 - settle)
+          : 1;
 
         heights[i] = from[i] + (item.restHeight - from[i]) * descent;
         velocities[i] = 0;
-        writeInstance(mesh, i, item, heights[i]);
+        writeInstance(mesh, i, item, heights[i], footprint);
 
         // The wave keeps running through the settle, so the chart
         // resolves in motion rather than freezing and then fading.
@@ -921,10 +938,15 @@ function writeInstance(
   index: number,
   item: BuildingLayout,
   rawHeight: number,
+  /** Footprint as a fraction of a cell. Only the wave's pulse-scale
+   * treatment passes anything but 1 — it is the one channel besides
+   * colour that a straight-down camera can actually see. */
+  footprint = 1,
 ) {
   const height = Math.max(rawHeight, 0.001);
+  const width = CELL_SIZE * footprint;
   scratchPosition.set(item.x, height / 2, item.z);
-  scratchScale.set(CELL_SIZE, height, CELL_SIZE);
+  scratchScale.set(width, height, width);
   scratchMatrix.compose(scratchPosition, scratchQuaternion, scratchScale);
   mesh.setMatrixAt(index, scratchMatrix);
 }

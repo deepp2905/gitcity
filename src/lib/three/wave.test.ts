@@ -4,7 +4,11 @@ import {
   WAVE_WAVELENGTH_COLUMNS,
   columnJitter,
   waveAt,
+  type WaveShape,
 } from "./wave";
+
+/** The wave as it ships: no treatments on. */
+const PLAIN: WaveShape = { diagonal: false, sharpFront: false };
 
 describe("columnJitter", () => {
   it("is stable for a given column", () => {
@@ -26,7 +30,7 @@ describe("waveAt", () => {
   it("stays within 0..1 for any column and time", () => {
     for (let column = 0; column < 53; column++) {
       for (let t = 0; t < 4; t += 0.1) {
-        const value = waveAt(column, t);
+        const value = waveAt(column, 0, t, PLAIN);
         expect(value).toBeGreaterThanOrEqual(0);
         expect(value).toBeLessThanOrEqual(1);
       }
@@ -34,27 +38,27 @@ describe("waveAt", () => {
   });
 
   it("travels: a column's value changes over time", () => {
-    const samples = [0, 0.25, 0.5, 0.75].map((t) => waveAt(10, t));
+    const samples = [0, 0.25, 0.5, 0.75].map((t) => waveAt(10, 0, t, PLAIN));
     expect(new Set(samples).size).toBeGreaterThan(1);
   });
 
   it("offsets neighbouring columns, so it reads as a front", () => {
-    expect(waveAt(0, 0, 0)).not.toBeCloseTo(waveAt(4, 0, 0), 2);
+    expect(waveAt(0, 0, 0, PLAIN, 0)).not.toBeCloseTo(waveAt(4, 0, 0, PLAIN, 0), 2);
   });
 
   it("repeats every wavelength when jitter is off", () => {
     // Without the per-column jitter the wave is a pure sine, so columns a
     // full wavelength apart sit at the same point in the cycle.
-    expect(waveAt(0, 0, 0)).toBeCloseTo(waveAt(WAVE_WAVELENGTH_COLUMNS, 0, 0), 5);
+    expect(waveAt(0, 0, 0, PLAIN, 0)).toBeCloseTo(waveAt(WAVE_WAVELENGTH_COLUMNS, 0, 0, PLAIN, 0), 5);
   });
 
   it("is deterministic for the same inputs", () => {
-    expect(waveAt(7, 1.5)).toBe(waveAt(7, 1.5));
+    expect(waveAt(7, 0, 1.5, PLAIN)).toBe(waveAt(7, 0, 1.5, PLAIN));
   });
 
   it("adds variation that a pure sine would not have", () => {
-    const pure = waveAt(5, 0.3, 0);
-    const jittered = waveAt(5, 0.3);
+    const pure = waveAt(5, 0, 0.3, PLAIN, 0);
+    const jittered = waveAt(5, 0, 0.3, PLAIN);
     expect(jittered).not.toBe(pure);
   });
 });
@@ -71,7 +75,7 @@ describe("waveAt as a triangle", () => {
     for (let i = 0; i < samples; i++) {
       // One full cycle, jitter off so this measures the curve alone.
       const t = (i / samples) / WAVE_SPEED_HZ;
-      const value = waveAt(0, t, 0);
+      const value = waveAt(0, 0, t, PLAIN, 0);
       buckets[Math.min(4, Math.floor(value * 5))] += 1;
     }
 
@@ -85,11 +89,60 @@ describe("waveAt as a triangle", () => {
     let lowest = 1;
     let highest = 0;
     for (let i = 0; i < 500; i++) {
-      const value = waveAt(0, (i / 500) / WAVE_SPEED_HZ, 0);
+      const value = waveAt(0, 0, (i / 500) / WAVE_SPEED_HZ, PLAIN, 0);
       lowest = Math.min(lowest, value);
       highest = Math.max(highest, value);
     }
     expect(lowest).toBeLessThan(0.02);
     expect(highest).toBeGreaterThan(0.98);
+  });
+});
+
+describe("wave treatments", () => {
+  const DIAGONAL: WaveShape = { diagonal: true, sharpFront: false };
+  const SHARP: WaveShape = { diagonal: false, sharpFront: true };
+
+  it("leaves a column uniform until the diagonal is on", () => {
+    // Sunday and Saturday of the same week, jitter off so the only
+    // difference can be the weekday term.
+    expect(waveAt(4, 0, 0.4, PLAIN, 0)).toBe(waveAt(4, 6, 0.4, PLAIN, 0));
+    expect(waveAt(4, 0, 0.4, DIAGONAL, 0)).not.toBe(
+      waveAt(4, 6, 0.4, DIAGONAL, 0),
+    );
+  });
+
+  it("rises faster than it falls once the front is sharp", () => {
+    const at = (t: number) => waveAt(0, 0, t / WAVE_SPEED_HZ, SHARP, 0);
+    // A cycle's peak sits near the end of the rise, not at its middle.
+    let peakAt = 0;
+    for (let i = 1; i < 1000; i++) {
+      if (at(i / 1000) > at(peakAt)) peakAt = i / 1000;
+    }
+    expect(peakAt).toBeLessThan(0.3);
+
+    // Symmetric by contrast: the triangle peaks halfway.
+    let plainPeak = 0;
+    for (let i = 1; i < 1000; i++) {
+      const t = i / 1000;
+      if (waveAt(0, 0, t / WAVE_SPEED_HZ, PLAIN, 0) >
+          waveAt(0, 0, plainPeak / WAVE_SPEED_HZ, PLAIN, 0)) {
+        plainPeak = t;
+      }
+    }
+    expect(plainPeak).toBeGreaterThan(0.4);
+    expect(plainPeak).toBeLessThan(0.6);
+  });
+
+  it("stays in range with every treatment on", () => {
+    const all: WaveShape = { diagonal: true, sharpFront: true };
+    for (let column = 0; column < 53; column++) {
+      for (let weekday = 0; weekday < 7; weekday++) {
+        for (let i = 0; i < 20; i++) {
+          const value = waveAt(column, weekday, i / 7, all);
+          expect(value).toBeGreaterThanOrEqual(0);
+          expect(value).toBeLessThanOrEqual(1);
+        }
+      }
+    }
   });
 });

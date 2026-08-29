@@ -261,6 +261,21 @@ live control there, grouped by concern, with per-section copy and reset. Copy a 
 to make it the default. It is behind a `NODE_ENV` check, so none of it
 reaches visitors.
 
+A **Debug: loading wave** group sits at the bottom of the panel. "Hold
+loading state" pins the flat camera and the wave on regardless of what
+the app is doing, so the three treatments below it can be watched for as
+long as it takes to judge them, and switched on in any combination:
+
+| Toggle | What it changes |
+| ------ | --------------- |
+| Diagonal front | Phase offset per weekday, so the front leans instead of running as vertical bars |
+| Sharp front | Fast leading edge, long tail — direction becomes legible, where a symmetric triangle reads as pulsing in place |
+| Pulse scale | Tiles shrink between crests and swell through them. Footprint, not height: height is invisible from straight above, which is why the wave is colour-driven in the first place |
+
+Pulse scale follows the raw wave value rather than the stepped colour, so
+snapping colour plays against smooth breathing, and it eases back to a
+full cell through the settle so the data never lands on shrunken tiles.
+
 ## Pinned dependency
 
 `three` is pinned to **0.182.0**, the last release before r183 deprecated

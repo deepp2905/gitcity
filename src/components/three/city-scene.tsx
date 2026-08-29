@@ -246,9 +246,9 @@ function captureSceneCanvas<Scene, Camera>(
 export function CityScene({
   period,
   login,
-  target,
+  target: rawTarget,
   view,
-  waving,
+  waving: rawWaving,
   interactive,
   reducedMotion,
   isMobile,
@@ -259,16 +259,25 @@ export function CityScene({
   // measuring the container.
   const size = useViewportSize();
 
+  /** Live scene constants. Only the dev tuning panel ever changes these;
+   * in production this stays at its defaults for the session. First,
+   * because the debug hold below overrides two of the props. */
+  const [config, setConfig] = useState<SceneConfig>(DEFAULT_SCENE_CONFIG);
+
+  /**
+   * The debug hold pins the whole loading state, not just the wave: flat
+   * camera as well, because the wave is colour-only and a tilted camera
+   * would be watching it through a city that is not there.
+   */
+  const waving = rawWaving || config.debugHoldLoading;
+  const target = config.debugHoldLoading ? 0 : rawTarget;
+
   /** Written every frame by the rig, read every frame by the buildings —
    * deliberately a ref so the transform never re-renders React. */
   const progressRef = useRef(target);
 
   /** Sparse mirror of progress, only to fade the DOM label overlay. */
   const [labelProgress, setLabelProgress] = useState(target);
-
-  /** Live scene constants. Only the dev tuning panel ever changes these;
-   * in production this stays at its defaults for the session. */
-  const [config, setConfig] = useState<SceneConfig>(DEFAULT_SCENE_CONFIG);
 
   // Both ends of the transform come from config rather than constants, so
   // the camera-angle sliders actually drive the scene.

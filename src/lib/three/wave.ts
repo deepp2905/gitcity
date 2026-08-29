@@ -33,6 +33,35 @@ export const WAVE_SPEED_HZ = 0.55;
 export const WAVE_JITTER = 0.22;
 
 /**
+ * Phase offset per weekday, in cycles, for the diagonal treatment.
+ *
+ * Across seven rows this is a third of a cycle top to bottom — enough to
+ * read as a slant rather than as bars, small enough that the front is
+ * still one front.
+ */
+export const WAVE_WEEKDAY_PHASE = 0.05;
+
+/**
+ * Share of a cycle the sharp-front treatment spends rising.
+ *
+ * The rest is the tail. A symmetric triangle has no direction — it reads
+ * as pulsing in place — where a fast edge followed by a long decay reads
+ * as something passing through.
+ */
+export const WAVE_FRONT_SHARE = 0.18;
+
+/** Smallest footprint a tile shrinks to between crests, as a fraction of
+ * a full cell, for the pulse-scale treatment. */
+export const WAVE_MIN_FOOTPRINT = 0.82;
+
+/** Which treatments are switched on. All off is the plain travelling
+ * triangle the wave shipped with. */
+export type WaveShape = {
+  diagonal: boolean;
+  sharpFront: boolean;
+};
+
+/**
  * How long the wave takes to subside once the search resolves.
  *
  * It has to land, not stop. The wave is at an arbitrary phase whenever
@@ -64,18 +93,31 @@ export function columnJitter(weekIndex: number): number {
  */
 export function waveAt(
   weekIndex: number,
+  weekday: number,
   elapsedSeconds: number,
+  shape: WaveShape,
   jitterAmount = WAVE_JITTER,
 ): number {
   // Position within the current cycle, 0..1. Subtracting the column
   // index is what makes the wave travel: each column runs the same cycle
   // a little behind its neighbour.
+  //
+  // The weekday term does the same thing down the grid, so the front
+  // arrives at Saturday later than at Sunday and the whole thing leans.
   const cycles =
-    elapsedSeconds * WAVE_SPEED_HZ - weekIndex / WAVE_WAVELENGTH_COLUMNS;
+    elapsedSeconds * WAVE_SPEED_HZ -
+    weekIndex / WAVE_WAVELENGTH_COLUMNS -
+    (shape.diagonal ? weekday * WAVE_WEEKDAY_PHASE : 0);
   const position = cycles - Math.floor(cycles);
 
-  // Triangle: 0 at the ends of the cycle, 1 in the middle.
-  const base = 1 - Math.abs(1 - 2 * position);
+  const base = shape.sharpFront
+    ? // Fast rise, slow decay.
+      position < WAVE_FRONT_SHARE
+      ? position / WAVE_FRONT_SHARE
+      : 1 - (position - WAVE_FRONT_SHARE) / (1 - WAVE_FRONT_SHARE)
+    : // Triangle: 0 at the ends of the cycle, 1 in the middle.
+      1 - Math.abs(1 - 2 * position);
+
   const jittered = base + columnJitter(weekIndex) * jitterAmount;
 
   return jittered > 0 ? (jittered < 1 ? jittered : 1) : 0;
