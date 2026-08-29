@@ -13,7 +13,15 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
       href={profile.profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex h-11 items-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] py-1 pl-1 pr-3.5 backdrop-blur-md transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      // Named on the link, not on the image or the span: the span is
+      // display:none below sm, which takes it out of the accessible tree
+      // and would leave the link nameless on a phone.
+      aria-label={`@${profile.login} on GitHub`}
+      // A bare avatar on a phone: three controls plus a variable-width
+      // username do not fit a narrow row, and the username is the one
+      // whose absence costs least — whoever searched already knows whose
+      // city they are looking at.
+      className="group flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] p-1 backdrop-blur-md transition-[background-color,color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:w-auto sm:justify-start sm:pr-3.5"
     >
       <Image
         src={profile.avatarUrl}
@@ -24,8 +32,12 @@ export function ProfileIdentity({ profile }: { profile: GithubProfile }) {
         unoptimized
       />
       {/* Username only. The display name added a second, variable-width
-          label to a row of otherwise compact pills. */}
-      <span className="text-sm font-medium text-ink group-hover:underline">
+          label to a row of otherwise compact pills.
+
+          Hidden below sm, where the avatar carries the identity on its
+          own. `display: none` rather than a width transition, so it stops
+          being a flex item and takes the gap with it. */}
+      <span className="hidden text-sm font-medium text-ink group-hover:underline sm:inline">
         @{profile.login}
       </span>
     </a>
