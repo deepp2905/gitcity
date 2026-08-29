@@ -28,6 +28,8 @@ type GridLabelsProps = {
   /** Tile gap in world units, so labels track a retuned grid. */
   cellGap: number;
   isMobile: boolean;
+  /** True while the loading wave is running instead of real data. */
+  waving: boolean;
   /** 0 = flat (labels fully visible), 1 = city (fully faded). */
   progress: number;
 };
@@ -48,6 +50,7 @@ export function GridLabels({
   zoom,
   cellGap,
   isMobile,
+  waving,
   progress,
 }: GridLabelsProps) {
   if (width === 0 || height === 0 || weekCount === 0) return null;
@@ -57,7 +60,12 @@ export function GridLabels({
   // describing a view that no longer exists -- and a city does not want
   // axis labels anyway. Shown only once the transform has fully arrived
   // back at flat, not merely started heading there.
-  const settledFlat = progress <= 0.0001;
+  //
+  // And never over the loading wave. The camera is flat throughout a
+  // search, so the labels would otherwise sit there dating a chart that
+  // is showing an animation rather than anyone's year. They arrive with
+  // the data instead.
+  const settledFlat = !waving && progress <= 0.0001;
 
   const months = buildMonthLabels(tiles);
   const halfCell = (CELL_SIZE / 2) * zoom;

@@ -583,6 +583,7 @@ export function CityScene({
           zoom={baseZoom}
           cellGap={config.cellGap}
           isMobile={isMobile}
+          waving={waving}
           progress={labelProgress}
         />
 

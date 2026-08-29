@@ -59,6 +59,11 @@ while idle, the selected period's total once there is one. Two things
 that never coexist, so they share a line rather than each reserving
 their own.
 
+Month and weekday labels never appear over the loading wave. The camera
+is flat throughout a search, so they would otherwise sit there dating a
+chart that is showing an animation rather than anyone's year; they arrive
+with the data instead.
+
 **A failed search returns to idle** — the mock city, the field, and the
 error above it. It used to leave whatever city was already loaded
 standing, which made sense while the field was always on screen beside
