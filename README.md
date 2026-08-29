@@ -44,6 +44,12 @@ The camera sits ~2 degrees off vertical rather than at 0. At exactly
 vertical its up vector parallels its view direction and `lookAt`
 degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
 
+Once a city is loaded the wordmark grows a back arrow and doubles as the
+way out. The arrow animates its *width*, not just its opacity: fading an
+inline icon in leaves its box occupying space throughout, which would
+park the wordmark permanently off-centre, so the width collapses instead
+and the mark slides over as the arrow arrives.
+
 The wordmark leaves upward while a search runs, as the field leaves
 downward — the chrome retreats to the edges and the city has the screen
 to itself. It comes back with the controls rather than the moment the
@@ -63,7 +69,16 @@ half of `staggerTotalMs`, which puts them squarely mid-rise: earlier and
 the chrome competes with a city that is still moving, later and it reads
 as an afterthought. Both occupants are always mounted and absolutely
 positioned, which is what lets them cross-fade — in flow, the outgoing
-one would collapse the instant it left.
+one would collapse the instant it left. Their *contents* stay mounted for
+the same reason: gating the controls on the phase unmounted them the
+moment it changed, leaving the transition nothing to animate, so going
+back blanked them instantly while the field faded in around them.
+
+The two travel in opposite directions, and both halves of an exchange
+move the same way: searching, the field drops out downward and the
+controls drop in from above; going back, the controls lift out upward and
+the field lifts in from below. One direction per gesture, so the swap
+reads as a shuffle rather than two unrelated fades.
 
 The line under it swaps the same way: four accounts worth looking at
 while idle, the selected period's total once there is one. Two things

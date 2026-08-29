@@ -323,7 +323,16 @@ export function CityApp() {
   // over its heights; once data lands it shows that.
   const shownPeriod = phase === "ready" && realPeriod ? realPeriod : mockPeriod;
   const shownProfile = phase === "ready" && data ? data.profile : MOCK_PROFILE;
-  const showControls = phase === "ready" && data !== null && realPeriod !== null;
+  /**
+   * Whether the controls have anything to show — which outlives whether
+   * they are *shown*.
+   *
+   * They stay mounted through their own exit. Unmounting on the phase
+   * change left the transition with nothing to animate, so going home
+   * blanked them instantly while the field faded in around them.
+   */
+  const controlContent = data !== null && realPeriod !== null;
+  const showControls = phase === "ready" && controlContent;
 
   /** The scene only answers taps once there is real data in it. */
   const canToggle = isInteractive(phase);
@@ -345,6 +354,9 @@ export function CityApp() {
   }, [phase, requestKey]);
 
   const revealed = revealedKey === requestKey && showControls;
+
+  /** The wordmark doubles as a way back once there is a city to leave. */
+  const showBack = revealed;
 
   /**
    * The wordmark belongs to the idle page and to the finished one, not to
@@ -404,6 +416,32 @@ export function CityApp() {
               : "pointer-events-none -translate-y-2 opacity-0"
           }`}
         >
+          {/*
+            Width, not just opacity. Fading an inline arrow in leaves its
+            box occupying space the whole time, so the wordmark sits
+            permanently off-centre; collapsing the width lets the mark
+            slide over as the arrow arrives. The extra 4px beyond the
+            icon is the gap, so that collapses with it rather than
+            stranding a space when there is no arrow.
+          */}
+          <span
+            className={`grid overflow-hidden transition-[width,opacity] duration-300 ease-[var(--ease-in-out-cubic)] ${
+              showBack ? "w-5 opacity-100" : "w-0 opacity-0"
+            }`}
+          >
+            <svg
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+              className="size-4 shrink-0 justify-self-start"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M16 10H4M9 5l-5 5 5 5" />
+            </svg>
+          </span>
           gitCity
         </Link>
       </header>
@@ -495,13 +533,23 @@ export function CityApp() {
             the username and the picker is a fixed width, so on a narrow
             phone the three controls can exceed the line.
           */}
+          {/*
+            Travels the opposite way to the field, and both halves of an
+            exchange move together: searching, the field drops out
+            downward and these drop in from above; going back, these lift
+            out upward and the field lifts in from below. One direction
+            per gesture, so it reads as a shuffle rather than two
+            unrelated fades.
+          */}
           <div
             aria-hidden={revealed ? undefined : true}
-            className={`absolute inset-x-0 top-0 flex min-w-0 flex-wrap items-center justify-center gap-2 transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
-              revealed ? "opacity-100" : "pointer-events-none opacity-0"
+            className={`absolute inset-x-0 top-0 flex min-w-0 flex-wrap items-center justify-center gap-2 transition-[opacity,translate] duration-300 ease-[var(--ease-in-out-cubic)] ${
+              revealed
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none -translate-y-2 opacity-0"
             }`}
           >
-            {showControls ? (
+            {controlContent ? (
               <>
                 <ProfileIdentity profile={data!.profile} />
                 <PeriodSelect
@@ -550,11 +598,11 @@ export function CityApp() {
           */}
           <div
             aria-hidden={revealed ? undefined : true}
-            className={`pointer-events-none absolute inset-x-0 top-0 flex h-8 items-center justify-center transition-opacity duration-500 ease-[var(--ease-in-out-cubic)] ${
-              revealed ? "opacity-100" : "opacity-0"
+            className={`pointer-events-none absolute inset-x-0 top-0 flex h-8 items-center justify-center transition-[opacity,translate] duration-300 ease-[var(--ease-in-out-cubic)] ${
+              revealed ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
             }`}
           >
-            {showControls ? <PeriodTotal period={realPeriod!} /> : null}
+            {controlContent ? <PeriodTotal period={realPeriod!} /> : null}
           </div>
         </div>
       </footer>
