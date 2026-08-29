@@ -36,6 +36,15 @@ import { DEFAULT_SCENE_CONFIG } from "@/lib/three/config";
 import { arrivalDurationMs } from "@/lib/three/wave";
 
 /**
+ * A beat between the last cell landing and the city lifting.
+ *
+ * Short on purpose. Run together, the arrival and the rise read as one
+ * long gesture; separated by even this much, the data arrives and *then*
+ * the city rises, which is two things happening.
+ */
+const RISE_PAUSE_MS = 50;
+
+/**
  * How long real data is held flat before the city rises.
  *
  * Derived from the arrival rather than set beside it. The two have to
@@ -47,9 +56,8 @@ import { arrivalDurationMs } from "@/lib/three/wave";
  * Reads the default rather than the live slider: the panel is for
  * finding a value, and the sequence follows once it is the default.
  */
-const INTRO_HOLD_MS = arrivalDurationMs(
-  DEFAULT_SCENE_CONFIG.waveArrivalSpreadMs,
-);
+const INTRO_HOLD_MS =
+  arrivalDurationMs(DEFAULT_SCENE_CONFIG.waveArrivalSpreadMs) + RISE_PAUSE_MS;
 
 /**
  * When the controls arrive, measured from the moment the data is ready.

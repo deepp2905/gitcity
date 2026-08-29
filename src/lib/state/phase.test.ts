@@ -102,7 +102,11 @@ describe("isInteractive", () => {
 describe("pickLoadingFloorMs", () => {
   it("spans the full range end to end", () => {
     expect(pickLoadingFloorMs(() => 0)).toBe(LOADING_FLOOR_MIN_MS);
-    expect(pickLoadingFloorMs(() => 0.5)).toBe(2000);
+    // The midpoint, expressed from the bounds rather than hardcoded, so
+    // retuning the range does not need a test edit.
+    expect(pickLoadingFloorMs(() => 0.5)).toBe(
+      (LOADING_FLOOR_MIN_MS + LOADING_FLOOR_MAX_MS) / 2,
+    );
     // Math.random never returns 1, so this is the open upper bound.
     expect(pickLoadingFloorMs(() => 1)).toBe(LOADING_FLOOR_MAX_MS);
   });

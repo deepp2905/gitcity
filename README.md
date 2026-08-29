@@ -221,8 +221,11 @@ pop the same scattered way the pulses do.
 once. Because the last cell starts only at the end of that window, the
 handover runs until it finishes rather than until the first one does.
 
-**The rise waits for it.** `INTRO_HOLD_MS` is derived from
-`arrivalDurationMs`, not set beside it: the wave branch owns the frame
+**The rise waits for it**, plus a `RISE_PAUSE_MS` beat. Run together, the
+arrival and the rise read as one long gesture; separated by even 50ms,
+the data arrives and *then* the city rises, which is two things
+happening. `INTRO_HOLD_MS` is derived from `arrivalDurationMs`, not set
+beside it: the wave branch owns the frame
 while cells are still landing, so a hold that ran short would tilt the
 camera over buildings it had not released — and two hand-tuned constants
 that must agree is a thing that silently stops agreeing. Change the

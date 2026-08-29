@@ -63,8 +63,8 @@ export function isInteractive(phase: Phase): boolean {
  * rather than fixed because a live GitHub round trip never takes the same
  * time twice, and a constant delay reads as a scripted pause.
  */
-export const LOADING_FLOOR_MIN_MS = 1500;
-export const LOADING_FLOOR_MAX_MS = 2500;
+export const LOADING_FLOOR_MIN_MS = 1875;
+export const LOADING_FLOOR_MAX_MS = 3125;
 
 /** A floor for one request, in `[LOADING_FLOOR_MIN_MS, LOADING_FLOOR_MAX_MS]`. */
 export function pickLoadingFloorMs(random: () => number = Math.random): number {
