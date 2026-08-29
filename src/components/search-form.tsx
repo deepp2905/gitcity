@@ -18,6 +18,19 @@ type SearchFormProps = {
   isLoading: boolean;
   /** True only while the field is the visible occupant of its slot. */
   shouldFocus?: boolean;
+  /**
+   * Whether an error is currently on screen for this field, and the id of
+   * the element showing it.
+   *
+   * The message itself is rendered by the parent, not here: a failed
+   * lookup and a malformed username are the same kind of news, and two
+   * components each owning half of it produced two different-looking
+   * errors in two different places.
+   */
+  invalid?: boolean;
+  errorId?: string;
+  /** Reports a client-side validation failure, or null to clear one. */
+  onError: (message: string | null) => void;
   onSubmit: (username: string) => void;
 };
 
@@ -25,12 +38,13 @@ export function SearchForm({
   initialValue = "",
   isLoading,
   shouldFocus = false,
+  invalid = false,
+  errorId,
+  onError,
   onSubmit,
 }: SearchFormProps) {
   const inputId = useId();
-  const errorId = useId();
   const [value, setValue] = useState(initialValue);
-  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasFinePointer = useHasFinePointer();
 
@@ -59,11 +73,11 @@ export function SearchForm({
     // instant feedback without a round trip.
     const parsed = parseUsernameInput(value);
     if (!parsed.ok) {
-      setError(CLIENT_VALIDATION_MESSAGES[parsed.reason]);
+      onError(CLIENT_VALIDATION_MESSAGES[parsed.reason]);
       return;
     }
 
-    setError(null);
+    onError(null);
     onSubmit(parsed.username);
   }
 
@@ -91,14 +105,16 @@ export function SearchForm({
           value={value}
           onChange={(event) => {
             setValue(event.target.value);
-            if (error) setError(null);
+            // Typing is an attempt to fix it, so the complaint goes away
+            // rather than sitting there while they correct it.
+            if (invalid) onError(null);
           }}
           placeholder="GitHub username or URL"
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
+          aria-invalid={invalid ? true : undefined}
+          aria-describedby={invalid ? errorId : undefined}
           className="h-11 w-full min-w-0 flex-1 rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] px-5 text-base text-ink outline-none backdrop-blur-md transition-colors placeholder:text-ink-subtle focus-visible:border-ink focus-visible:ring-2 focus-visible:ring-ink/15 aria-[invalid]:border-danger"
         />
 
@@ -122,11 +138,6 @@ export function SearchForm({
         </button>
       </div>
 
-      {error ? (
-        <p id={errorId} role="alert" className="mt-2 text-sm text-danger">
-          {error}
-        </p>
-      ) : null}
     </form>
   );
 }

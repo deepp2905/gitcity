@@ -59,6 +59,13 @@ while idle, the selected period's total once there is one. Two things
 that never coexist, so they share a line rather than each reserving
 their own.
 
+**Both kinds of failure share one banner**, above the field. A malformed
+username never leaves the browser and a missing account comes back from
+the API, but they are the same news to whoever typed it, so validation
+lives in `CityApp` alongside the fetch error rather than inside the form.
+A local complaint outranks a lookup error: it describes what is in the
+field now, where the other describes the last thing submitted.
+
 **Changing the view.** A search holds the flat grid briefly and then
 rises on its own, once per username. After that the only things that move
 the camera is clicking the scene. There is no orbit, zoom, pan or lean:

@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
@@ -64,6 +71,17 @@ export function CityApp() {
 
   /** Standing or flat. Client state, not a URL param — see view.ts. */
   const [view, setView] = useState<ViewMode>(DEFAULT_VIEW);
+
+  /**
+   * A malformed username, caught before any request goes out.
+   *
+   * Kept here rather than inside the form so it shares one banner with a
+   * failed lookup. "That isn't a username" and "no such user" are the
+   * same news to whoever typed it, and they were arriving in two
+   * different styles in two different places.
+   */
+  const [formError, setFormError] = useState<string | null>(null);
+  const errorId = useId();
 
   /**
    * `data` is deliberately independent of the URL: a failed search leaves
@@ -132,6 +150,7 @@ export function CityApp() {
   // rapid tab switching doesn't flood the Back button.
   const handleSearch = useCallback(
     (username: string) => {
+      setFormError(null);
       // Every search starts flat, so the data lands on the familiar grid
       // and then rises. Without this a second search made from a standing
       // city would skip straight past the reveal.
@@ -166,6 +185,7 @@ export function CityApp() {
 
       setReloadToken((token) => token + 1);
       setView(DEFAULT_VIEW);
+      setFormError(null);
       navigate({ user: null, period: DEFAULT_PERIOD_ID }, false);
     },
     [navigate],
@@ -200,6 +220,11 @@ export function CityApp() {
 
   const isSettled = outcome?.key === requestKey;
   const error = isSettled ? outcome.error : null;
+
+  // A local validation failure wins: it is about what is in the field
+  // right now, where a stale lookup error is about the last thing that
+  // was submitted.
+  const errorMessage = formError ?? error?.message ?? null;
 
   const phase = resolvePhase({
     user,
@@ -365,12 +390,19 @@ export function CityApp() {
         className="chrome-enter pointer-events-auto relative z-10 mx-auto flex w-full max-w-3xl shrink-0 flex-col items-center gap-3"
         style={{ "--enter-delay": "80ms" } as React.CSSProperties}
       >
-        {error ? (
+        {/*
+          One banner for both kinds of failure, above the field either
+          way. Keyed on the message so a different complaint pops again
+          rather than swapping its words in place.
+        */}
+        {errorMessage ? (
           <p
+            key={errorMessage}
+            id={errorId}
             role="alert"
             className="pop-in w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-2.5 text-center text-sm text-danger"
           >
-            {error.message}
+            {errorMessage}
           </p>
         ) : null}
 
@@ -402,6 +434,9 @@ export function CityApp() {
               initialValue={user ?? ""}
               isLoading={phase === "loading"}
               shouldFocus={phase === "idle"}
+              invalid={errorMessage !== null}
+              errorId={errorId}
+              onError={setFormError}
               onSubmit={handleSearch}
             />
           </div>
