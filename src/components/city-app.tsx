@@ -44,6 +44,10 @@ import { arrivalDurationMs } from "@/lib/three/wave";
  */
 const RISE_PAUSE_MS = 50;
 
+/** How long the chrome takes to swap. Must match the `duration-300` on
+ * the field and the controls, which share a slot and cross-fade. */
+const CHROME_SWAP_MS = 300;
+
 /**
  * How long real data is held flat before the city rises.
  *
@@ -359,6 +363,30 @@ export function CityApp() {
   const showBack = revealed;
 
   /**
+   * Which side the controls hide on.
+   *
+   * They enter from below, as the field does, but leave upward — so
+   * "hidden" is not one position. Below until they have arrived, above
+   * once they have, and back to below after the exit has finished, which
+   * is invisible by then and costs nothing.
+   *
+   * A single hidden position cannot express this: a CSS transition
+   * interpolates between two states, so the side it leaves toward is the
+   * side it would next arrive from.
+   */
+  const [hidesAbove, setHidesAbove] = useState(false);
+  if (revealed && !hidesAbove) setHidesAbove(true);
+
+  useEffect(() => {
+    if (revealed) return;
+    const timer = window.setTimeout(
+      () => setHidesAbove(false),
+      CHROME_SWAP_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [revealed]);
+
+  /**
    * The wordmark belongs to the idle page and to the finished one, not to
    * the stretch between them. It leaves when a search starts and comes
    * back with the controls, rather than the moment the data lands —
@@ -534,19 +562,18 @@ export function CityApp() {
             phone the three controls can exceed the line.
           */}
           {/*
-            Travels the opposite way to the field, and both halves of an
-            exchange move together: searching, the field drops out
-            downward and these drop in from above; going back, these lift
-            out upward and the field lifts in from below. One direction
-            per gesture, so it reads as a shuffle rather than two
-            unrelated fades.
+            Enters the way the field does — up from below — and leaves
+            upward, so it passes through rather than bouncing back the
+            way it came. See `hidesAbove`.
           */}
           <div
             aria-hidden={revealed ? undefined : true}
             className={`absolute inset-x-0 top-0 flex min-w-0 flex-wrap items-center justify-center gap-2 transition-[opacity,translate] duration-300 ease-[var(--ease-in-out-cubic)] ${
               revealed
                 ? "translate-y-0 opacity-100"
-                : "pointer-events-none -translate-y-2 opacity-0"
+                : `pointer-events-none opacity-0 ${
+                    hidesAbove ? "-translate-y-2" : "translate-y-2"
+                  }`
             }`}
           >
             {controlContent ? (
@@ -599,7 +626,9 @@ export function CityApp() {
           <div
             aria-hidden={revealed ? undefined : true}
             className={`pointer-events-none absolute inset-x-0 top-0 flex h-8 items-center justify-center transition-[opacity,translate] duration-300 ease-[var(--ease-in-out-cubic)] ${
-              revealed ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+              revealed
+                ? "translate-y-0 opacity-100"
+                : `opacity-0 ${hidesAbove ? "-translate-y-2" : "translate-y-2"}`
             }`}
           >
             {controlContent ? <PeriodTotal period={realPeriod!} /> : null}

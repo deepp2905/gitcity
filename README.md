@@ -74,11 +74,13 @@ the same reason: gating the controls on the phase unmounted them the
 moment it changed, leaving the transition nothing to animate, so going
 back blanked them instantly while the field faded in around them.
 
-The two travel in opposite directions, and both halves of an exchange
-move the same way: searching, the field drops out downward and the
-controls drop in from above; going back, the controls lift out upward and
-the field lifts in from below. One direction per gesture, so the swap
-reads as a shuffle rather than two unrelated fades.
+The controls enter the way the field does — up from below — and leave
+upward, so they pass through rather than bouncing back the way they came.
+That means "hidden" is not one position, and a CSS transition cannot
+express it alone: it interpolates between two states, so the side an
+element leaves toward is the side it would next arrive from. Which side
+they hide on is tracked, and reset once the exit has finished, when the
+reposition is invisible.
 
 The line under it swaps the same way: four accounts worth looking at
 while idle, the selected period's total once there is one. Two things
@@ -316,7 +318,9 @@ period picker and download button rather than over the idle city: nothing
 it controls is worth looking at until there is real data standing up. Every scene constant is a
 live control there, grouped by concern, with per-section copy and reset. Copy a section, paste it over the matching block of
 `DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
-to make it the default.
+to make it the default. The gear turns 30 degrees on hover — a third of
+a tooth on a twelve-toothed gear, so it lands exactly back on itself and
+reads as the mechanism turning rather than a shape tilted off true.
 
 It ships in production, so it is a visitor-facing control surface rather
 than a dev-only one — and it is bundled either way, where the old

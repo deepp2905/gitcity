@@ -62,7 +62,10 @@ function SettingsIcon() {
     <svg
       viewBox="0 0 24 24"
       aria-hidden
-      className="size-[18px]"
+      // A third of a tooth. The gear has twelve, so 30 degrees lands it
+      // exactly back on itself -- it reads as the mechanism turning,
+      // not as a shape tilted off true.
+      className="size-[18px] transition-[rotate] duration-300 ease-[cubic-bezier(0.2,0,0,1)] group-hover:rotate-30"
       fill="none"
       stroke="currentColor"
       strokeWidth={1.75}
@@ -191,7 +194,11 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         aria-label="Open scene tuning"
         title="Scene tuning"
         data-ui
-        className="pointer-events-auto fixed right-3 top-3 z-50 grid size-11 sm:bottom-3 sm:top-auto place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        // `group` so the gear can answer the button's hover rather than
+        // its own: the icon is smaller than its target, and a rotation
+        // that only fired once the pointer was over the teeth would miss
+        // most of the ways in.
+        className="group pointer-events-auto fixed right-3 top-3 z-50 grid size-11 sm:bottom-3 sm:top-auto place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <SettingsIcon />
       </button>
