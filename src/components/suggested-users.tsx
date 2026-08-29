@@ -29,7 +29,10 @@ type SuggestedUsersProps = {
 
 export function SuggestedUsers({ onSelect }: SuggestedUsersProps) {
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-1">
+    // Left-aligned to the field above, not to the page. pl-2.5 cancels
+    // the buttons' own px-2.5 against the field's px-5, so the first
+    // login's text starts on exactly the placeholder's vertical.
+    <ul className="flex flex-wrap items-center justify-start gap-1 pl-2.5">
       {SUGGESTED_LOGINS.map(({ login, wideOnly }) => (
         <li key={login} className={wideOnly ? "hidden sm:block" : undefined}>
           <button

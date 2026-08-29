@@ -71,7 +71,11 @@ describe("resolvePhase", () => {
     ).toBe("ready");
   });
 
-  it("keeps the existing city up when a later search fails", () => {
+  it("returns to idle when a search fails, whatever was loaded before", () => {
+    // Not "ready". The ready phase swaps the search field out for the
+    // loaded user's controls, so resolving there would resurrect the
+    // previous city, label it with someone else's error, and leave no
+    // field to try again in.
     expect(
       resolvePhase({
         ...base,
@@ -79,7 +83,7 @@ describe("resolvePhase", () => {
         loadedLogin: "torvalds",
         hasError: true,
       }),
-    ).toBe("ready");
+    ).toBe("idle");
   });
 
   it("falls back to the mock when the very first search fails", () => {

@@ -30,10 +30,16 @@ export function resolvePhase({
 }: PhaseInput): Phase {
   if (!user) return "idle";
 
-  // A failed search keeps whatever city is already up rather than
-  // dropping back to the mock, so the error reads as "that one didn't
-  // work" instead of wiping the screen.
-  if (hasError) return loadedLogin ? "ready" : "idle";
+  // A failed search returns to idle, whatever was loaded before.
+  //
+  // This used to resolve to "ready" when any earlier city was in memory,
+  // so that a failure left it standing rather than wiping the screen.
+  // That stopped being sensible once the field hands over to the
+  // controls in the ready phase: searching a name that does not exist
+  // resurrected the *previous* user's city, swapped the field out for
+  // their controls, and left the error pointing at a name nothing on
+  // screen belonged to — with no field left to try again in.
+  if (hasError) return "idle";
 
   const dataMatchesUser =
     loadedLogin !== null && loadedLogin.toLowerCase() === user.toLowerCase();

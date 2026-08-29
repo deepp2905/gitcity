@@ -59,6 +59,14 @@ while idle, the selected period's total once there is one. Two things
 that never coexist, so they share a line rather than each reserving
 their own.
 
+**A failed search returns to idle** — the mock city, the field, and the
+error above it. It used to leave whatever city was already loaded
+standing, which made sense while the field was always on screen beside
+it. Once the field hands over to the controls in the ready phase, that
+resurrected the previous user's city, gave it their controls, and left
+the error naming someone nothing on screen belonged to, with no field
+left to try again in.
+
 **Both kinds of failure share one line**, just above the field — bare
 text, not a bordered banner: a box announces itself before it is read,
 and this sits beside a search field where being wrong is routine. A malformed username never leaves
