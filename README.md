@@ -197,16 +197,19 @@ render, and with ambient 1.6 plus directional 2 the extra chroma is what
 clips first — so those steps read as neon while the same lighting left
 the city alone.
 
-**The data pulses in.** Handing every cell over at the same instant made
-the arrival read as a cut — the animation stopped and the values were
-simply there, with nothing connecting the two. Each cell now takes its
-own turn: it flares to full green, and resolves to its real value on the
-way back down, so a pulse is what puts the data on screen rather than
-something the data replaces.
+**The pulsing settles into the data.** Handing every cell over at the
+same instant made the arrival read as a cut — the animation stopped and
+the values were simply there, with nothing connecting the two. Each cell
+now takes its own turn, and the pulses keep running around it while it
+does, so what is on screen mid-arrival is a live blend of pulse and
+value.
 
-The crossfade is cubed rather than linear, so the value only takes over
-during the fall. On a straight ramp the cell is half data by the time the
-flare peaks, and the flare stops reading as a flare.
+Deliberately **no flare to full** on the way. Forcing every cell bright
+first lights days that have nothing on them: wrong for a sparse year and
+worst for an empty one, where the whole grid would flash green and then
+resolve to blank. A cell travels from whatever its pulse is doing
+straight to whatever it holds, so the same arrival works whether 0% or
+100% of someone's days have contributions on them.
 
 Turns are **scattered, not swept**: with no front travelling across the
 grid there is no direction an arrival could follow, so a column-ordered
@@ -215,6 +218,11 @@ pop the same scattered way the pulses do.
 `waveArrivalSpreadMs` sets how long the whole grid takes; 0 pops it at
 once. Because the last cell starts only at the end of that window, the
 handover runs until it finishes rather than until the first one does.
+
+That total — the spread plus `WAVE_SETTLE_MS`, 960ms as shipped — has to
+stay under `INTRO_HOLD_MS`. The wave branch owns the frame while cells
+are still arriving, so an arrival that outlasts the hold would leave the
+camera tilting over buildings it has not released yet.
 
 **And it lands rather than stops.** A free-running wave is at an
 arbitrary phase whenever the data arrives, so a good share of the columns

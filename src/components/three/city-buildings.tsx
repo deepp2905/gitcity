@@ -539,22 +539,25 @@ export function CityBuildings({
                   WAVE_SETTLE_MS,
               );
 
-        // The cell flares to full before it resolves, so the data is
-        // delivered by a pulse rather than crossfaded in behind one.
-        // Peaks at the middle of the window and falls back, and the
-        // crossfade is cubed so the value only takes over on the way
-        // down -- resolve on a straight ramp and the flare is half data
-        // before anyone sees it.
-        const flare = arrival > 0 ? 1 - Math.abs(1 - 2 * arrival) : 0;
-        const lit = flare > amount ? flare : amount;
-        const resolve = arrival * arrival * arrival;
+        // The pulse keeps running while the cell arrives, so what is on
+        // screen mid-window is a blend of the live pulse and the real
+        // value: the pulsing visibly settles into the data rather than
+        // being replaced by it.
+        //
+        // Deliberately no flare to full. Forcing every cell bright first
+        // lights days that have nothing on them, which is wrong for a
+        // sparse year and worst for an empty one -- 371 cells flashing
+        // green and resolving to blank. The cell travels from whatever
+        // its pulse is doing straight to whatever it holds, so the same
+        // arrival works at any density.
+        const resolve = easeInOutCubic(arrival);
 
         // Footprint follows the raw amount, not the stepped colour: the
         // contrast between snapping colour and smooth breathing is the
-        // point. Eased back to a full cell through the settle, so the
-        // data never lands on shrunken tiles.
+        // point. Released back to a full cell as the cell arrives, so the
+        // data never lands on a shrunken tile.
         const footprint = config.wavePulseScale
-          ? 1 - (1 - WAVE_MIN_FOOTPRINT) * (1 - lit)
+          ? 1 - (1 - WAVE_MIN_FOOTPRINT) * (1 - amount) * (1 - resolve)
           : 1;
 
         heights[i] = from[i] + (item.restHeight - from[i]) * descent;
@@ -563,7 +566,7 @@ export function CityBuildings({
 
         // The wave keeps running through the settle, so the chart
         // resolves in motion rather than freezing and then fading.
-        scratchColor.set(waveLevelColor(lit));
+        scratchColor.set(waveLevelColor(amount));
         if (resolve > 0) scratchColor.lerp(item.color, resolve);
 
         const base = i * 3;

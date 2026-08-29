@@ -67,8 +67,13 @@ export type SceneConfig = {
    *
    * 0 hands every cell over at once, which is what made the arrival read
    * as a cut: the animation stopped and the data was simply there.
-   * Scattered over this window instead, each cell flares and resolves on
-   * its own beat, so the pulsing is what puts the data on screen.
+   * Scattered over this window instead, each cell resolves on its own
+   * beat while the rest keep pulsing around it.
+   *
+   * CEILING: this plus `WAVE_SETTLE_MS` must stay under `INTRO_HOLD_MS`
+   * in CityApp. The wave branch owns the frame while it is settling, so
+   * an arrival that outlasts the hold leaves the camera tilting over a
+   * chart whose buildings have not been released yet.
    */
   waveArrivalSpreadMs: number;
 
@@ -203,7 +208,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   wavePulseScale: false,
   waveTwinkle: true,
   waveTwinklePercent: 60,
-  waveArrivalSpreadMs: 500,
+  waveArrivalSpreadMs: 620,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
@@ -487,7 +492,7 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         max: 1200,
         step: 25,
         unit: " ms",
-        hint: "0 pops the whole grid at once",
+        hint: "Keep under 1000: see INTRO_HOLD_MS",
       },
     ],
   },

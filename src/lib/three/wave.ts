@@ -158,13 +158,17 @@ export function waveValueAt(
  * contribution year. Cutting straight to the data left that band on
  * screen to fade *down*, which read as a flash.
  *
- * Over this window each tile crosses from its wave colour to its own
- * data colour. Deliberately per tile and not through a shared value:
- * decaying the amplitude to zero first was smooth, but it took the entire
- * grid to cream on the way, and a chart that blanks before it fills reads
- * as a second load rather than the end of the first.
+ * Over this window each tile crosses from its live pulse to its own data
+ * colour. Deliberately per tile and not through a shared value: decaying
+ * the amplitude to zero first was smooth, but it took the entire grid to
+ * cream on the way, and a chart that blanks before it fills reads as a
+ * second load rather than the end of the first.
+ *
+ * This is one cell's crossing. The whole grid takes this plus
+ * `waveArrivalSpreadMs`, since the last cell only starts at the end of
+ * that spread.
  */
-export const WAVE_SETTLE_MS = 260;
+export const WAVE_SETTLE_MS = 340;
 
 /** Deterministic per-column offset in -1..1, so a column keeps the same
  * character frame to frame rather than shimmering. */

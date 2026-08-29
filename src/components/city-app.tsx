@@ -33,8 +33,15 @@ import { buildMockPeriod } from "@/lib/contributions/mock";
 import { useMockSeed } from "@/lib/hooks/use-mock-seed";
 import { isInteractive, pickLoadingFloorMs, resolvePhase } from "@/lib/state/phase";
 
-/** How long real data is held flat before the city rises. */
-const INTRO_HOLD_MS = 800;
+/**
+ * How long real data is held flat before the city rises.
+ *
+ * Has to outlast the arrival — `WAVE_SETTLE_MS` plus
+ * `waveArrivalSpreadMs`, currently 960ms. The wave branch owns the frame
+ * while cells are still arriving, so a shorter hold would tilt the camera
+ * over buildings that have not been released yet.
+ */
+const INTRO_HOLD_MS = 1000;
 
 /**
  * When the controls arrive, measured from the moment the data is ready.
