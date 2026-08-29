@@ -8,12 +8,20 @@
  * — before showing what the thing does with one. These give the idle
  * state somewhere to go in a single tap.
  */
-const SUGGESTED_LOGINS = [
-  "lochie",
-  "joshpuckett",
-  "raunofreiberg",
-  "benjitaylor",
-] as const;
+type Suggestion = {
+  login: string;
+  /** Hidden below the sm breakpoint, where the row runs out of width. */
+  wideOnly?: boolean;
+};
+
+const SUGGESTED_LOGINS: Suggestion[] = [
+  { login: "lochie" },
+  { login: "joshpuckett" },
+  { login: "raunofreiberg" },
+  // Four names are wider than a phone. Dropped below sm rather than
+  // wrapped: a second line here would push the row into the city.
+  { login: "benjitaylor", wideOnly: true },
+];
 
 type SuggestedUsersProps = {
   onSelect: (username: string) => void;
@@ -25,8 +33,8 @@ export function SuggestedUsers({ onSelect }: SuggestedUsersProps) {
     // so the first login's text starts on the same vertical as the
     // placeholder above it rather than 10px inside it.
     <ul className="flex flex-wrap items-center justify-start gap-1 pl-2.5">
-      {SUGGESTED_LOGINS.map((login) => (
-        <li key={login}>
+      {SUGGESTED_LOGINS.map(({ login, wideOnly }) => (
+        <li key={login} className={wideOnly ? "hidden sm:block" : undefined}>
           <button
             type="button"
             onClick={() => onSelect(login)}
