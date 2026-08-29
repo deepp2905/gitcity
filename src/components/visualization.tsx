@@ -29,6 +29,8 @@ type VisualizationProps = {
   waving: boolean;
   interactive: boolean;
   webglSupported: boolean;
+  /** True once the page chrome has arrived; the tuning panel follows it. */
+  chromeRevealed: boolean;
   onToggleView: (next: ViewMode) => void;
   /** Populated by the scene with a snapshot function, for the PNG export. */
   captureRef?: RefObject<(() => HTMLCanvasElement | null) | null>;
@@ -52,6 +54,7 @@ export function Visualization({
   waving,
   interactive,
   webglSupported,
+  chromeRevealed,
   onToggleView,
   captureRef,
 }: VisualizationProps) {
@@ -81,6 +84,7 @@ export function Visualization({
         reducedMotion={reducedMotion}
         isMobile={isMobile}
         onToggleView={onToggleView}
+        chromeRevealed={chromeRevealed}
         view={view}
         captureRef={captureRef}
       />

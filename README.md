@@ -289,13 +289,18 @@ and home indicator.
 
 ## Tuning panel
 
-In development a gear button sits bottom-right, styled as the other round
-controls on the page — and top-right on phones, where the bottom of the
-screen belongs to the field and the controls. Every scene constant is a
+A gear button sits bottom-right, styled as the other round controls on
+the page — and top-right on phones, where the bottom of the screen
+belongs to the field and the controls. It appears with the identity pill,
+period picker and download button rather than over the idle city: nothing
+it controls is worth looking at until there is real data standing up. Every scene constant is a
 live control there, grouped by concern, with per-section copy and reset. Copy a section, paste it over the matching block of
 `DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
-to make it the default. It is behind a `NODE_ENV` check, so none of it
-reaches visitors.
+to make it the default.
+
+It ships in production, so it is a visitor-facing control surface rather
+than a dev-only one — and it is bundled either way, where the old
+`NODE_ENV` check let the bundler drop it.
 
 The loading state ships as scattered pulses over 60% of the grid, with
 the travelling front switched off — the front and its two treatments stay

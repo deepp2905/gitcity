@@ -66,6 +66,10 @@ type CitySceneProps = {
   interactive: boolean;
   reducedMotion: boolean;
   isMobile: boolean;
+  /** True once the page chrome has arrived, which the tuning panel
+   * follows so it appears alongside the controls rather than before
+   * them. */
+  chromeRevealed: boolean;
   onToggleView: (next: ViewMode) => void;
   /**
    * Filled in with a function that snapshots the scene, so the download
@@ -252,6 +256,7 @@ export function CityScene({
   interactive,
   reducedMotion,
   isMobile,
+  chromeRevealed,
   onToggleView,
   captureRef,
 }: CitySceneProps) {
@@ -644,7 +649,11 @@ export function CityScene({
           overlays below the page content. */}
       {config.showFps ? <FpsMeter /> : null}
 
-      {process.env.NODE_ENV === "development" ? (
+      {/* Ships in production, unlike most tuning affordances, and arrives
+          with the rest of the chrome rather than sitting over the idle
+          city: nothing it controls is worth looking at until there is
+          real data standing up. */}
+      {chromeRevealed ? (
         <TuningPanel config={config} onChange={setConfig} />
       ) : null}
 

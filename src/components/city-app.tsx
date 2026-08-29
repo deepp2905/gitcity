@@ -402,6 +402,7 @@ export function CityApp() {
         waving={phase === "loading"}
         interactive={canToggle}
         webglSupported={webglSupported}
+        chromeRevealed={revealed}
         onToggleView={handleToggleView}
         captureRef={captureRef}
       />
