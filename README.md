@@ -141,6 +141,14 @@ measures the same space.
 The exact counts live in the accessible heatmap, so the skyline is free
 to exaggerate under the cursor without anyone losing the numbers.
 
+The swell answers the pointer across the whole page, since the city
+fills the viewport behind everything — but not while it is over the
+chrome. Hovering a button, the field or the open menu settles it rather
+than driving it, so the chart is not heaving underneath whatever is being
+read; moving back off picks it up again. Native interactive tags and a
+couple of ARIA roles cover most of that, with `data-ui` for panels that
+are plain containers.
+
 The pointer is unprojected onto the ground plane and converted into the
 mesh's own space, because the camera tilts and viewport coordinates say
 nothing about which buildings are near. Damping the point rather than

@@ -93,6 +93,22 @@ const TOUCH_DRAG_THRESHOLD_PX = 14;
 const WEEKDAY_GUTTER_PX = 34;
 
 /**
+ * Anything the pointer can be *using* rather than pointing at the city
+ * through.
+ *
+ * Native interactive tags cover most of it; the roles pick up the period
+ * menu, and `data-ui` is for panels that are plain containers — the tune
+ * panel is a div, and its gaps and labels are as much "inside a control"
+ * as its buttons are.
+ */
+const CHROME_SELECTOR =
+  'button, a, input, select, textarea, label, [role="listbox"], [role="dialog"], [data-ui]';
+
+function isOverChrome(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest(CHROME_SELECTOR) !== null;
+}
+
+/**
  * Minimal shape of what the capture needs from the renderer.
  *
  * Structural rather than `THREE.WebGLRenderer`: two copies of
@@ -382,7 +398,12 @@ export function CityScene({
   const pointerRef = useRef<Pointer>({ x: 0, y: 0, inside: false });
 
   useEffect(() => {
-    const track = (event: PointerEvent, inside: boolean) => {
+    const track = (event: PointerEvent, active: boolean) => {
+      // Reading a control is not pointing at the city. Hovering a button,
+      // the field or the open menu settles the swell rather than driving
+      // it, so the chart is not heaving underneath whatever is being
+      // read. Moving back off picks it up again.
+      const inside = active && !isOverChrome(event.target);
       pointerRef.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
         y: (event.clientY / window.innerHeight) * 2 - 1,
@@ -413,8 +434,9 @@ export function CityScene({
       pointerRef.current = { ...pointerRef.current, inside: false };
     };
 
-    // On the window, not the canvas: the swell should answer the pointer
-    // anywhere on the page, including over the controls.
+    // On the window, not the canvas: the city fills the viewport behind
+    // everything, so the swell should answer the pointer across the whole
+    // page -- minus the chrome, which `track` filters out.
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerdown", handleDown);
     window.addEventListener("pointerup", handleUp);
