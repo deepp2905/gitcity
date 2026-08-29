@@ -210,6 +210,11 @@ export type SliderSpec = {
   min: number;
   max: number;
   step: number;
+  /**
+   * Printed straight after the value, so include a leading space if the
+   * unit wants one — "%" sits tight against the number, " ms" does not.
+   */
+  unit?: string;
   /** Short note shown under the control. */
   hint?: string;
 };
@@ -458,7 +463,8 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         min: 0,
         max: 100,
         step: 5,
-        hint: "% of the grid",
+        unit: "%",
+        hint: "Share of the grid that pulses",
       },
     ],
   },

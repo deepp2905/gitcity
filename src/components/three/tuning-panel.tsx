@@ -344,6 +344,11 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
                       : config[control.key].toFixed(
                           String(control.step).split(".")[1]?.length ?? 2,
                         )}
+                    {/* Muted, so the number stays the thing being read
+                        and the unit is just there to name it. */}
+                    {control.unit ? (
+                      <span className="text-ink-subtle">{control.unit}</span>
+                    ) : null}
                   </span>
                 </span>
                 <input
