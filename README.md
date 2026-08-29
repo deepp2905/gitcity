@@ -511,7 +511,13 @@ src/
   and captures whichever state is on screen: flat gives the chart, tilted
   gives the city, and a permanently visible button has to do the obvious
   thing rather than silently export a view nobody is looking at.
-- No social card builder, account system, analytics, or saved cities.
+- No social card builder, account system, or saved cities.
+- Microsoft Clarity is loaded in production for analytics and session
+  replay. It goes through `next/script` with `afterInteractive` rather
+  than a raw tag in `<head>`: the App Router owns the head, and Next's
+  loader is what guarantees the snippet runs once and survives client
+  navigation. Gated on `NODE_ENV`, so a dev server does not file sessions
+  next to real ones; preview deploys do, since they build as production.
 - The in-memory response cache and request throttle
   (`src/lib/github/cache.ts`, `src/lib/github/throttle.ts`) are
   best-effort, single-process — they work within one running server
