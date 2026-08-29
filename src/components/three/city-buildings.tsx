@@ -110,6 +110,8 @@ type BuildingLayout = {
   delayMs: number;
   /** Recolour-wave delay, used only in the flat state. */
   colorDelayMs: number;
+  /** Delay before this column hands the wave over to the data. */
+  settleDelayMs: number;
   color: THREE.Color;
 };
 
@@ -196,6 +198,14 @@ export function CityBuildings({
         config.colorStaggerMs,
         config.staggerCurve,
       );
+      // The arrival sweeps the same way the wave travels, so the data
+      // reads as something the front left behind rather than as a cut.
+      const settleDelayMs = columnDelayMs(
+        tile.weekIndex,
+        weekCount,
+        config.waveSettleStaggerMs,
+        config.staggerCurve,
+      );
 
       if (!tile.day) {
         const futureHeight = groundHeight * FUTURE_TILE_HEIGHT_SCALE;
@@ -209,6 +219,7 @@ export function CityBuildings({
           riseHeight: futureHeight,
           delayMs,
           colorDelayMs,
+          settleDelayMs,
           color: new THREE.Color(palette.futureTile),
         };
       }
@@ -238,6 +249,7 @@ export function CityBuildings({
         riseHeight: worldHeight(scaled, config.sceneMaxHeight),
         delayMs,
         colorDelayMs,
+        settleDelayMs,
         color: new THREE.Color(
           contributionRampColor(normalized, day.count > 0),
         ),
@@ -257,6 +269,7 @@ export function CityBuildings({
     config.staggerTotalMs,
     config.staggerCurve,
     config.colorStaggerMs,
+    config.waveSettleStaggerMs,
   ]);
 
   /**
@@ -463,8 +476,12 @@ export function CityBuildings({
     // The wave outlives the search by WAVE_SETTLE_MS, fading its own
     // amplitude out. Handing straight over left the grid at whatever
     // phase the sine had reached, half of it darker than any real day.
+    // The handover runs until the *last* column has finished, not the
+    // first: with a sweep, the far side is still waving long after the
+    // near side has become data.
+    const settleTotalMs = WAVE_SETTLE_MS + Math.max(0, config.waveSettleStaggerMs);
     const settling =
-      !waving && waveElapsedRef.current > 0 && waveSettleRef.current < WAVE_SETTLE_MS;
+      !waving && waveElapsedRef.current > 0 && waveSettleRef.current < settleTotalMs;
 
     if (waving || settling) {
       // A search is in flight. The wave is purely a colour wave: it only
@@ -478,13 +495,12 @@ export function CityBuildings({
       waveElapsedRef.current += delta;
       waveSettleRef.current = waving ? 0 : waveSettleRef.current + delta * 1000;
 
-      // 0 while the search runs, easing to 1 as it resolves. Each tile
-      // crosses from the wave straight to its own colour: no intermediate
-      // state the whole grid shares, so there is no moment where the
-      // chart is uniformly anything.
-      const settle = waving
-        ? 0
-        : easeInOutCubic(Math.min(1, waveSettleRef.current / WAVE_SETTLE_MS));
+      // Each tile crosses from the wave straight to its own colour, on
+      // its column's own schedule. Two things follow from that: no
+      // intermediate state the whole grid shares, so the chart is never
+      // uniformly anything, and the crossing sweeps rather than
+      // happening everywhere at once.
+      const settleElapsed = waving ? -1 : waveSettleRef.current;
 
       const waveShape = {
         front: config.waveFront,
@@ -513,6 +529,17 @@ export function CityBuildings({
               elapsedSeconds,
               waveShape,
             );
+
+        const settle =
+          settleElapsed < 0
+            ? 0
+            : easeInOutCubic(
+                Math.min(
+                  1,
+                  Math.max(0, settleElapsed - item.settleDelayMs) /
+                    WAVE_SETTLE_MS,
+                ),
+              );
 
         // Footprint follows the raw amount, not the stepped colour: the
         // contrast between snapping colour and smooth breathing is the

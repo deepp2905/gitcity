@@ -61,6 +61,16 @@ export type SceneConfig = {
    * point of use.
    */
   waveTwinklePercent: number;
+  /**
+   * How long the data takes to sweep across the grid as the wave hands
+   * over, in milliseconds.
+   *
+   * 0 hands every tile over at once, which is what made the arrival read
+   * as a cut: the animation stopped and the data was simply there. Spread
+   * over the columns instead, the front leaves real data behind it and
+   * the pulse looks like what delivered it.
+   */
+  waveSettleStaggerMs: number;
 
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
@@ -191,6 +201,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   wavePulseScale: false,
   waveTwinkle: false,
   waveTwinklePercent: 30,
+  waveSettleStaggerMs: 400,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
@@ -465,6 +476,16 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         step: 5,
         unit: "%",
         hint: "Share of the grid that pulses",
+      },
+      {
+        kind: "slider",
+        key: "waveSettleStaggerMs",
+        label: "Arrival sweep",
+        min: 0,
+        max: 900,
+        step: 25,
+        unit: " ms",
+        hint: "0 hands the whole grid over at once",
       },
     ],
   },

@@ -197,6 +197,18 @@ render, and with ambient 1.6 plus directional 2 the extra chroma is what
 clips first — so those steps read as neon while the same lighting left
 the city alone.
 
+**The arrival sweeps.** Handing every tile over at the same instant was
+what made the data read as a cut — the animation stopped and the values
+were simply there, with nothing connecting the two. The crossing is
+staggered by column instead, on the same left-to-right schedule the rise
+and the wave both use, so the front visibly leaves real data behind it
+and the pulse looks like what delivered it. `waveSettleStaggerMs` sets
+the spread; 0 restores the all-at-once behaviour.
+
+Because the far side is still waving long after the near side has become
+data, the handover has to run until the *last* column finishes rather
+than the first.
+
 **And it lands rather than stops.** A free-running wave is at an
 arbitrary phase whenever the data arrives, so a good share of the columns
 would be sitting on the deepest green — darker than almost any real day —
