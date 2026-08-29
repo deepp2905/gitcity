@@ -153,7 +153,7 @@ export function CityApp() {
           key,
           error: {
             code: "UPSTREAM_ERROR",
-            message: "Something went wrong. Please try again.",
+            message: "Something went wrong. Try again.",
           },
         });
       });

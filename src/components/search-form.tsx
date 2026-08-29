@@ -2,15 +2,9 @@
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { parseUsernameInput } from "@/lib/username/parse";
-import type { UsernameParseFailureReason } from "@/lib/username/parse";
+import { USERNAME_ERROR_MESSAGES } from "@/lib/username/messages";
 import { useHasFinePointer } from "@/lib/hooks/use-media-query";
 
-const CLIENT_VALIDATION_MESSAGES: Record<UsernameParseFailureReason, string> = {
-  empty: "Enter a GitHub username or profile URL.",
-  "invalid-syntax": "That doesn't look like a valid GitHub username or URL.",
-  "invalid-host": "Only github.com usernames and URLs are supported.",
-  reserved: "That username is reserved by GitHub and can't belong to a user.",
-};
 
 type SearchFormProps = {
   /** Current username from the URL, used to seed the field on load. */
@@ -73,7 +67,7 @@ export function SearchForm({
     // instant feedback without a round trip.
     const parsed = parseUsernameInput(value);
     if (!parsed.ok) {
-      onError(CLIENT_VALIDATION_MESSAGES[parsed.reason]);
+      onError(USERNAME_ERROR_MESSAGES[parsed.reason]);
       return;
     }
 

@@ -4,10 +4,8 @@ import type {
   ContributionErrorResponse,
   ContributionResponse,
 } from "@/lib/contributions/types";
-import {
-  parseUsernameInput,
-  type UsernameParseFailureReason,
-} from "@/lib/username/parse";
+import { parseUsernameInput } from "@/lib/username/parse";
+import { USERNAME_ERROR_MESSAGES } from "@/lib/username/messages";
 import { fetchContributionCalendars } from "@/lib/github/client";
 import { computeStaticBoundaries, toQueryVariables } from "@/lib/github/boundaries";
 import { normalizeContributionsResponse } from "@/lib/github/normalize";
@@ -31,12 +29,6 @@ const STATUS_BY_CODE: Record<ContributionErrorCode, number> = {
   UPSTREAM_ERROR: 502,
 };
 
-const INVALID_USERNAME_MESSAGES: Record<UsernameParseFailureReason, string> = {
-  empty: "Enter a GitHub username or profile URL.",
-  "invalid-syntax": "That doesn't look like a valid GitHub username or URL.",
-  "invalid-host": "Only github.com usernames and URLs are supported.",
-  reserved: "That username is reserved by GitHub and can't belong to a user.",
-};
 
 function errorResponse(
   code: ContributionErrorCode,
@@ -63,7 +55,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!throttle.allowed) {
     return errorResponse(
       "RATE_LIMITED",
-      "Too many requests — please slow down.",
+      "Too many requests. Wait a moment.",
       throttle.retryAfter,
     );
   }
@@ -71,7 +63,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   const rawUser = new URL(request.url).searchParams.get("user") ?? "";
   const parsed = parseUsernameInput(rawUser);
   if (!parsed.ok) {
-    return errorResponse("INVALID_USERNAME", INVALID_USERNAME_MESSAGES[parsed.reason]);
+    return errorResponse("INVALID_USERNAME", USERNAME_ERROR_MESSAGES[parsed.reason]);
   }
   const username = parsed.username;
 
@@ -90,7 +82,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json<ContributionResponse>(cachedSuccess);
   }
   if (isCachedNotFound(username)) {
-    return errorResponse("NOT_FOUND", `No GitHub profile found for "${username}".`);
+    return errorResponse("NOT_FOUND", `No GitHub user "${username}".`);
   }
 
   const now = new Date();
@@ -108,14 +100,14 @@ export async function GET(request: Request): Promise<NextResponse> {
         cacheNotFound(username);
         return errorResponse(
           "NOT_FOUND",
-          `No GitHub profile found for "${username}".`,
+          `No GitHub user "${username}".`,
         );
       }
       return errorResponse(err.code, safeMessage(err), err.retryAfter);
     }
 
     console.error("Unexpected error fetching contributions:", err);
-    return errorResponse("UPSTREAM_ERROR", "Something went wrong talking to GitHub.");
+    return errorResponse("UPSTREAM_ERROR", "Something went wrong with GitHub. Try again.");
   }
 }
 
@@ -124,11 +116,11 @@ export async function GET(request: Request): Promise<NextResponse> {
 function safeMessage(err: GithubApiError): string {
   switch (err.code) {
     case "RATE_LIMITED":
-      return "GitHub API rate limit reached — please try again shortly.";
+      return "Hit GitHub's rate limit. Try again shortly.";
     case "UPSTREAM_TIMEOUT":
-      return "GitHub took too long to respond — please try again.";
+      return "GitHub took too long to respond. Try again.";
     case "UPSTREAM_ERROR":
-      return "Something went wrong talking to GitHub.";
+      return "Something went wrong with GitHub. Try again.";
     default:
       return err.message;
   }

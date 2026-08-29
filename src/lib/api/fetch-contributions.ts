@@ -60,7 +60,7 @@ export async function fetchContributions(
     const error = errorBody?.error;
     return failure(
       error?.code ?? "UPSTREAM_ERROR",
-      error?.message ?? "Something went wrong. Please try again.",
+      error?.message ?? "Something went wrong. Try again.",
       error?.retryAfter,
     );
   }

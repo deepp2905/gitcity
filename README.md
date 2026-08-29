@@ -109,6 +109,14 @@ lives in `CityApp` alongside the fetch error rather than inside the form.
 A local complaint outranks a lookup error: it describes what is in the
 field now, where the other describes the last thing submitted.
 
+Every message is written to fit one line of the slot, about 63
+characters. The slot reserves no height, so a message that wraps pushes
+the field and the city up. The worst case is a not-found error naming a
+maximum-length GitHub username, which is why it reads "No GitHub user"
+rather than "No GitHub profile found for". The four parse messages live
+in `src/lib/username/messages.ts`, shared by the client check and the API
+route, which ran the same parser and held identical copies.
+
 The identity pill and the download button carry tooltips after a 200ms
 beat. They render *inside* their trigger rather
 than wrapping it, so they cost the layout nothing — the trigger needs
