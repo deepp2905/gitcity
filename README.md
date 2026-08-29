@@ -46,8 +46,10 @@ degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
 
 The wordmark leaves upward while a search runs, as the field leaves
 downward — the chrome retreats to the edges and the city has the screen
-to itself. Opacity, not `display`, so the header keeps its height and
-nothing below it moves.
+to itself. It comes back with the controls rather than the moment the
+data lands: tied to the phase alone it reappeared by itself, a beat ahead
+of everything else. Opacity, not `display`, so the header keeps its
+height and nothing below it moves.
 
 Note for anyone editing these: Tailwind v4 compiles `translate-*` to the
 standalone `translate` property, not `transform`, so a transition must

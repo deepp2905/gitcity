@@ -338,6 +338,14 @@ export function CityApp() {
 
   const revealed = revealedKey === requestKey && showControls;
 
+  /**
+   * The wordmark belongs to the idle page and to the finished one, not to
+   * the stretch between them. It leaves when a search starts and comes
+   * back with the controls, rather than the moment the data lands —
+   * otherwise it reappears alone, a beat before everything else.
+   */
+  const showWordmark = phase === "idle" || revealed;
+
   /** Filled in by the scene with a snapshot function for the PNG export. */
   const captureRef = useRef<(() => HTMLCanvasElement | null) | null>(null);
 
@@ -373,18 +381,19 @@ export function CityApp() {
 
           It leaves upward while a search runs, as the field leaves
           downward: the chrome retreats to the edges and the city has the
-          screen to itself. Opacity rather than display, so the header
-          keeps its height and nothing below it moves. */}
+          screen to itself, and it returns with the rest of the chrome.
+          Opacity rather than display, so the header keeps its height and
+          nothing below it moves. */}
       <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0 text-center">
         <Link
           href="/"
           onClick={handleGoHome}
-          aria-hidden={phase === "loading" ? true : undefined}
-          tabIndex={phase === "loading" ? -1 : undefined}
+          aria-hidden={showWordmark ? undefined : true}
+          tabIndex={showWordmark ? undefined : -1}
           className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold tracking-tight text-ink transition-[background-color,opacity,translate,scale] duration-300 ease-[var(--ease-in-out-cubic)] hover:bg-ink/5 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-            phase === "loading"
-              ? "pointer-events-none -translate-y-2 opacity-0"
-              : "pointer-events-auto translate-y-0 opacity-100"
+            showWordmark
+              ? "pointer-events-auto translate-y-0 opacity-100"
+              : "pointer-events-none -translate-y-2 opacity-0"
           }`}
         >
           gitCity
