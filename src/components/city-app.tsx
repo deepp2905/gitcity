@@ -391,16 +391,21 @@ export function CityApp() {
         style={{ "--enter-delay": "80ms" } as React.CSSProperties}
       >
         {/*
-          One banner for both kinds of failure, above the field either
-          way. Keyed on the message so a different complaint pops again
-          rather than swapping its words in place.
+          One line for both kinds of failure, just above the field. Bare
+          text rather than a bordered banner: a box announces itself
+          before it is read, and this sits beside a search field where
+          being wrong is routine.
+
+          pl-5 matches the field's own padding, so the message starts on
+          the same vertical as the placeholder it is about. No entrance
+          animation — validation should answer the keystroke that asked
+          for it, and even a short delay reads as lag.
         */}
         {errorMessage ? (
           <p
-            key={errorMessage}
             id={errorId}
             role="alert"
-            className="pop-in w-full max-w-md rounded-lg border border-danger/30 bg-danger-bg px-4 py-2.5 text-center text-sm text-danger"
+            className="w-full max-w-md pl-5 text-sm text-danger"
           >
             {errorMessage}
           </p>
