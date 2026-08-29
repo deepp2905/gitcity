@@ -261,9 +261,9 @@ live control there, grouped by concern, with per-section copy and reset. Copy a 
 to make it the default. It is behind a `NODE_ENV` check, so none of it
 reaches visitors.
 
-A **Debug: loading wave** group sits at the bottom of the panel. "Hold
-loading state" pins the flat camera and the wave on regardless of what
-the app is doing, so the three treatments below it can be watched for as
+The **Debug** group holds the FPS monitor and the loading-wave switches.
+"Hold loading state" pins the flat camera and the wave on regardless of
+what the app is doing, so the treatments below it can be watched for as
 long as it takes to judge them, and switched on in any combination:
 
 | Toggle | What it changes |

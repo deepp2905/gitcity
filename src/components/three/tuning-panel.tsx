@@ -75,6 +75,59 @@ function SettingsIcon() {
   );
 }
 
+/**
+ * A switch.
+ *
+ * The whole row is the button, so the label is the accessible name and
+ * the target is the width of the panel rather than a 36px track. The
+ * hint sits outside it — a description belongs beside a control, not
+ * inside its name.
+ *
+ * `translate` rather than `transform` on the knob: Tailwind v4 compiles
+ * translate utilities to the standalone property, so a transition naming
+ * `transform` would leave the knob snapping.
+ */
+function Toggle({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="mb-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={value}
+        onClick={() => onChange(!value)}
+        className="flex w-full items-center justify-between gap-3 rounded-md py-1 text-left text-xs text-ink-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+      >
+        {label}
+        <span
+          aria-hidden="true"
+          className={`relative h-4 w-7 shrink-0 rounded-full transition-colors duration-150 ease-[cubic-bezier(0.2,0,0,1)] ${
+            value ? "bg-ink" : "bg-ink/15"
+          }`}
+        >
+          <span
+            className={`absolute left-0.5 top-0.5 size-3 rounded-full bg-white shadow-sm transition-[translate] duration-150 ease-[cubic-bezier(0.2,0,0,1)] ${
+              value ? "translate-x-3" : "translate-x-0"
+            }`}
+          />
+        </span>
+      </button>
+      {hint ? (
+        <span className="text-[10px] text-ink-subtle">{hint}</span>
+      ) : null}
+    </div>
+  );
+}
+
 type TuningPanelProps = {
   config: SceneConfig;
   onChange: (next: SceneConfig) => void;
@@ -229,7 +282,19 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
           {collapsed[group.title]
             ? null
             : group.controls.map((control) =>
-            control.kind === "choice" ? (
+            control.kind === "toggle" ? (
+              <Toggle
+                key={control.key}
+                label={control.label}
+                hint={control.hint}
+                value={config[control.key]}
+                onChange={(value) => {
+                  const next = { ...config };
+                  Object.assign(next, { [control.key]: value });
+                  onChange(next);
+                }}
+              />
+            ) : control.kind === "choice" ? (
               <div key={control.key} className="mb-2">
                 <span className="text-xs text-ink-muted">{control.label}</span>
                 <div

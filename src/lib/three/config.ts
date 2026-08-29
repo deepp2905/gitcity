@@ -207,34 +207,36 @@ export type SliderSpec = {
   hint?: string;
 };
 
-/** A control whose value is picked from a small fixed set. Written as a
- * union per key so each spec's options are typed to that key's value. */
-export type ChoiceSpec =
-  | {
-      kind: "choice";
-      key: "heightScale";
-      label: string;
-      options: readonly { value: HeightScale; label: string }[];
-      hint?: string;
-    }
-  | {
-      // One variant for every boolean, rather than one per key: the
-      // options are the same two either way, and a union member per
-      // toggle turns adding a debug switch into an edit in three places.
-      kind: "choice";
-      key: BooleanKey;
-      label: string;
-      options: readonly { value: boolean; label: string }[];
-      hint?: string;
-    };
+/**
+ * A control whose value is picked from a small fixed set.
+ *
+ * Only one of these left now that booleans have their own kind. If a
+ * second ever appears, make this a union per key again so each spec's
+ * options stay typed to that key's value.
+ */
+export type ChoiceSpec = {
+  kind: "choice";
+  key: "heightScale";
+  label: string;
+  options: readonly { value: HeightScale; label: string }[];
+  hint?: string;
+};
 
-/** The only options a boolean control ever has. */
-export const YES_NO = [
-  { value: false, label: "No" },
-  { value: true, label: "Yes" },
-] as const;
+/**
+ * A boolean, shown as a switch.
+ *
+ * Its own kind rather than a two-option choice: every boolean has the
+ * same two values, so spelling them out per control was noise, and a
+ * switch says "on or off" in a way a pair of tabs does not.
+ */
+export type ToggleSpec = {
+  kind: "toggle";
+  key: BooleanKey;
+  label: string;
+  hint?: string;
+};
 
-export type ControlSpec = SliderSpec | ChoiceSpec;
+export type ControlSpec = SliderSpec | ChoiceSpec | ToggleSpec;
 
 export type ControlGroup = {
   title: string;
@@ -405,14 +407,42 @@ export const CONTROL_GROUPS: ControlGroup[] = [
   {
     title: "Debug",
     controls: [
+      { kind: "toggle", key: "showFps", label: "FPS monitor" },
       {
-        kind: "choice",
-        key: "showFps",
-        label: "FPS monitor",
-        options: [
-          { value: false, label: "No" },
-          { value: true, label: "Yes" },
-        ],
+        kind: "toggle",
+        key: "debugHoldLoading",
+        label: "Hold loading state",
+        hint: "Pins the flat camera and the wave on",
+      },
+      {
+        kind: "toggle",
+        key: "waveFront",
+        label: "Travelling front",
+        hint: "Off to judge the others alone",
+      },
+      {
+        kind: "toggle",
+        key: "waveDiagonal",
+        label: "Diagonal front",
+        hint: "Phase offset per weekday",
+      },
+      {
+        kind: "toggle",
+        key: "waveSharpFront",
+        label: "Sharp front",
+        hint: "Fast leading edge, long tail",
+      },
+      {
+        kind: "toggle",
+        key: "wavePulseScale",
+        label: "Pulse scale",
+        hint: "Tiles breathe with the crest",
+      },
+      {
+        kind: "toggle",
+        key: "waveTwinkle",
+        label: "Random pulses",
+        hint: "A third of cells, each on its own clock",
       },
     ],
   },
@@ -431,56 +461,6 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         key: "lightZ", label: "Light Z", min: -100, max: 100, step: 1 },
       { kind: "slider",
         key: "maxShadowOpacity", label: "Shadow", min: 0, max: 0.6, step: 0.01 },
-    ],
-  },
-  {
-    // Last, and dev-only like the rest of the panel. These exist to
-    // compare loading-wave treatments side by side: hold the state open,
-    // then switch each one on and off against the others.
-    title: "Debug: loading wave",
-    controls: [
-      {
-        kind: "choice",
-        key: "debugHoldLoading",
-        label: "Hold loading state",
-        options: YES_NO,
-        hint: "Pins the flat camera and the wave on",
-      },
-      {
-        kind: "choice",
-        key: "waveFront",
-        label: "Travelling front",
-        options: YES_NO,
-        hint: "Off to judge the others alone",
-      },
-      {
-        kind: "choice",
-        key: "waveDiagonal",
-        label: "Diagonal front",
-        options: YES_NO,
-        hint: "Phase offset per weekday",
-      },
-      {
-        kind: "choice",
-        key: "waveSharpFront",
-        label: "Sharp front",
-        options: YES_NO,
-        hint: "Fast leading edge, long tail",
-      },
-      {
-        kind: "choice",
-        key: "wavePulseScale",
-        label: "Pulse scale",
-        options: YES_NO,
-        hint: "Tiles breathe with the crest",
-      },
-      {
-        kind: "choice",
-        key: "waveTwinkle",
-        label: "Random pulses",
-        options: YES_NO,
-        hint: "A third of cells, each on its own clock",
-      },
     ],
   },
 ];
