@@ -44,6 +44,15 @@ The camera sits ~2 degrees off vertical rather than at 0. At exactly
 vertical its up vector parallels its view direction and `lookAt`
 degenerates; 2 degrees foreshortens by ~0.06%, which is invisible.
 
+The wordmark leaves upward while a search runs, as the field leaves
+downward — the chrome retreats to the edges and the city has the screen
+to itself. Opacity, not `display`, so the header keeps its height and
+nothing below it moves.
+
+Note for anyone editing these: Tailwind v4 compiles `translate-*` to the
+standalone `translate` property, not `transform`, so a transition must
+name `translate` or the movement snaps and only the fade animates.
+
 **The bottom of the page holds one line throughout.** Idle, it is the
 search field; searching drops it 8px and fades it out; loading shows
 nothing at all; and once the data lands the identity pill, period picker

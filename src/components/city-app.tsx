@@ -354,12 +354,23 @@ export function CityApp() {
       {/* A real anchor, so middle-click and cmd-click open a tab like
           any other link; the handler only takes over the plain click.
           pointer-events stay off on the bar and on for the mark alone, so
-          the rest of the strip doesn't shadow the city. */}
+          the rest of the strip doesn't shadow the city.
+
+          It leaves upward while a search runs, as the field leaves
+          downward: the chrome retreats to the edges and the city has the
+          screen to itself. Opacity rather than display, so the header
+          keeps its height and nothing below it moves. */}
       <header className="chrome-enter relative z-10 mx-auto w-full max-w-7xl shrink-0 text-center">
         <Link
           href="/"
           onClick={handleGoHome}
-          className="pointer-events-auto inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold tracking-tight text-ink transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-ink/5 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+          aria-hidden={phase === "loading" ? true : undefined}
+          tabIndex={phase === "loading" ? -1 : undefined}
+          className={`inline-flex h-8 items-center rounded-full px-3 text-sm font-semibold tracking-tight text-ink transition-[background-color,opacity,translate,scale] duration-300 ease-[var(--ease-in-out-cubic)] hover:bg-ink/5 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+            phase === "loading"
+              ? "pointer-events-none -translate-y-2 opacity-0"
+              : "pointer-events-auto translate-y-0 opacity-100"
+          }`}
         >
           gitCity
         </Link>
@@ -428,7 +439,7 @@ export function CityApp() {
           */}
           <div
             aria-hidden={phase === "idle" ? undefined : true}
-            className={`absolute inset-x-0 top-0 flex justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-in-out-cubic)] ${
+            className={`absolute inset-x-0 top-0 flex justify-center transition-[opacity,translate] duration-300 ease-[var(--ease-in-out-cubic)] ${
               phase === "idle"
                 ? "translate-y-0 opacity-100"
                 : "pointer-events-none translate-y-2 opacity-0"
@@ -484,7 +495,7 @@ export function CityApp() {
         <div className="relative flex min-h-8 w-full items-center justify-center">
           <div
             aria-hidden={phase === "idle" ? undefined : true}
-            className={`absolute inset-x-0 top-0 flex justify-center transition-[opacity,transform] duration-300 ease-[var(--ease-in-out-cubic)] ${
+            className={`absolute inset-x-0 top-0 flex justify-center transition-[opacity,translate] duration-300 ease-[var(--ease-in-out-cubic)] ${
               phase === "idle"
                 ? "translate-y-0 opacity-100"
                 : "pointer-events-none translate-y-2 opacity-0"
