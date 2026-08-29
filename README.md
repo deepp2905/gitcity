@@ -82,7 +82,7 @@ A local complaint outranks a lookup error: it describes what is in the
 field now, where the other describes the last thing submitted.
 
 **Changing the view.** A search holds the flat grid briefly and then
-rises on its own, once per username. After that the only things that move
+rises on its own, once per search. After that the only thing that moves
 the camera is clicking the scene. There is no orbit, zoom, pan or lean:
 the rig owns the camera outright, so it never has to be handed to
 anything else and read back, and the only thing that answers the pointer
@@ -218,9 +218,8 @@ The scene runs on phones and tablets, with a few deliberate differences:
   down. There is no hovering touch, so a tap that ended must not leave
   the bulge where it landed. Touch pointers only emit `pointermove` while
   in contact, so a drag is already scoped to the gesture; only the lift
-  needs handling. Touch devices fire
-  `pointermove` during a tap and once more as the finger lifts, so the
-  city would bulge and stay bulged with nothing following to settle it.
+  needs handling. A drag scrubs the swell and a tap transforms the view,
+  which the 14px movement threshold below keeps apart.
 - Tapping the scene transforms it, with a wider movement allowance than a
   mouse gets: a finger wanders further over the same intent.
 - The city is width-constrained in portrait, so it is allowed a much
@@ -303,12 +302,21 @@ server. It is only a cache.
 
 ## Testing
 
-By design, this project ships **unit tests only**, covering pure logic
-that a manual browser pass won't reliably exercise: username parsing
-(`src/lib/username`), contribution period/date/week math and the
-sqrt height-normalization curve (`src/lib/contributions`). UI behavior —
-the heatmap, the 3D scene, transitions, accessibility — is verified
-manually in the browser rather than through component or E2E tests.
+By design, this project ships **unit tests only**, covering pure logic a
+manual browser pass won't reliably exercise:
+
+- username parsing and the reserved-name list (`src/lib/username`)
+- period/date/week math, the sqrt height curve, month-label placement and
+  the seeded mock city (`src/lib/contributions`)
+- the load-phase state machine and URL round-tripping (`src/lib/state`)
+- camera fitting, the cubic-bezier solver, the spring integrator, grid
+  layout, rounded-box geometry and the loading wave (`src/lib/three`)
+- OKLCH interpolation and the wave's colour steps (`src/lib/theme`)
+- export filenames and frame geometry (`src/lib/export`)
+
+UI behaviour — the scene, transitions, layout, accessibility — is
+verified manually in the browser rather than through component or E2E
+tests.
 
 ## Project structure
 
@@ -319,19 +327,24 @@ src/
     page.tsx, layout.tsx, globals.css
   components/
     three/                        Canvas, camera rig, instanced buildings,
-                                  parallax, labels, tuning panel, FPS meter
-    *.tsx                         Search, period select, download,
-                                  heatmap, profile, shell
+                                  labels, shadow catcher, tuning panel,
+                                  FPS meter
+    *.tsx                         Search, suggested logins, period select,
+                                  download, heatmap, profile, shell
   lib/
     api/                          Client-side fetch wrapper
+    export/                       PNG composition for the download
     contributions/                Period/date/week math, height scale,
-                                  scene tiles, public types
+                                  scene tiles, mock city, empty-year copy,
+                                  public types
     github/                       GraphQL query, client, normalization,
                                   cache, throttle, offline fixtures
-    hooks/                        Viewport size, media queries, WebGL support
+    hooks/                        Viewport size, media queries, WebGL
+                                  support, per-visit mock seed
     state/                        URL params, view mode, load phase
     theme/                        Colour palette and OKLCH interpolation
-    three/                        Layout, camera, easing, springs, config
+    three/                        Layout, camera, easing, springs, loading
+                                  wave, building geometry, config
     username/                     Input parsing + reserved-name list
 ```
 
@@ -339,20 +352,20 @@ src/
 
 - GitHub.com public profiles only; GitHub Enterprise and user OAuth are
   out of scope.
-- "Five tabs" means Last 12 months plus up to four calendar years. The
+- Five periods: Last 12 months plus up to four calendar years. The
   GraphQL query always requests the current year and the three years
   before it (GraphQL aliases must be static); which of those become
-  visible tabs is then decided by which years GitHub actually reports
+  options is then decided by which years GitHub actually reports
   contribution history for. An account whose most recent activity is
-  older than that four-year window won't show a tab for it — a
-  deliberate MVP trade-off over doing a two-step "discover years, then
-  query" round trip.
-- Years GitHub reports but whose public calendar is empty keep their tab
-  rather than being dropped, and say so in the scene. GitHub lists years
-  it has *any* record for, including contributions that aren't publicly
-  visible, so an empty tab is information rather than a bug.
-- The current calendar-year tab is year-to-date and intentionally
-  overlaps the rolling view.
+  older than that four-year window won't get an entry — a deliberate MVP
+  trade-off over doing a two-step "discover years, then query" round
+  trip.
+- Years GitHub reports but whose public calendar is empty keep their
+  entry rather than being dropped, and say so in the scene. GitHub lists
+  years it has *any* record for, including contributions that aren't
+  publicly visible, so an empty year is information rather than a bug.
+- The current calendar year is year-to-date and intentionally overlaps
+  the rolling period.
 - English-only copy, light/warm daylight theme only (no dark mode) for
   the MVP.
 - PNG export is 1080x1350 (4:5 portrait at 2x), and is the city and an
@@ -363,9 +376,10 @@ src/
   overlay rather than part of the scene, and are deliberately left out:
   what gets sent to someone is a picture of a city, not a chart. The
   wordmark sits at the top at 0.75x the identity pill's scale: whose city
-  it is matters more than what made it. The button appears only in the 3D
-  state, so there is no path to a "3D city" download that is really a
-  flat grid.
+  it is matters more than what made it. The button is always available
+  and captures whichever state is on screen: flat gives the chart, tilted
+  gives the city, and a permanently visible button has to do the obvious
+  thing rather than silently export a view nobody is looking at.
 - No social card builder, account system, analytics, or saved cities.
 - The in-memory response cache and request throttle
   (`src/lib/github/cache.ts`, `src/lib/github/throttle.ts`) are
