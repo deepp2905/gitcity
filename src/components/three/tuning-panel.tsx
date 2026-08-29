@@ -241,7 +241,12 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
               type="button"
               onClick={() => toggleGroup(group.title)}
               aria-expanded={!collapsed[group.title]}
-              className="flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-semibold text-ink hover:bg-ink/5"
+              // Claims the whole row rather than hugging its label, so
+              // the hover fill and the hit area match the section it
+              // opens. Stops where the copy and reset actions begin when
+              // the section is open, and runs the full width when it is
+              // collapsed and they are not there.
+              className="flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-1 text-left text-xs font-semibold text-ink hover:bg-ink/5"
             >
               <span
                 aria-hidden="true"
@@ -259,7 +264,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
             {/* Only while the section is open: actions for controls you
                 can't see are noise. */}
             {collapsed[group.title] ? null : (
-              <span className="flex gap-0.5">
+              <span className="flex shrink-0 gap-0.5">
                 <button
                   type="button"
                   onClick={() => copyGroup(group)}
