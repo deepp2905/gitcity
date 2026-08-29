@@ -55,9 +55,10 @@ export const WAVE_FRONT_SHARE = 0.18;
 export const WAVE_MIN_FOOTPRINT = 0.82;
 
 /**
- * Share of cells that pulse on their own schedule, for the twinkle
- * treatment. Membership is fixed per cell rather than churning: cells
- * joining and leaving the set would read as flicker rather than rhythm.
+ * Default share of cells that pulse on their own schedule, for the
+ * twinkle treatment. Membership is fixed per cell rather than churning:
+ * cells joining and leaving the set would read as flicker rather than
+ * rhythm.
  */
 export const WAVE_TWINKLE_SHARE = 0.3;
 
@@ -76,6 +77,8 @@ export type WaveShape = {
   diagonal: boolean;
   sharpFront: boolean;
   twinkle: boolean;
+  /** Share of cells in the pulsing set, 0..1. */
+  twinkleShare: number;
 };
 
 /** Deterministic 0..1 per cell, so a cell keeps its character between
@@ -98,8 +101,11 @@ export function twinkleAt(
   weekIndex: number,
   weekday: number,
   elapsedSeconds: number,
+  share: number = WAVE_TWINKLE_SHARE,
 ): number {
-  if (cellHash(weekIndex, weekday, 1) >= WAVE_TWINKLE_SHARE) return 0;
+  // Compared against a fixed per-cell draw, so raising the share adds
+  // cells to the set rather than reshuffling which ones are in it.
+  if (cellHash(weekIndex, weekday, 1) >= share) return 0;
 
   const period =
     WAVE_TWINKLE_PERIOD_S *
@@ -129,7 +135,7 @@ export function waveValueAt(
     ? waveAt(weekIndex, weekday, elapsedSeconds, shape)
     : 0;
   const pulse = shape.twinkle
-    ? twinkleAt(weekIndex, weekday, elapsedSeconds)
+    ? twinkleAt(weekIndex, weekday, elapsedSeconds, shape.twinkleShare)
     : 0;
   return front > pulse ? front : pulse;
 }

@@ -55,6 +55,12 @@ export type SceneConfig = {
    * second, sparser wave.
    */
   waveTwinkle: boolean;
+  /**
+   * Percent of cells in the pulsing set. A percent rather than a
+   * fraction so the panel reads "30" and not "0.30"; divided at the
+   * point of use.
+   */
+  waveTwinklePercent: number;
 
   // --- Building rise (spring) ---
   /** Spring constant. Higher rises faster; independent of bounce. */
@@ -184,6 +190,7 @@ export const DEFAULT_SCENE_CONFIG: SceneConfig = {
   waveSharpFront: false,
   wavePulseScale: false,
   waveTwinkle: false,
+  waveTwinklePercent: 30,
 };
 
 /** Keys whose value is a number, and so drivable by a slider. */
@@ -442,7 +449,16 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         kind: "toggle",
         key: "waveTwinkle",
         label: "Random pulses",
-        hint: "A third of cells, each on its own clock",
+        hint: "Each on its own clock",
+      },
+      {
+        kind: "slider",
+        key: "waveTwinklePercent",
+        label: "Pulsing cells",
+        min: 0,
+        max: 100,
+        step: 5,
+        hint: "% of the grid",
       },
     ],
   },

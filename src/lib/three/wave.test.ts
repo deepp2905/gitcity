@@ -16,6 +16,7 @@ const PLAIN: WaveShape = {
   diagonal: false,
   sharpFront: false,
   twinkle: false,
+  twinkleShare: WAVE_TWINKLE_SHARE,
 };
 
 describe("columnJitter", () => {
@@ -142,12 +143,7 @@ describe("wave treatments", () => {
   });
 
   it("stays in range with every treatment on", () => {
-    const all: WaveShape = {
-      front: true,
-      diagonal: true,
-      sharpFront: true,
-      twinkle: true,
-    };
+    const all: WaveShape = { ...PLAIN, diagonal: true, sharpFront: true, twinkle: true };
     for (let column = 0; column < 53; column++) {
       for (let weekday = 0; weekday < 7; weekday++) {
         for (let i = 0; i < 20; i++) {
@@ -244,5 +240,34 @@ describe("waveValueAt", () => {
         );
       }
     }
+  });
+});
+
+describe("twinkle share", () => {
+  const CELLS: [number, number][] = [];
+  for (let column = 0; column < 53; column++) {
+    for (let weekday = 0; weekday < 7; weekday++) CELLS.push([column, weekday]);
+  }
+
+  const setFor = (share: number) =>
+    new Set(
+      CELLS.filter(([c, d]) =>
+        Array.from({ length: 40 }, (_, i) =>
+          twinkleAt(c, d, i / 8, share),
+        ).some((v) => v > 0),
+      ).map(([c, d]) => `${c}:${d}`),
+    );
+
+  it("grows and shrinks with the share", () => {
+    expect(setFor(0).size).toBe(0);
+    expect(setFor(0.1).size).toBeLessThan(setFor(0.5).size);
+    expect(setFor(1).size).toBe(CELLS.length);
+  });
+
+  it("adds cells rather than reshuffling which ones pulse", () => {
+    // Raising the share should keep every cell that was already in.
+    const small = setFor(0.2);
+    const large = setFor(0.6);
+    for (const cell of small) expect(large.has(cell)).toBe(true);
   });
 });

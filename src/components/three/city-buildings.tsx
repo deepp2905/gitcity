@@ -491,6 +491,7 @@ export function CityBuildings({
         diagonal: config.waveDiagonal,
         sharpFront: config.waveSharpFront,
         twinkle: config.waveTwinkle,
+        twinkleShare: config.waveTwinklePercent / 100,
       };
       const colors = colorsRef.current;
       const elapsedSeconds = waveElapsedRef.current;

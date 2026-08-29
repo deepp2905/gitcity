@@ -272,7 +272,7 @@ long as it takes to judge them, and switched on in any combination:
 | Diagonal front | Phase offset per weekday, so the front leans instead of running as vertical bars |
 | Sharp front | Fast leading edge, long tail — direction becomes legible, where a symmetric triangle reads as pulsing in place |
 | Pulse scale | Tiles shrink between crests and swell through them. Footprint, not height: height is invisible from straight above, which is why the wave is colour-driven in the first place |
-| Random pulses | A fixed ~30% of cells pulse their colour on their own phase and period, independent of the front |
+| Random pulses | A fixed share of cells pulse their colour on their own phase and period, independent of the front. The **Pulsing cells** slider under it sets that share |
 
 Pulse scale follows the raw wave value rather than the stepped colour, so
 snapping colour plays against smooth breathing, and it eases back to a
@@ -280,8 +280,10 @@ full cell through the settle so the data never lands on shrunken tiles.
 
 The treatments combine by taking whichever value is brighter, not by
 summing: a random pulse should flare a cell above the front passing
-through it, never drag a lit one back down. Twinkle membership is fixed
-per cell rather than re-rolled — cells joining and leaving the set would
+through it, never drag a lit one back down. The share slider compares against a fixed per-cell draw, so raising it
+adds cells to the set rather than reshuffling which ones are in it — the
+pattern grows instead of scrambling as you drag. Twinkle membership is
+likewise fixed per cell rather than re-rolled — cells joining and leaving the set would
 read as flicker rather than rhythm — and each member gets its own phase
 *and* its own period, since a shared beat across a third of the grid
 would just be a second, sparser wave.
