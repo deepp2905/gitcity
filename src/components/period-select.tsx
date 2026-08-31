@@ -21,7 +21,12 @@ type PeriodSelectProps = {
  *
  * Follows the listbox pattern: a button that owns the value, and a list
  * of options that takes focus while open. Arrow keys move, Enter and
- * Space choose, Escape returns to the button without changing anything.
+ * Space choose.
+ *
+ * Choosing does not close it. Switching period is a thing people do more
+ * than once — comparing years against each other — and a menu that shuts
+ * on every pick makes the second comparison cost two taps instead of
+ * one. It closes on a tap outside, on Escape, or on Tab.
  */
 export function PeriodSelect({
   periods,
@@ -72,11 +77,6 @@ export function PeriodSelect({
   if (periods.length <= 1) return null;
 
   const active = periods[activeIndex];
-
-  function choose(id: PeriodId) {
-    onSelect(id);
-    setOpen(false);
-  }
 
   function moveFocus(delta: number, from: number) {
     const next = (from + delta + periods.length) % periods.length;
@@ -140,7 +140,7 @@ export function PeriodSelect({
                 role="option"
                 aria-selected={isActive}
                 tabIndex={-1}
-                onClick={() => choose(period.id)}
+                onClick={() => onSelect(period.id)}
                 onKeyDown={(event) => handleListKeyDown(event, index)}
                 className={`flex h-9 w-full items-center justify-start rounded-full px-3.5 text-left text-sm font-medium tabular-nums transition-[background-color,color] duration-150 ease-[cubic-bezier(0.2,0,0,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
                   isActive

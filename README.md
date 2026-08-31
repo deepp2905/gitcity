@@ -321,7 +321,9 @@ The scene runs on phones and tablets, with a few deliberate differences:
   than a phone, and one button naming the current period is a fraction of
   that. It opens upward, because the controls are pinned to the bottom of
   the viewport and there is nothing below them but the edge of the
-  screen.
+  screen. Choosing does not close it — comparing years is a thing
+  people do more than once, and a menu that shuts on every pick makes the
+  second comparison cost two taps instead of one.
 
 Heights use `dvh` and padding uses `env(safe-area-inset-*)`, so iOS
 Safari's address bar can't crop the page and the chrome clears the notch
