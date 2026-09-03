@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({
@@ -41,25 +40,23 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
 
         {/*
-          next/script rather than a raw tag in <head>. The App Router
-          controls the document head, and an inline script written there
-          is not guaranteed to survive or to run once; `afterInteractive`
-          hands it to Next's loader, which injects it after hydration and
-          deduplicates it across client navigations.
+          A plain script element, not next/script. React 19 hoists
+          <script> into <head>, so this renders as a real executing tag
+          in the served HTML — which is what Clarity's "paste into
+          <head>" instruction actually asks for.
 
-          Production only, so a dev server does not file sessions
-          alongside real ones. Preview deploys still count -- they build
-          with NODE_ENV=production -- which is usually what you want.
+          Both next/script strategies failed to do that here.
+          `afterInteractive` emits no markup at all: the tag ships inside
+          the React flight payload and is injected by Next's loader
+          during hydration. `beforeInteractive` emits only a
+          <link rel="preload">, which fetches but does not run. Either
+          way nothing in the HTML executes on its own.
+
+          The src form rather than Clarity's inline loader: that snippet
+          only builds this exact tag, plus a queue stub for calling
+          `clarity()` before it loads, which nothing here does.
         */}
-        {process.env.NODE_ENV === "production" ? (
-          <Script id="clarity" strategy="afterInteractive">
-            {`(function(c,l,a,r,i,t,y){
-    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-})(window, document, "clarity", "script", "${CLARITY_PROJECT_ID}");`}
-          </Script>
-        ) : null}
+        <script async src={`https://www.clarity.ms/tag/${CLARITY_PROJECT_ID}`} />
       </body>
     </html>
   );

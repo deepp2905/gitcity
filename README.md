@@ -514,12 +514,14 @@ src/
   gives the city, and a permanently visible button has to do the obvious
   thing rather than silently export a view nobody is looking at.
 - No social card builder, account system, or saved cities.
-- Microsoft Clarity is loaded in production for analytics and session
-  replay. It goes through `next/script` with `afterInteractive` rather
-  than a raw tag in `<head>`: the App Router owns the head, and Next's
-  loader is what guarantees the snippet runs once and survives client
-  navigation. Gated on `NODE_ENV`, so a dev server does not file sessions
-  next to real ones; preview deploys do, since they build as production.
+- Microsoft Clarity is loaded for analytics and session replay, as a
+  plain `<script>` element in the root layout. React 19 hoists it into
+  `<head>`, so it renders as a real executing tag in the served HTML —
+  which is what Clarity's "paste into `<head>`" instruction asks for.
+  `next/script` does not manage that: `afterInteractive` emits no markup
+  at all (the tag ships inside the React flight payload and is injected
+  during hydration), and `beforeInteractive` emits only a
+  `<link rel="preload">`, which fetches without running.
 - The in-memory response cache and request throttle
   (`src/lib/github/cache.ts`, `src/lib/github/throttle.ts`) are
   best-effort, single-process — they work within one running server
