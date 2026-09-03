@@ -336,7 +336,9 @@ the page — and top-right on phones, where the bottom of the screen
 belongs to the field and the controls. It appears with the identity pill,
 period picker and download button rather than over the idle city: nothing
 it controls is worth looking at until there is real data standing up. Every scene constant is a
-live control there, grouped by concern, with per-section copy and reset. Copy a section, paste it over the matching block of
+live control there, grouped by concern, with per-section copy and reset.
+Every section starts collapsed, so the panel opens as a short list of
+names rather than a wall of sliders. Copy a section, paste it over the matching block of
 `DEFAULT_SCENE_CONFIG` in [`src/lib/three/config.ts`](src/lib/three/config.ts)
 to make it the default. The gear turns 30 degrees on hover — a third of
 a tooth on a twelve-toothed gear, so it lands exactly back on itself and

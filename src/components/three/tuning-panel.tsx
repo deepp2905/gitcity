@@ -147,13 +147,11 @@ type TuningPanelProps = {
 export function TuningPanel({ config, onChange }: TuningPanelProps) {
   const [open, setOpen] = useState(false);
   const [copiedGroup, setCopiedGroup] = useState<string | null>(null);
-  /** Collapsed sections, by title. Only the first starts open, so the
-   * panel opens as a short list of sections rather than a wall of
-   * sliders. */
+  /** Collapsed sections, by title. All of them start closed, so the panel
+   * opens as a short list of section names rather than a wall of
+   * sliders and you go straight to the one you came for. */
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      CONTROL_GROUPS.map((group, index) => [group.title, index !== 0]),
-    ),
+    Object.fromEntries(CONTROL_GROUPS.map((group) => [group.title, true])),
   );
 
   function toggleGroup(title: string) {
