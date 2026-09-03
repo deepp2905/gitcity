@@ -107,6 +107,9 @@ type BuildingLayout = {
   z: number;
   restHeight: number;
   riseHeight: number;
+  /** Whether the hover swell lifts this tile. False for days with
+   * nothing on them, which have no height to exaggerate. */
+  swells: boolean;
   /** Rise-wave delay, used by the 3D spring release. */
   delayMs: number;
   /** Recolour-wave delay, used only in the flat state. */
@@ -215,6 +218,7 @@ export function CityBuildings({
           z,
           restHeight: futureHeight,
           riseHeight: futureHeight,
+          swells: false,
           delayMs,
           colorDelayMs,
           settleDelayMs,
@@ -245,6 +249,7 @@ export function CityBuildings({
         z,
         restHeight: groundHeight,
         riseHeight: worldHeight(scaled, config.sceneMaxHeight),
+        swells: day.count > 0,
         delayMs,
         colorDelayMs,
         settleDelayMs,
@@ -901,13 +906,21 @@ function updateSwell(
   };
 }
 
-/** A building's height as actually rendered, with the hover swell on it. */
+/**
+ * A building's height as actually rendered, with the hover swell on it.
+ *
+ * Days with no contributions sit this out. The swell is multiplicative,
+ * so a ground tile still lifted by about a third of its own height —
+ * enough to ripple visibly across the empty stretches of a sparse year,
+ * and it read as those days having something in them. A day with nothing
+ * on it has no height to exaggerate.
+ */
 function swelledHeight(
   height: number,
   item: BuildingLayout,
   swell: Swell,
 ): number {
-  return swell.amount > 0
+  return swell.amount > 0 && item.swells
     ? height * (1 + swell.amount * falloff(item, swell))
     : height;
 }

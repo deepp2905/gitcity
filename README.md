@@ -184,6 +184,11 @@ magnitude. Measuring on one axis also lets the radius stay meaningful
 without the effect shrinking to a dot, and matches how the loading wave
 measures the same space.
 
+Days with nothing on them sit it out. The swell is multiplicative, so a
+ground tile still lifted by about a third of its own height — enough to
+ripple visibly across the empty stretches of a sparse year, and it read
+as those days having something in them.
+
 The exact counts live in the accessible heatmap, so the skyline is free
 to exaggerate under the cursor without anyone losing the numbers.
 
