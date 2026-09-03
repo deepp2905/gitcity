@@ -514,12 +514,14 @@ src/
   gives the city, and a permanently visible button has to do the obvious
   thing rather than silently export a view nobody is looking at.
 - No social card builder, account system, or saved cities.
-- Microsoft Clarity is loaded for analytics and session replay, as a
-  plain `<script>` element in the root layout. React 19 hoists it into
-  `<head>`, so it renders as a real executing tag in the served HTML —
-  which is what Clarity's "paste into `<head>`" instruction asks for.
-  `next/script` does not manage that: `afterInteractive` emits no markup
-  at all (the tag ships inside the React flight payload and is injected
+- Microsoft Clarity is loaded for analytics and session replay, through
+  the official `@microsoft/clarity` package rather than the pasted
+  snippet. `Clarity.init` runs in a small client component
+  (`src/components/analytics.tsx`) that renders nothing. Both approaches
+  inject the same tag, but this one either ran or it did not — the
+  hand-placed versions were hard to distinguish from a working one.
+  `next/script` managed neither: `afterInteractive` emits no markup at
+  all (the tag ships inside the React flight payload and is injected
   during hydration), and `beforeInteractive` emits only a
   `<link rel="preload">`, which fetches without running.
 - The in-memory response cache and request throttle
