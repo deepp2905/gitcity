@@ -1,6 +1,6 @@
 # gitCity
 
-Turn a GitHub contribution history into a familiar 2D heatmap that
+Turn a GitHub contribution history into a familiar 2D/3D heatmap that
 transform it into a warm, daylight 3D skyline. Not affiliated with GitHub —
 see [Assumptions](#assumptions) below.
 
