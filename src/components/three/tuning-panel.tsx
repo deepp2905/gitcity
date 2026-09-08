@@ -137,12 +137,17 @@ type TuningPanelProps = {
 };
 
 /**
- * Development-only control surface for every tunable scene constant.
+ * Control surface for every tunable scene constant.
  *
- * Rendered by CityScene behind a NODE_ENV check, so none of this reaches
- * visitors or the production bundle. Styled with the site's own tokens
- * rather than pulling in a GUI library, so it sits in the page instead of
- * floating over it as a foreign dark panel.
+ * Ships in production, so it is visitor-facing rather than dev-only, and
+ * is bundled either way — the NODE_ENV check it used to sit behind was
+ * what let the bundler drop it. CityScene gates it on the chrome having
+ * arrived instead: nothing it controls is worth looking at until there
+ * is real data standing up.
+ *
+ * Styled with the site's own tokens rather than pulling in a GUI
+ * library, so it sits in the page instead of floating over it as a
+ * foreign dark panel.
  */
 export function TuningPanel({ config, onChange }: TuningPanelProps) {
   const [open, setOpen] = useState(false);

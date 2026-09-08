@@ -1,8 +1,8 @@
 # gitCity
 
-Turn a GitHub contribution history into a familiar 2D/3D heatmap that
-transform it into a warm, daylight 3D skyline. Not affiliated with GitHub —
-see [Assumptions](#assumptions) below.
+Turn a GitHub contribution history into a warm, daylight 3D skyline —
+the familiar heatmap, lifted. Not affiliated with GitHub — see
+[Assumptions](#assumptions) below.
 
 ## Stack
 
@@ -11,6 +11,7 @@ see [Assumptions](#assumptions) below.
   mirrored as hex constants in [`src/lib/theme/palette.ts`](src/lib/theme/palette.ts)
   for use in Three.js materials)
 - React Three Fiber + Three.js for the 3D skyline
+- Microsoft Clarity for analytics and session replay
 - Vitest for unit tests (pure logic only — see [Testing](#testing))
 - pnpm
 
@@ -189,9 +190,6 @@ ground tile still lifted by about a third of its own height — enough to
 ripple visibly across the empty stretches of a sparse year, and it read
 as those days having something in them.
 
-The exact counts live in the accessible heatmap, so the skyline is free
-to exaggerate under the cursor without anyone losing the numbers.
-
 The swell answers the pointer across the whole page, since the city
 fills the viewport behind everything — but not while it is over the
 chrome. Hovering a button, the field or the open menu settles it rather
@@ -222,6 +220,12 @@ from moving: `pointerleave`, `pointercancel` and window `blur` all clear
 an `inside` flag, because a pointer that has left the document keeps its
 last coordinates and the swell would otherwise hold its bulge over an
 empty screen forever.
+
+**The loading state has a floor**, randomized between 1875ms and
+3125ms per search. A cached or fixture response can answer in ~20ms, and
+without a floor the wave would flash past unseen. Randomized rather than
+fixed because a live GitHub round trip never takes the same time twice,
+and a constant delay reads as a scripted pause.
 
 **The loading wave steps between five colours** rather than interpolating
 between them. The contribution ramp is continuous because it encodes a
@@ -470,7 +474,8 @@ src/
                                   labels, shadow catcher, tuning panel,
                                   FPS meter
     *.tsx                         Search, suggested logins, period select,
-                                  download, heatmap, profile, shell
+                                  download, tooltip, heatmap, profile,
+                                  analytics, shell
   lib/
     api/                          Client-side fetch wrapper
     export/                       PNG composition for the download
