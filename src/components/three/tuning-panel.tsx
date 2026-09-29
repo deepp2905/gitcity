@@ -200,7 +200,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
         // its own: the icon is smaller than its target, and a rotation
         // that only fired once the pointer was over the teeth would miss
         // most of the ways in.
-        className="group pointer-events-auto fixed right-3 top-3 z-50 grid size-11 sm:bottom-3 sm:top-auto place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="group pointer-events-auto absolute right-3 top-3 z-50 grid size-11 place-items-center rounded-full border border-[var(--surface-translucent-border)] bg-[var(--surface-translucent)] text-ink backdrop-blur-md transition-[background-color,scale] duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-canvas-raised active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink sm:bottom-3 sm:top-auto"
       >
         <SettingsIcon />
       </button>
@@ -210,7 +210,7 @@ export function TuningPanel({ config, onChange }: TuningPanelProps) {
   return (
     <div
       data-ui
-      className="pointer-events-auto fixed right-3 top-3 z-50 flex max-h-[80vh] w-72 flex-col sm:bottom-3 sm:top-auto overflow-hidden rounded-xl border border-border bg-canvas-raised shadow-[var(--shadow-raised)]">
+      className="pointer-events-auto absolute right-3 top-3 z-50 flex max-h-[80vh] w-72 flex-col overflow-hidden rounded-xl border border-border bg-canvas-raised shadow-[var(--shadow-raised)] sm:bottom-3 sm:top-auto">
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-3 py-2.5">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
           Scene tuning

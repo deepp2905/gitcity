@@ -502,15 +502,17 @@ export function CityScene({
   );
 
   return (
-    // Fixed to the viewport and behind everything: the city is the page's
-    // backdrop, and the controls sit above it on their own stacking
-    // level. Pointer events stay on so the scene remains clickable and
-    // hoverable through the gaps between controls.
+    // Positioned against the viewport-sized page and behind everything:
+    // the city is the page's backdrop, and the controls sit above it on
+    // their own stacking level. Keeping it in the page's coordinate space
+    // lets Safari move it with the document during elastic overscroll.
+    // Pointer events stay on so the scene remains clickable and hoverable
+    // through the gaps between controls.
     <>
-      {/* The city itself: a fixed backdrop behind the page. Its own
+      {/* The city itself: a viewport-sized backdrop behind the page. Its own
           stacking context, so overlays below are siblings rather than
           children or they would be trapped beneath the page content. */}
-      <div className="fixed inset-0 z-0">
+      <div className="absolute inset-x-0 top-0 z-0 h-dvh">
       <div
         // No border, background or radius: the canvas already clears to
         // the page colour, so the scene reads as part of the page rather

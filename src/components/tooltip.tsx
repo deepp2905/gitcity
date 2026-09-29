@@ -3,7 +3,7 @@
  *
  * Rendered *inside* its trigger rather than wrapping it, so it costs the
  * layout nothing: the trigger only needs `group relative`, and a
- * positioned trigger — the tuning gear is `fixed` — already provides the
+ * positioned trigger — the tuning gear is `absolute` — already provides the
  * containing block.
  *
  * No JavaScript. The delay is `group-hover:delay-200` against a base

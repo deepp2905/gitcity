@@ -407,9 +407,12 @@ export function CityApp() {
 
   return (
     /*
-     * One page, one chart. The city is a fixed full-viewport backdrop
+     * One page, one chart. The city is a full-viewport backdrop
      * rendered inside this subtree and is on screen in every phase, so
      * there is no landing view that gets replaced by an app view.
+     * It is positioned against this viewport-sized page rather than fixed
+     * to the visual viewport, so Safari's elastic overscroll moves the city
+     * and its controls with the rest of the document.
      *
      * Everything else is chrome pinned to the edges: a wordmark at the
      * top, the controls at the bottom. Being inside the same subtree as

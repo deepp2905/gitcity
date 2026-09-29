@@ -121,7 +121,7 @@ route, which ran the same parser and held identical copies.
 The identity pill and the download button carry tooltips after a 200ms
 beat. They render *inside* their trigger rather
 than wrapping it, so they cost the layout nothing — the trigger needs
-`group relative`, and a positioned one like the fixed gear already
+`group relative`, and a positioned one like the absolute gear already
 provides the containing block. No JavaScript: the pause is
 `group-hover:delay-200` against a base `delay-0`, which delays the way in
 and not the way out, and Tailwind puts `hover` behind
