@@ -322,6 +322,9 @@ The scene runs on phones and tablets, with a few deliberate differences:
   in contact, so a drag is already scoped to the gesture; only the lift
   needs handling. A drag scrubs the swell and a tap transforms the view,
   which the 14px movement threshold below keeps apart.
+- A one-finger drag that starts on the city stays with the city instead of
+  turning into page scroll or Safari elastic overscroll. Pinch zoom remains
+  available; gestures that begin on the page chrome keep native scrolling.
 - Tapping the scene transforms it, with a wider movement allowance than a
   mouse gets: a finger wanders further over the same intent.
 - The city is width-constrained in portrait, so it is allowed a much

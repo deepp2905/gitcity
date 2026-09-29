@@ -520,7 +520,13 @@ export function CityScene({
         // pointer-events must be re-enabled explicitly: the page wrapper
         // disables them so the scene shows through the gaps between
         // controls, and pointer-events inherits.
-        className={`pointer-events-auto relative h-full w-full touch-manipulation ${
+        // A one-finger gesture that starts on the city belongs to the city
+        // for its full lifetime, even when it moves vertically. Declaring
+        // that before pointerdown is the only reliable way to stop Safari
+        // handing the gesture to document scrolling after it has begun.
+        // Keep pinch zoom available as an accessibility affordance.
+        style={{ touchAction: "pinch-zoom" }}
+        className={`pointer-events-auto relative h-full w-full ${
           interactive ? "cursor-pointer" : "cursor-default"
         }`}
         onPointerDown={handlePointerDown}
