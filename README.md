@@ -32,6 +32,17 @@ browser.
 pnpm dev
 ```
 
+### Environment variables
+
+| Variable | Required | Purpose |
+| -------- | -------- | ------- |
+| `GITHUB_TOKEN` | Yes, unless fixtures are enabled | Server-only token used for GitHub GraphQL requests. Public contribution data needs no scopes. |
+| `GITHUB_API_TIMEOUT_MS` | No | Positive request timeout in milliseconds; defaults to `8000`. |
+| `USE_FIXTURES` | No | Set to `true` to serve local files from `fixtures/` instead of calling GitHub. |
+
+The token must remain server-only: do not add a `NEXT_PUBLIC_` prefix or
+reference it from a client component.
+
 ## How it behaves
 
 There is only ever **one** visualization: the 3D scene. The "2D" state is
@@ -341,6 +352,12 @@ Heights use `dvh` and padding uses `env(safe-area-inset-*)`, so iOS
 Safari's address bar can't crop the page and the chrome clears the notch
 and home indicator.
 
+The WebGL layer, tuning control and optional FPS meter are absolutely
+positioned against the viewport-sized page container rather than fixed to
+Safari's visual viewport. They therefore move with the rest of the document
+during Safari's elastic overscroll while retaining the same edge-anchored
+layout in normal use.
+
 ## Tuning panel
 
 A gear button sits bottom-right, styled as the other round controls on
@@ -431,6 +448,10 @@ Build somewhere else instead:
 ```bash
 NEXT_DIST_DIR=.next-verify pnpm build
 ```
+
+The layout uses `next/font/google` for Inter, so a production build needs
+network access to `fonts.googleapis.com`. A network-isolated build will fail
+at that font-fetch step even when the application code is valid.
 
 If a hydration mismatch does appear, delete `.next` and restart the dev
 server. It is only a cache.
