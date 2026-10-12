@@ -562,6 +562,9 @@ src/
   `<link rel="preload">`, which fetches without running.
 - The in-memory response cache and request throttle
   (`src/lib/github/cache.ts`, `src/lib/github/throttle.ts`) are
+  configured to reuse successful contribution responses for six hours
+  per username, fetching fresh data on the next request after expiry.
+  Missing profiles are cached for five minutes. Both are
   best-effort, single-process — they work within one running server
   (and survive Next.js dev Fast Refresh) but don't share state across
   separate serverless function instances. Swap in Redis/Vercel KV if the

@@ -1,7 +1,7 @@
 import "server-only";
 import type { ContributionResponse } from "@/lib/contributions/types";
 
-const SUCCESS_TTL_MS = 60 * 60 * 1000; // 1 hour
+const SUCCESS_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 const NOT_FOUND_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 type CacheEntry =
